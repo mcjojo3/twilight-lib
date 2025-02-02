@@ -12,12 +12,11 @@ import org.apache.logging.log4j.Logger;
 @Mod("twilight_lib")
 public class TwilightLib {
 
-    // Create a logger for your mod
+    // Create a logger for your mod.
     public static final Logger LOGGER = LogManager.getLogger("twilight_lib");
 
     public TwilightLib() {
         LOGGER.info("TwilightLib main mod class constructed.");
-        // Other initialization, event bus subscriptions, etc.
     }
 
     @Mod.EventBusSubscriber(modid = "twilight_lib", value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)

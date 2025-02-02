@@ -1,22 +1,21 @@
 package mc.sayda.twilight_lib;
 
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.server.level.ServerPlayer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 public class ModelManager {
-    // A registry mapping model names to their respective supplier factory.
-    // Note: The Supplier returns another Supplier so that instantiation can be deferred until needed.
-    public static final Map<String, Supplier<Supplier<EntityModel<Player>>>> MODEL_REGISTRY = new HashMap<>();
+    // Maps model names (in lowercase) to suppliers producing an EntityModel<AbstractClientPlayer>
+    public static final Map<String, Supplier<Supplier<EntityModel<AbstractClientPlayer>>>> MODEL_REGISTRY = new HashMap<>();
 
-    // Mapping of players (by UUID) to the selected model name.
+    // Maps a player's UUID to the chosen model name
     private static final Map<UUID, String> PLAYER_MODELS = new HashMap<>();
 
-    public static void registerModel(String name, Supplier<Supplier<EntityModel<Player>>> modelSupplier) {
+    public static void registerModel(String name, Supplier<Supplier<EntityModel<AbstractClientPlayer>>> modelSupplier) {
         MODEL_REGISTRY.put(name.toLowerCase(), modelSupplier);
     }
 
@@ -28,11 +27,11 @@ public class ModelManager {
         PLAYER_MODELS.put(player.getUUID(), name.toLowerCase());
     }
 
-    public static void removePlayerModel(ServerPlayer player) {
-        PLAYER_MODELS.remove(player.getUUID());
-    }
-
     public static String getPlayerModel(UUID playerId) {
         return PLAYER_MODELS.get(playerId);
+    }
+
+    public static void removePlayerModel(ServerPlayer player) {
+        PLAYER_MODELS.remove(player.getUUID());
     }
 }

@@ -2,6 +2,9 @@
 
 Twilight Lib is a library mod used by mc_jojo3's mods. It is designed to more easily allow synchronization and compatibility between my different mods and is in no way meant to be used in other ways. If anyone (which I doubt) finds this mod useful for other purposes, feel free to use it, but it will remain closed source (without documentation, I might add) like most of my mods due to my horrendous code commenting/documentation skills.
 
+- [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/twilight-lib)
+- [Modrinth](https://modrinth.com/mod/twilight-lib)
+
 <details>
 <summary><strong><u>Functionalities</u></strong></summary>
 

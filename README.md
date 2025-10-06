@@ -8,14 +8,17 @@ Twilight Lib is a library mod used by mc_jojo3's mods. It is designed to more ea
 <details>
 <summary><strong><u>Functionalities</u></strong></summary>
 
-- [CreRaces](https://modrinth.com/mod/creraces)
-- [Pehkui](https://legacy.curseforge.com/minecraft/mc-mods/pehkui) *(Verifies installation)*
-- [MGR:R](https://modrinth.com/mod/mgrr) *(Mine Gear Rising: Revengeance)*
-- [Clash of Fates](https://legacy.curseforge.com/minecraft/mc-mods/clash-of-fates)
-- [RogueCraft](https://modrinth.com/mod/roguecraft)
-- [EnviroMine Lite](https://modrinth.com/mod/enviromine-lite)
-- [Masks of Terror](https://modrinth.com/mod/masks-of-terror)
-- [Vigor](https://modrinth.com/project/vigor)
+- Synchronize data between mods, like tags, variables etc
+- Custom renderer, for mods like [CreRaces Classic](https://modrinth.com/mod/creraces) etc
+- Possibly some shared items / blocks and more...
+
+</details>
+
+<details>
+<summary><strong><u>Mods utilizing the Library</u></strong></summary>
+
+- [CreRaces](https://modrinth.com/mod/creraces-experimental)
+- [CreRaces Classic](https://modrinth.com/mod/creraces)
 
 </details>
 
@@ -29,11 +32,12 @@ Twilight Lib is a library mod used by mc_jojo3's mods. It is designed to more ea
 - **1.16.5:** N/A: None
 - **1.17.1:** N/A: None
 - **1.18.2:** N/A: None
-- **1.19.2:** LTS: "Long Term Support"
-- **1.19.4:** LTS: "Long Term Support"
-- **1.20.1:** LTS: "Long Term Support"
-- **1.20.4:** LTS: "Long Term Support"
-- **1.20.6:** LTS: "Long Term Support"
+- **1.19.2:** N/A: None
+- **1.19.4:** N/A: None
+- **1.20.1:** ADS: "Active Development Support"
+- **1.20.4:** N/A: None
+- **1.20.6:** N/A: None
+- **1.21.1:** ADS: "Active Development Support"
 
 *Do note that this is the plan, but things may change over time!*
 

@@ -17,7 +17,7 @@ public class ModEntities {
     public static final RegistryObject<EntityType<CustomFoxEntity>> BLACK_FOX = registerFox("black_fox", CustomFoxEntity.FoxColor.BLACK);
     public static final RegistryObject<EntityType<CustomFoxEntity>> BLUE_FOX = registerFox("blue_fox", CustomFoxEntity.FoxColor.BLUE);
     public static final RegistryObject<EntityType<CustomFoxEntity>> ORANGE_FOX = registerFox("orange_fox", CustomFoxEntity.FoxColor.ORANGE);
-    public static final RegistryObject<EntityType<CustomFoxEntity>> GOLDEN_FOX = registerFox("golden_fox", CustomFoxEntity.FoxColor.GOLDEN);
+    public static final RegistryObject<EntityType<CustomFoxEntity>> YELLOW_FOX = registerFox("yellow_fox", CustomFoxEntity.FoxColor.YELLOW);
     public static final RegistryObject<EntityType<CustomFoxEntity>> PURPLE_FOX = registerFox("purple_fox", CustomFoxEntity.FoxColor.PURPLE);
     public static final RegistryObject<EntityType<CustomFoxEntity>> RED_FOX = registerFox("red_fox", CustomFoxEntity.FoxColor.RED);
 

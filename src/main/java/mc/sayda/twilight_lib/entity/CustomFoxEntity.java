@@ -20,7 +20,7 @@ public class CustomFoxEntity extends Fox {
         WHITE,
         BLACK,
         BLUE,
-        GOLDEN,
+        YELLOW,
         ORANGE,
         PURPLE,
         RED

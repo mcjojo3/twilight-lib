@@ -43,7 +43,7 @@ public class AddonInit {
      * Register all color variants of kitsune parts (ears, snout, and tail variants)
      */
     private static void registerKitsuneVariants() {
-        String[] colors = {"white", "black", "blue", "golden", "orange", "purple", "red"};
+        String[] colors = {"white", "black", "blue", "yellow", "orange", "purple", "red"};
 
         // Define which tails are visible for each variant
         // Standard variants (swapped with alt for 3-5):
@@ -105,11 +105,21 @@ public class AddonInit {
         int totalAddons = 0;
 
         for (String color : colors) {
-            // Register ears
+            // Register ears (standard variant)
             AddonRegistry.registerAddon(
                 "kitsune_ears_" + color,
                 KitsuneEarsModel.LAYER_LOCATION,
                 KitsuneEarsModel::createBodyLayer,
+                KitsuneEarsModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_ears_" + color + ".png")
+            );
+            totalAddons++;
+
+            // Register ears (alt variant - same texture)
+            AddonRegistry.registerAddon(
+                "kitsune_ears_" + color + "_alt",
+                KitsuneEarsModel.LAYER_LOCATION_ALT,
+                KitsuneEarsModel::createBodyLayerAlt,
                 KitsuneEarsModel::new,
                 new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_ears_" + color + ".png")
             );

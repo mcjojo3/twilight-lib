@@ -24,7 +24,7 @@ public class ClientModEvents {
             ModEntities.WHITE_FOX,
             ModEntities.BLACK_FOX,
             ModEntities.BLUE_FOX,
-            ModEntities.GOLDEN_FOX,
+            ModEntities.YELLOW_FOX,
             ModEntities.ORANGE_FOX,
             ModEntities.PURPLE_FOX,
             ModEntities.RED_FOX

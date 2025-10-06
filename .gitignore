@@ -1,25 +1,56 @@
-# eclipse
-bin
-*.launch
-.settings
-.metadata
-.classpath
-.project
+# ---------- .gitignore ----------
 
-# idea
-out
-*.ipr
-*.iws
-*.iml
-.idea
+# OS
+.DS_Store
+Thumbs.db
 
-# gradle
-build
-.gradle
+# IDEs (IntelliJ, Eclipse, VS Code)
+/.idea/
+/*.iml
+/*.ipr
+/*.iws
+/.vscode/
 
-# other
-eclipse
-run
+# Build outputs
+/build/
+/out/
+/bin/
+/target/
+/run/
+/run-data/
 
-# Files from Forge MDK
-forge*changelog.txt
+# Gradle caches and local config
+/.gradle/
+.gradle/
+gradle-local.properties
+
+# Project metadata (Eclipse)
+/.classpath
+/.project
+/.settings/
+
+# Logs and temporary files
+*.log
+hs_err_pid*
+*.tmp
+*.swp
+
+# Minecraft / Forge MDK local caches and run folders
+*.lock
+*.cache
+run/
+run-data/
+build/
+out/
+
+# Miscellaneous
+.idea_modules/
+coverage/
+tmp/
+.cache/
+*.bak
+*.orig
+.env
+
+# Exclude personal/assistant folder
+.claude/

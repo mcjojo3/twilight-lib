@@ -1,0 +1,39 @@
+package mc.sayda.twilight_lib.capabilities;
+
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.common.capabilities.CapabilityToken;
+import net.minecraftforge.common.capabilities.ICapabilitySerializable;
+import net.minecraftforge.common.util.LazyOptional;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+public class PlayerAddonsProvider implements ICapabilitySerializable<CompoundTag> {
+    public static final Capability<IPlayerAddons> ADDONS_CAP = CapabilityManager.get(new CapabilityToken<>(){});
+
+    private final PlayerAddonsData backend = new PlayerAddonsData();
+    private final LazyOptional<IPlayerAddons> optional = LazyOptional.of(() -> backend);
+
+    @Nonnull
+    @Override
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
+        return cap == ADDONS_CAP ? optional.cast() : LazyOptional.empty();
+    }
+
+    public void invalidate() {
+        optional.invalidate();
+    }
+
+    @Override
+    public CompoundTag serializeNBT() {
+        return backend.serialize();
+    }
+
+    @Override
+    public void deserializeNBT(CompoundTag tag) {
+        backend.deserialize(tag);
+    }
+}

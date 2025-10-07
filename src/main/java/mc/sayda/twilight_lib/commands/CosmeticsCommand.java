@@ -129,8 +129,12 @@ public class CosmeticsCommand {
                 .filter(SupporterRegistry::isTrailSupporterExclusive)
                 .collect(java.util.stream.Collectors.toSet());
 
-            player.sendSystemMessage(Component.literal("✨ Your Supporter Trails:")
+            player.sendSystemMessage(Component.literal("═══════════════════════════")
+                    .withStyle(ChatFormatting.LIGHT_PURPLE));
+            player.sendSystemMessage(Component.literal("    ✨ Your Supporter Trails")
                 .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
+            player.sendSystemMessage(Component.literal("═══════════════════════════")
+                    .withStyle(ChatFormatting.LIGHT_PURPLE));
 
             if (supporterTrailsOwned.isEmpty()) {
                 player.sendSystemMessage(Component.literal("  No supporter trails available yet!")
@@ -149,16 +153,30 @@ public class CosmeticsCommand {
                     .withStyle(ChatFormatting.GRAY));
             }
 
-            // Show available supporter trails by tier
+            // Show available supporter trails by tier (dynamic from SupporterRegistry)
             player.sendSystemMessage(Component.literal(""));
             player.sendSystemMessage(Component.literal("💜 Supporter Trail Tiers:")
                 .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
-            player.sendSystemMessage(Component.literal("🥉 Bronze: hearts")
-                .withStyle(ChatFormatting.GRAY));
-            player.sendSystemMessage(Component.literal("🥈 Silver: +sparkles, cherry_blossom")
-                .withStyle(ChatFormatting.GRAY));
-            player.sendSystemMessage(Component.literal("🥇 Gold: +twilight, stars")
-                .withStyle(ChatFormatting.GRAY));
+
+            Set<String> bronzeTrails = SupporterRegistry.getTrailsForTier("bronze");
+            if (!bronzeTrails.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🥉 Bronze: " + String.join(", ", bronzeTrails))
+                    .withStyle(ChatFormatting.GRAY));
+            }
+
+            Set<String> silverTrails = SupporterRegistry.getTrailsForTier("silver");
+            if (!silverTrails.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🥈 Silver: " + String.join(", ", silverTrails))
+                    .withStyle(ChatFormatting.GRAY));
+            }
+
+            Set<String> goldTrails = SupporterRegistry.getTrailsForTier("gold");
+            if (!goldTrails.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🥇 Gold: " + String.join(", ", goldTrails))
+                    .withStyle(ChatFormatting.GRAY));
+            }
+
+            player.sendSystemMessage(Component.literal(""));
         });
 
         return 1;
@@ -177,8 +195,12 @@ public class CosmeticsCommand {
                 .filter(SupporterRegistry::isAddonSupporterExclusive)
                 .collect(java.util.stream.Collectors.toSet());
 
-            player.sendSystemMessage(Component.literal("🎨 Your Supporter Addons:")
+            player.sendSystemMessage(Component.literal("═══════════════════════════")
+                    .withStyle(ChatFormatting.LIGHT_PURPLE));
+            player.sendSystemMessage(Component.literal("    🎨 Your Supporter Addons")
                 .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
+            player.sendSystemMessage(Component.literal("═══════════════════════════")
+                    .withStyle(ChatFormatting.LIGHT_PURPLE));
 
             if (supporterAddonsOwned.isEmpty()) {
                 player.sendSystemMessage(Component.literal("  No supporter addons available yet!")
@@ -193,14 +215,30 @@ public class CosmeticsCommand {
                 }
             }
 
-            // Show available supporter addons by tier
+            // Show available supporter addons by tier (dynamic from SupporterRegistry)
             player.sendSystemMessage(Component.literal(""));
             player.sendSystemMessage(Component.literal("💜 Supporter Addon Tiers:")
                 .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
-            player.sendSystemMessage(Component.literal("🥈 Silver: galaxy_tail")
-                .withStyle(ChatFormatting.GRAY));
-            player.sendSystemMessage(Component.literal("🥇 Gold: +starlight_ears, halo, twilight_wings")
-                .withStyle(ChatFormatting.GRAY));
+
+            Set<String> bronzeAddons = SupporterRegistry.getAddonsForTier("bronze");
+            if (!bronzeAddons.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🥉 Bronze: " + String.join(", ", bronzeAddons))
+                    .withStyle(ChatFormatting.GRAY));
+            }
+
+            Set<String> silverAddons = SupporterRegistry.getAddonsForTier("silver");
+            if (!silverAddons.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🥈 Silver: " + String.join(", ", silverAddons))
+                    .withStyle(ChatFormatting.GRAY));
+            }
+
+            Set<String> goldAddons = SupporterRegistry.getAddonsForTier("gold");
+            if (!goldAddons.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🥇 Gold: " + String.join(", ", goldAddons))
+                    .withStyle(ChatFormatting.GRAY));
+            }
+
+            player.sendSystemMessage(Component.literal(""));
         });
 
         return 1;
@@ -219,8 +257,12 @@ public class CosmeticsCommand {
                 .filter(SupporterRegistry::isEffectSupporterExclusive)
                 .collect(java.util.stream.Collectors.toSet());
 
-            player.sendSystemMessage(Component.literal("💫 Your Supporter Effects:")
+            player.sendSystemMessage(Component.literal("═══════════════════════════")
+                    .withStyle(ChatFormatting.LIGHT_PURPLE));
+            player.sendSystemMessage(Component.literal("    💫 Your Supporter Effects")
                 .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
+            player.sendSystemMessage(Component.literal("═══════════════════════════")
+                    .withStyle(ChatFormatting.LIGHT_PURPLE));
 
             if (supporterEffectsOwned.isEmpty()) {
                 player.sendSystemMessage(Component.literal("  No supporter effects available yet!")
@@ -235,12 +277,30 @@ public class CosmeticsCommand {
                 }
             }
 
-            // Show available supporter effects by tier
+            // Show available supporter effects by tier (dynamic from SupporterRegistry)
             player.sendSystemMessage(Component.literal(""));
             player.sendSystemMessage(Component.literal("💜 Supporter Effect Tiers:")
                 .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
-            player.sendSystemMessage(Component.literal("🥇 Gold: respawn_twilight")
-                .withStyle(ChatFormatting.GRAY));
+
+            Set<String> bronzeEffects = SupporterRegistry.getEffectsForTier("bronze");
+            if (!bronzeEffects.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🥉 Bronze: " + String.join(", ", bronzeEffects))
+                    .withStyle(ChatFormatting.GRAY));
+            }
+
+            Set<String> silverEffects = SupporterRegistry.getEffectsForTier("silver");
+            if (!silverEffects.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🥈 Silver: " + String.join(", ", silverEffects))
+                    .withStyle(ChatFormatting.GRAY));
+            }
+
+            Set<String> goldEffects = SupporterRegistry.getEffectsForTier("gold");
+            if (!goldEffects.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🥇 Gold: " + String.join(", ", goldEffects))
+                    .withStyle(ChatFormatting.GRAY));
+            }
+
+            player.sendSystemMessage(Component.literal(""));
         });
 
         return 1;
@@ -251,29 +311,10 @@ public class CosmeticsCommand {
             return 0;
         }
 
-        // Check if player has any supporter items
-        final boolean[] hasAnySupporter = {false};
-
-        player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            long supporterTrailCount = trails.getTrails().stream()
-                .filter(SupporterRegistry::isTrailSupporterExclusive)
-                .count();
-            if (supporterTrailCount > 0) hasAnySupporter[0] = true;
-        });
-
-        player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-            long supporterAddonCount = addons.getAddons().stream()
-                .filter(SupporterRegistry::isAddonSupporterExclusive)
-                .count();
-            if (supporterAddonCount > 0) hasAnySupporter[0] = true;
-        });
-
-        player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-            long supporterEffectCount = effects.getEffects().stream()
-                .filter(SupporterRegistry::isEffectSupporterExclusive)
-                .count();
-            if (supporterEffectCount > 0) hasAnySupporter[0] = true;
-        });
+        // Get supporter data
+        String uuid = player.getStringUUID();
+        java.util.Optional<mc.sayda.twilight_lib.supporter.SupporterData> supporterData =
+            mc.sayda.twilight_lib.supporter.SupporterService.getSupporterData(uuid);
 
         player.sendSystemMessage(Component.literal("═══════════════════════════")
             .withStyle(ChatFormatting.LIGHT_PURPLE));
@@ -282,12 +323,70 @@ public class CosmeticsCommand {
         player.sendSystemMessage(Component.literal("═══════════════════════════")
             .withStyle(ChatFormatting.LIGHT_PURPLE));
 
-        if (hasAnySupporter[0]) {
-            player.sendSystemMessage(Component.literal("✨ Supporter Status: ").withStyle(ChatFormatting.WHITE)
-                .append(Component.literal("Active").withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD)));
+        if (supporterData.isPresent()) {
+            mc.sayda.twilight_lib.supporter.SupporterData data = supporterData.get();
+
+            // Show tier status
+            if (data.isActiveSupporter()) {
+                String tier = data.getTier();
+                String tierDisplay = switch(tier.toLowerCase()) {
+                    case "bronze" -> "🥉 Bronze";
+                    case "silver" -> "🥈 Silver";
+                    case "gold" -> "🥇 Gold";
+                    default -> tier;
+                };
+
+                player.sendSystemMessage(Component.literal("✨ Supporter Tier: ").withStyle(ChatFormatting.WHITE)
+                    .append(Component.literal(tierDisplay).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)));
+                player.sendSystemMessage(Component.literal(""));
+                player.sendSystemMessage(Component.literal("Thank you for supporting development! 💜")
+                    .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.ITALIC));
+            } else {
+                player.sendSystemMessage(Component.literal("Supporter Tier: Expired/Gift")
+                    .withStyle(ChatFormatting.GRAY));
+                player.sendSystemMessage(Component.literal(""));
+                player.sendSystemMessage(Component.literal("You have manual cosmetic grants!")
+                    .withStyle(ChatFormatting.YELLOW));
+            }
+
+            // Count cosmetics
+            java.util.Set<String> allTrails = data.getAllTrails();
+            java.util.Set<String> allAddons = data.getAllAddons();
+            java.util.Set<String> allEffects = data.getAllEffects();
+
+            int totalCosmetics = allTrails.size() + allAddons.size() + allEffects.size();
+
             player.sendSystemMessage(Component.literal(""));
-            player.sendSystemMessage(Component.literal("Thank you for supporting development! 💜")
-                .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.ITALIC));
+            player.sendSystemMessage(Component.literal("Your Cosmetics:")
+                .withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
+            player.sendSystemMessage(Component.literal("  ✨ Trails: " + allTrails.size())
+                .withStyle(ChatFormatting.AQUA));
+            player.sendSystemMessage(Component.literal("  🎨 Addons: " + allAddons.size())
+                .withStyle(ChatFormatting.AQUA));
+            player.sendSystemMessage(Component.literal("  💫 Effects: " + allEffects.size())
+                .withStyle(ChatFormatting.AQUA));
+            player.sendSystemMessage(Component.literal("  Total: " + totalCosmetics)
+                .withStyle(ChatFormatting.GREEN));
+
+            // Show manual grants if any
+            if (!data.isActiveSupporter()) {
+                player.sendSystemMessage(Component.literal(""));
+                player.sendSystemMessage(Component.literal("Manual Grants:")
+                    .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD));
+
+                if (!data.getManualTrails().isEmpty()) {
+                    player.sendSystemMessage(Component.literal("  Trails: " + String.join(", ", data.getManualTrails()))
+                        .withStyle(ChatFormatting.GRAY));
+                }
+                if (!data.getManualAddons().isEmpty()) {
+                    player.sendSystemMessage(Component.literal("  Addons: " + String.join(", ", data.getManualAddons()))
+                        .withStyle(ChatFormatting.GRAY));
+                }
+                if (!data.getManualEffects().isEmpty()) {
+                    player.sendSystemMessage(Component.literal("  Effects: " + String.join(", ", data.getManualEffects()))
+                        .withStyle(ChatFormatting.GRAY));
+                }
+            }
         } else {
             player.sendSystemMessage(Component.literal("Supporter Status: Not Active")
                 .withStyle(ChatFormatting.GRAY));
@@ -313,12 +412,11 @@ public class CosmeticsCommand {
             .withStyle(ChatFormatting.GRAY));
 
         player.sendSystemMessage(Component.literal(""));
-        player.sendSystemMessage(Component.literal("💜 All cosmetics are purely visual,")
+        player.sendSystemMessage(Component.literal("💜 All cosmetics are purely visual!")
             .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
-        player.sendSystemMessage(Component.literal("  enjoy your cosmetics!")
-            .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
-        player.sendSystemMessage(Component.literal("═══════════════════════════")
-            .withStyle(ChatFormatting.LIGHT_PURPLE));
+        player.sendSystemMessage(Component.literal(""));
+        //player.sendSystemMessage(Component.literal("═══════════════════════════")
+            //.withStyle(ChatFormatting.LIGHT_PURPLE));
 
         return 1;
     }

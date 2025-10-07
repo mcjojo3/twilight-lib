@@ -84,8 +84,8 @@ public class CosmeticsCommand {
 
             player.sendSystemMessage(Component.literal("✨ Trail set to: " + trailId)
                 .withStyle(ChatFormatting.GREEN));
-            player.sendSystemMessage(Component.literal("💜 Cosmetic Only - No Gameplay Advantage")
-                .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+            //player.sendSystemMessage(Component.literal("💜 Cosmetic Only - No Gameplay Advantage")
+            //    .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         });
 
         return 1;

@@ -18,7 +18,6 @@ import java.util.Random;
 
 /**
  * Client-side trail rendering for supporters
- * Purely cosmetic - no gameplay impact!
  */
 public class TrailRenderer {
 

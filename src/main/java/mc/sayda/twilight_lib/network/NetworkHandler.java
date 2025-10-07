@@ -4,7 +4,9 @@ import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.MorphProvider;
-import mc.sayda.twilight_lib.capabilities.PlayerAddonsProvider;
+import mc.sayda.twilight_lib.capabilities.AddonsProvider;
+import mc.sayda.twilight_lib.capabilities.TrailsProvider;
+import mc.sayda.twilight_lib.capabilities.EffectsProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -37,6 +39,16 @@ public class NetworkHandler {
         CHANNEL.registerMessage(
                 index++, SyncAddonsPacket.class,
                 SyncAddonsPacket::encode, SyncAddonsPacket::decode, SyncAddonsPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT)
+        );
+        CHANNEL.registerMessage(
+                index++, SyncTrailsPacket.class,
+                SyncTrailsPacket::encode, SyncTrailsPacket::decode, SyncTrailsPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT)
+        );
+        CHANNEL.registerMessage(
+                index++, SyncEffectsPacket.class,
+                SyncEffectsPacket::encode, SyncEffectsPacket::decode, SyncEffectsPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT)
         );
         LOGGER.debug("This is the precipice of a new reality! Network channel initialized.");
@@ -91,9 +103,55 @@ public class NetworkHandler {
         if (recipient.level() == null) return;
         LOGGER.debug("Every day, every season... ends. And begin something new! Syncing all addons to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
-            p.getCapability(PlayerAddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+            p.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
                 if (!addons.getAddons().isEmpty()) {
                     sendAddonsToPlayer(recipient, new SyncAddonsPacket(p.getUUID(), addons.getAddons()));
+                }
+            });
+        }
+    }
+
+    // Trails packet methods
+    public static void sendToAll(SyncTrailsPacket pkt) {
+        CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
+        LOGGER.debug("Sparkles and twilight! Sending trails packet to all players.");
+    }
+
+    public static void sendTrailsToPlayer(Player player, SyncTrailsPacket pkt) {
+        if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
+        LOGGER.debug("Sending supporter trails to {}", player.getGameProfile().getName());
+    }
+
+    public static void sendAllTrailsToPlayer(Player recipient) {
+        if (recipient.level() == null) return;
+        LOGGER.debug("Sharing the sparkle! Syncing all trails to {}", recipient.getGameProfile().getName());
+        for (Player p : recipient.level().players()) {
+            p.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+                sendTrailsToPlayer(recipient, new SyncTrailsPacket(p.getUUID(), trails.serialize()));
+            });
+        }
+    }
+
+    // Effects packet methods
+    public static void sendEffectsToAll(SyncEffectsPacket pkt) {
+        CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
+        LOGGER.debug("Twilight magic spreads! Sending effects packet to all players.");
+    }
+
+    public static void sendEffectsToPlayer(Player player, SyncEffectsPacket pkt) {
+        if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
+        LOGGER.debug("Sending effects to {}", player.getGameProfile().getName());
+    }
+
+    public static void sendAllEffectsToPlayer(Player recipient) {
+        if (recipient.level() == null) return;
+        LOGGER.debug("Sharing the magic! Syncing all effects to {}", recipient.getGameProfile().getName());
+        for (Player p : recipient.level().players()) {
+            p.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+                if (!effects.getEffects().isEmpty()) {
+                    sendEffectsToPlayer(recipient, new SyncEffectsPacket(p.getUUID(), effects.getEffects()));
                 }
             });
         }

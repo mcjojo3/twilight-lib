@@ -11,16 +11,16 @@ import net.minecraftforge.common.util.LazyOptional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class PlayerAddonsProvider implements ICapabilitySerializable<CompoundTag> {
-    public static final Capability<IPlayerAddons> ADDONS_CAP = CapabilityManager.get(new CapabilityToken<>(){});
+public class EffectsProvider implements ICapabilitySerializable<CompoundTag> {
+    public static final Capability<IEffects> EFFECTS_CAP = CapabilityManager.get(new CapabilityToken<>(){});
 
-    private final PlayerAddonsData backend = new PlayerAddonsData();
-    private final LazyOptional<IPlayerAddons> optional = LazyOptional.of(() -> backend);
+    private final EffectsData backend = new EffectsData();
+    private final LazyOptional<IEffects> optional = LazyOptional.of(() -> backend);
 
     @Nonnull
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-        return cap == ADDONS_CAP ? optional.cast() : LazyOptional.empty();
+        return cap == EFFECTS_CAP ? optional.cast() : LazyOptional.empty();
     }
 
     public void invalidate() {

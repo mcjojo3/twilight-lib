@@ -4,7 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 
 import java.util.Set;
 
-public interface IPlayerAddons {
+public interface IAddons {
     Set<String> getAddons();
     void addAddon(String addonId);
     void removeAddon(String addonId);

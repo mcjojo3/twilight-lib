@@ -4,14 +4,22 @@ import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.client.model.PlayerRigModel;
 import mc.sayda.twilight_lib.client.renderer.CustomFoxRenderer;
 import mc.sayda.twilight_lib.client.renderer.PlayerAddonLayer;
+import mc.sayda.twilight_lib.cosmetics.TrailRenderer;
 import mc.sayda.twilight_lib.entity.ModEntities;
+import mc.sayda.twilight_lib.particle.BronzeHeartParticle;
+import mc.sayda.twilight_lib.particle.GoldHeartParticle;
+import mc.sayda.twilight_lib.particle.ModParticles;
+import mc.sayda.twilight_lib.particle.SilverHeartParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 import java.util.List;
 
@@ -53,5 +61,18 @@ public class ClientModEvents {
                 playerRenderer.addLayer(new PlayerAddonLayer(playerRenderer));
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        // Register trail renderer to tick event
+        MinecraftForge.EVENT_BUS.register(TrailRenderer.class);
+    }
+
+    @SubscribeEvent
+    public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
+        event.registerSpriteSet(ModParticles.BRONZE_HEART.get(), BronzeHeartParticle::provider);
+        event.registerSpriteSet(ModParticles.SILVER_HEART.get(), SilverHeartParticle::provider);
+        event.registerSpriteSet(ModParticles.GOLD_HEART.get(), GoldHeartParticle::provider);
     }
 }

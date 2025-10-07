@@ -7,6 +7,8 @@ import mc.sayda.twilight_lib.commands.TwilightLibCommands;
 import mc.sayda.twilight_lib.entity.ModEntities;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncMorphPacket;
+import mc.sayda.twilight_lib.supporter.SupporterService;
+import mc.sayda.twilight_lib.supporter.SupporterData;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -32,22 +34,29 @@ public class TwilightLib {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         ModEntities.register(modBus);
+        mc.sayda.twilight_lib.particle.ModParticles.register(modBus);
         modBus.addListener(this::onRegisterCapabilities);
         NetworkHandler.init();
 
         MinecraftForge.EVENT_BUS.addGenericListener(Entity.class, this::attachEntityCaps);
         MinecraftForge.EVENT_BUS.addListener(TwilightLibCommands::registerCommands);
         MinecraftForge.EVENT_BUS.addListener(mc.sayda.twilight_lib.commands.AddonCommands::registerCommands);
+        MinecraftForge.EVENT_BUS.addListener(mc.sayda.twilight_lib.commands.CosmeticsCommand::registerCommands);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLogin);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerClone);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerRespawn);
+
+        // Fetch supporter list on startup (async)
+        SupporterService.fetchSupporters();
 
         LOGGER.info("Hi! My name is Zoe. Twilight Lib loaded successfully.");
     }
 
     private void onRegisterCapabilities(final RegisterCapabilitiesEvent evt) {
         evt.register(IMorph.class);
-        evt.register(mc.sayda.twilight_lib.capabilities.IPlayerAddons.class);
+        evt.register(mc.sayda.twilight_lib.capabilities.IAddons.class);
+        evt.register(mc.sayda.twilight_lib.capabilities.ITrails.class);
+        evt.register(mc.sayda.twilight_lib.capabilities.IEffects.class);
     }
 
     private void attachEntityCaps(final AttachCapabilitiesEvent<Entity> evt) {
@@ -58,9 +67,19 @@ public class TwilightLib {
             evt.addListener(morphProvider::invalidate);
 
             // Attach addons capability
-            mc.sayda.twilight_lib.capabilities.PlayerAddonsProvider addonsProvider = new mc.sayda.twilight_lib.capabilities.PlayerAddonsProvider();
+            mc.sayda.twilight_lib.capabilities.AddonsProvider addonsProvider = new mc.sayda.twilight_lib.capabilities.AddonsProvider();
             evt.addCapability(new ResourceLocation(MODID, "addons"), addonsProvider);
             evt.addListener(addonsProvider::invalidate);
+
+            // Attach trails capability
+            mc.sayda.twilight_lib.capabilities.TrailsProvider trailsProvider = new mc.sayda.twilight_lib.capabilities.TrailsProvider();
+            evt.addCapability(new ResourceLocation(MODID, "trails"), trailsProvider);
+            evt.addListener(trailsProvider::invalidate);
+
+            // Attach effects capability
+            mc.sayda.twilight_lib.capabilities.EffectsProvider effectsProvider = new mc.sayda.twilight_lib.capabilities.EffectsProvider();
+            evt.addCapability(new ResourceLocation(MODID, "effects"), effectsProvider);
+            evt.addListener(effectsProvider::invalidate);
         }
     }
 
@@ -70,11 +89,67 @@ public class TwilightLib {
 
         LOGGER.info("New friend detected! Syncing morphs and addons for {}", loggedInPlayer.getGameProfile().getName());
 
+        // Check supporter status and auto-grant cosmetics (tier unlocks + manual overrides)
+        String uuid = loggedInPlayer.getStringUUID();
+        Optional<SupporterData> supporterData = SupporterService.getSupporterData(uuid);
+
+        if (supporterData.isPresent()) {
+            SupporterData data = supporterData.get();
+
+            // Get ALL cosmetics (tier-based + manual overrides)
+            java.util.Set<String> allTrails = data.getAllTrails();
+            java.util.Set<String> allAddons = data.getAllAddons();
+            java.util.Set<String> allEffects = data.getAllEffects();
+
+            // Log supporter status
+            if (data.isActiveSupporter()) {
+                LOGGER.info("Active supporter detected! {} is a {} tier supporter",
+                    loggedInPlayer.getGameProfile().getName(), data.getTier());
+            } else {
+                LOGGER.info("User {} has manual cosmetic grants (expired/gift supporter)",
+                    loggedInPlayer.getGameProfile().getName());
+            }
+
+            // Auto-grant trails (tier unlocks + manual overrides)
+            loggedInPlayer.getCapability(mc.sayda.twilight_lib.capabilities.TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+                for (String trail : allTrails) {
+                    trails.addTrail(trail);
+                }
+                loggedInPlayer.getPersistentData().put("TwilightLibTrails", trails.serialize());
+            });
+
+            // Auto-grant addons (tier unlocks + manual overrides)
+            loggedInPlayer.getCapability(mc.sayda.twilight_lib.capabilities.AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+                for (String addon : allAddons) {
+                    addons.addAddon(addon);
+                }
+                loggedInPlayer.getPersistentData().put("TwilightLibAddons", addons.serialize());
+            });
+
+            // Auto-grant effects (tier unlocks + manual overrides)
+            loggedInPlayer.getCapability(mc.sayda.twilight_lib.capabilities.EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+                for (String effect : allEffects) {
+                    effects.addEffect(effect);
+                }
+                loggedInPlayer.getPersistentData().put("TwilightLibEffects", effects.serialize());
+            });
+
+            LOGGER.info("Auto-granted {} trails, {} addons, {} effects to {}",
+                    allTrails.size(), allAddons.size(), allEffects.size(),
+                    loggedInPlayer.getGameProfile().getName());
+        }
+
         // Send all existing morphs to the newly logged-in player
         NetworkHandler.sendAllMorphsToPlayer(loggedInPlayer);
 
         // Send all existing addons to the newly logged-in player
         NetworkHandler.sendAllAddonsToPlayer(loggedInPlayer);
+
+        // Send all existing trails to the newly logged-in player
+        NetworkHandler.sendAllTrailsToPlayer(loggedInPlayer);
+
+        // Send all existing effects to the newly logged-in player
+        NetworkHandler.sendAllEffectsToPlayer(loggedInPlayer);
 
         // Send this player's morph to everyone else
         loggedInPlayer.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
@@ -87,10 +162,22 @@ public class TwilightLib {
         });
 
         // Send this player's addons to everyone else
-        loggedInPlayer.getCapability(mc.sayda.twilight_lib.capabilities.PlayerAddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+        loggedInPlayer.getCapability(mc.sayda.twilight_lib.capabilities.AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             if (!addons.getAddons().isEmpty()) {
                 NetworkHandler.sendAddonsToAll(new mc.sayda.twilight_lib.network.SyncAddonsPacket(loggedInPlayer.getUUID(), addons.getAddons()));
                 LOGGER.info("We're gonna be best friends! Player {} logged in with {} addons", loggedInPlayer.getGameProfile().getName(), addons.getAddons().size());
+            }
+        });
+
+        // Send this player's trails to everyone else
+        loggedInPlayer.getCapability(mc.sayda.twilight_lib.capabilities.TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+            NetworkHandler.sendToAll(new mc.sayda.twilight_lib.network.SyncTrailsPacket(loggedInPlayer.getUUID(), trails.serialize()));
+        });
+
+        // Send this player's effects to everyone else
+        loggedInPlayer.getCapability(mc.sayda.twilight_lib.capabilities.EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+            if (!effects.getEffects().isEmpty()) {
+                NetworkHandler.sendEffectsToAll(new mc.sayda.twilight_lib.network.SyncEffectsPacket(loggedInPlayer.getUUID(), effects.getEffects()));
             }
         });
     }
@@ -115,10 +202,30 @@ public class TwilightLib {
         // Restore addons
         if (oldData.contains("TwilightLibAddons", CompoundTag.TAG_COMPOUND)) {
             CompoundTag addonsData = oldData.getCompound("TwilightLibAddons");
-            evt.getEntity().getCapability(mc.sayda.twilight_lib.capabilities.PlayerAddonsProvider.ADDONS_CAP).ifPresent(newAddons -> {
+            evt.getEntity().getCapability(mc.sayda.twilight_lib.capabilities.AddonsProvider.ADDONS_CAP).ifPresent(newAddons -> {
                 newAddons.deserialize(addonsData);
                 LOGGER.debug("Naptime's over! Restoring addons from death.");
                 evt.getEntity().getPersistentData().put("TwilightLibAddons", addonsData);
+            });
+        }
+
+        // Restore trails
+        if (oldData.contains("TwilightLibTrails", CompoundTag.TAG_COMPOUND)) {
+            CompoundTag trailsData = oldData.getCompound("TwilightLibTrails");
+            evt.getEntity().getCapability(mc.sayda.twilight_lib.capabilities.TrailsProvider.TRAILS_CAP).ifPresent(newTrails -> {
+                newTrails.deserialize(trailsData);
+                LOGGER.debug("Sparkles restored! Restoring trails from death.");
+                evt.getEntity().getPersistentData().put("TwilightLibTrails", trailsData);
+            });
+        }
+
+        // Restore effects
+        if (oldData.contains("TwilightLibEffects", CompoundTag.TAG_COMPOUND)) {
+            CompoundTag effectsData = oldData.getCompound("TwilightLibEffects");
+            evt.getEntity().getCapability(mc.sayda.twilight_lib.capabilities.EffectsProvider.EFFECTS_CAP).ifPresent(newEffects -> {
+                newEffects.deserialize(effectsData);
+                LOGGER.debug("Twilight magic lives on! Restoring effects from death.");
+                evt.getEntity().getPersistentData().put("TwilightLibEffects", effectsData);
             });
         }
     }
@@ -137,10 +244,24 @@ public class TwilightLib {
         });
 
         // Sync addons to client after respawn
-        player.getCapability(mc.sayda.twilight_lib.capabilities.PlayerAddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+        player.getCapability(mc.sayda.twilight_lib.capabilities.AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             if (!addons.getAddons().isEmpty()) {
                 NetworkHandler.sendAddonsToAll(new mc.sayda.twilight_lib.network.SyncAddonsPacket(player.getUUID(), addons.getAddons()));
                 LOGGER.debug("Aaand a skip-skip and a jump-jump! Player {} respawned with {} addons", player.getGameProfile().getName(), addons.getAddons().size());
+            }
+        });
+
+        // Sync trails to client after respawn
+        player.getCapability(mc.sayda.twilight_lib.capabilities.TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+            NetworkHandler.sendToAll(new mc.sayda.twilight_lib.network.SyncTrailsPacket(player.getUUID(), trails.serialize()));
+            LOGGER.debug("Sparkles return! Player {} respawned with trails", player.getGameProfile().getName());
+        });
+
+        // Sync effects to client after respawn
+        player.getCapability(mc.sayda.twilight_lib.capabilities.EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+            if (!effects.getEffects().isEmpty()) {
+                NetworkHandler.sendEffectsToAll(new mc.sayda.twilight_lib.network.SyncEffectsPacket(player.getUUID(), effects.getEffects()));
+                LOGGER.debug("Twilight magic restored! Player {} respawned with {} effects", player.getGameProfile().getName(), effects.getEffects().size());
             }
         });
     }

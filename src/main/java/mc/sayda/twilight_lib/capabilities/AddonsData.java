@@ -8,7 +8,7 @@ import net.minecraft.nbt.Tag;
 import java.util.HashSet;
 import java.util.Set;
 
-public class PlayerAddonsData implements IPlayerAddons {
+public class AddonsData implements IAddons {
     private final Set<String> addons = new HashSet<>();
 
     @Override

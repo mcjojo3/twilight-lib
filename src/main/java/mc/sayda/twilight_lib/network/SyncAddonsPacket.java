@@ -1,7 +1,7 @@
 package mc.sayda.twilight_lib.network;
 
 import com.mojang.logging.LogUtils;
-import mc.sayda.twilight_lib.capabilities.PlayerAddonsProvider;
+import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -53,7 +53,7 @@ public class SyncAddonsPacket {
                 return;
             }
 
-            entity.getCapability(PlayerAddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+            entity.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
                 addons.clearAddons();
                 msg.addons.forEach(addons::addAddon);
                 LOGGER.debug("Isn't this cool? Synced {} addons for {}",

@@ -3,7 +3,7 @@ package mc.sayda.twilight_lib.commands;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
-import mc.sayda.twilight_lib.capabilities.PlayerAddonsProvider;
+import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncAddonsPacket;
 import net.minecraft.commands.CommandSourceStack;
@@ -112,7 +112,7 @@ public class AddonCommands {
             return 0;
         }
 
-        target.getCapability(PlayerAddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+        target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             addons.addAddon(addonId);
             target.getPersistentData().put("TwilightLibAddons", addons.serialize());
             // Sync to all clients
@@ -137,7 +137,7 @@ public class AddonCommands {
     }
 
     private static int executeUnequipAddon(CommandSourceStack source, ServerPlayer target, String addonId) {
-        target.getCapability(PlayerAddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+        target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             if (addons.hasAddon(addonId)) {
                 addons.removeAddon(addonId);
                 target.getPersistentData().put("TwilightLibAddons", addons.serialize());
@@ -164,7 +164,7 @@ public class AddonCommands {
     }
 
     private static int executeClearAddons(CommandSourceStack source, ServerPlayer target) {
-        target.getCapability(PlayerAddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+        target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             addons.clearAddons();
             target.getPersistentData().remove("TwilightLibAddons");
             // Sync to all clients

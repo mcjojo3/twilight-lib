@@ -1,11 +1,15 @@
 package mc.sayda.twilight_lib.commands;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.MorphProvider;
+import mc.sayda.twilight_lib.capabilities.TrailsProvider;
+import mc.sayda.twilight_lib.cosmetics.TrailType;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncMorphPacket;
+import mc.sayda.twilight_lib.network.SyncTrailsPacket;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -42,6 +46,14 @@ public class TwilightLibCommands {
             initializeEntityCache(level);
         }
         return SharedSuggestionProvider.suggestResource(VALID_LIVING_ENTITIES.stream(), builder);
+    };
+
+    // Suggestion provider for trail types
+    private static final SuggestionProvider<CommandSourceStack> TRAIL_SUGGESTIONS = (context, builder) -> {
+        for (TrailType type : TrailType.values()) {
+            builder.suggest(type.getId());
+        }
+        return builder.buildFuture();
     };
 
     /**
@@ -137,6 +149,46 @@ public class TwilightLibCommands {
                                                 setMorph(ctx.getSource(), target, Optional.empty());
                                                 return 1;
                                             })))
+                            // trail set <trail> - targets executor
+                            .then(Commands.literal("trail")
+                                    .then(Commands.literal("set")
+                                            .then(Commands.argument("trail", StringArgumentType.word())
+                                                    .suggests(TRAIL_SUGGESTIONS)
+                                                    .executes(ctx -> {
+                                                        ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                                        if (target == null) {
+                                                            ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                            return 0;
+                                                        }
+                                                        return executeSetTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"));
+                                                    })
+                                                    // trail set <trail> <target> - targets specific player
+                                                    .then(Commands.argument("target", EntityArgument.player())
+                                                            .executes(ctx -> {
+                                                                ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                return executeSetTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"));
+                                                            }))))
+                                    // trail toggle - targets executor
+                                    .then(Commands.literal("toggle")
+                                            .executes(ctx -> {
+                                                ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                                if (target == null) {
+                                                    ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                    return 0;
+                                                }
+                                                return executeToggleTrail(ctx.getSource(), target);
+                                            })
+                                            // trail toggle <target> - targets specific player
+                                            .then(Commands.argument("target", EntityArgument.player())
+                                                    .executes(ctx -> {
+                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                        return executeToggleTrail(ctx.getSource(), target);
+                                                    })))
+                                    // trail list - targets executor
+                                    .then(Commands.literal("list")
+                                            .executes(ctx -> {
+                                                return executeListTrails(ctx.getSource(), null);
+                                            })))
             );
         }
     }
@@ -213,6 +265,91 @@ public class TwilightLibCommands {
             } else {
                 source.sendSuccess(() -> Component.literal("Unmorphed " + target.getGameProfile().getName()), true);
             }
+        }
+    }
+
+    private static int executeSetTrail(CommandSourceStack source, ServerPlayer target, String trailId) {
+        // Validate trail type
+        TrailType trailType = TrailType.fromId(trailId);
+        if (trailType == null) {
+            source.sendFailure(Component.literal("Invalid trail type: " + trailId));
+            return 0;
+        }
+
+        target.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+            trails.addTrail(trailId);
+
+            // Auto-activate the trail and enable trails
+            trails.setActiveTrail(trailId);
+            trails.setTrailEnabled(true);
+
+            // Save to persistent NBT
+            target.getPersistentData().put("TwilightLibTrails", trails.serialize());
+
+            // Sync to all clients
+            NetworkHandler.sendToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
+        });
+
+        // Send feedback
+        boolean shouldSendFeedback = shouldSendFeedbackToSource(source, target);
+        if (shouldSendFeedback) {
+            source.sendSuccess(() -> Component.literal("Set trail to '" + trailId + "' for " + target.getGameProfile().getName()), true);
+        }
+
+        return 1;
+    }
+
+    private static int executeListTrails(CommandSourceStack source, ServerPlayer target) {
+        // Admin command - list ALL available trail types
+        String[] trailIds = new String[TrailType.values().length];
+        int i = 0;
+        for (TrailType type : TrailType.values()) {
+            trailIds[i++] = type.getId();
+        }
+
+        if (trailIds.length == 0) {
+            source.sendSuccess(() -> Component.literal("No trails registered"), false);
+        } else {
+            source.sendSuccess(() -> Component.literal("Available trails: " + String.join(", ", trailIds)), false);
+        }
+
+        return 1;
+    }
+
+    private static int executeToggleTrail(CommandSourceStack source, ServerPlayer target) {
+        final boolean[] newState = {false};
+
+        target.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+            // Toggle trail enabled state
+            newState[0] = !trails.isTrailEnabled();
+            trails.setTrailEnabled(newState[0]);
+
+            // Save to persistent NBT
+            target.getPersistentData().put("TwilightLibTrails", trails.serialize());
+
+            // Sync to all clients
+            NetworkHandler.sendToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
+
+            LOGGER.debug("Sparkles {}! Trail {} for {}",
+                newState[0] ? "activated" : "deactivated",
+                newState[0] ? "enabled" : "disabled",
+                target.getGameProfile().getName());
+        });
+
+        // Always send feedback showing current state
+        String status = newState[0] ? "enabled" : "disabled";
+        source.sendSuccess(() -> Component.literal("Trail " + status + " for " + target.getGameProfile().getName()), true);
+
+        return 1;
+    }
+
+    private static boolean shouldSendFeedbackToSource(CommandSourceStack source, ServerPlayer target) {
+        try {
+            ServerPlayer sourcePlayer = source.getPlayerOrException();
+            return !sourcePlayer.getUUID().equals(target.getUUID());
+        } catch (Exception e) {
+            // Source is not a player (command block, console, etc.)
+            return true;
         }
     }
 }

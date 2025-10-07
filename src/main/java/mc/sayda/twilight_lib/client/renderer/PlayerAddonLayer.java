@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mc.sayda.twilight_lib.addon.AddonModelInfo;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
-import mc.sayda.twilight_lib.capabilities.PlayerAddonsProvider;
+import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.client.model.IAddonModel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
@@ -55,7 +55,7 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                        float netHeadYaw, float headPitch) {
 
         // Get player's equipped addons
-        player.getCapability(PlayerAddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+        player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             PlayerModel<AbstractClientPlayer> playerModel = this.getParentModel();
 
             // Render each equipped addon

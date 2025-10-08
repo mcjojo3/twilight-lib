@@ -49,6 +49,14 @@ public class CosmeticsCommand {
                 )
             )
             .then(Commands.literal("effects")
+                .then(Commands.literal("set")
+                    .then(Commands.argument("type", StringArgumentType.word())
+                        .executes(CosmeticsCommand::setEffect)
+                    )
+                )
+                .then(Commands.literal("toggle")
+                    .executes(CosmeticsCommand::toggleEffect)
+                )
                 .then(Commands.literal("list")
                     .executes(CosmeticsCommand::listEffects)
                 )
@@ -302,6 +310,45 @@ public class CosmeticsCommand {
 
             player.sendSystemMessage(Component.literal(""));
         });
+
+        return 1;
+    }
+
+    private static int setEffect(CommandContext<CommandSourceStack> ctx) {
+        if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
+            return 0;
+        }
+
+        String effectId = StringArgumentType.getString(ctx, "type");
+
+        player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+            // Check if player has this effect
+            if (!effects.hasEffect(effectId)) {
+                player.sendSystemMessage(Component.literal("❌ You don't have access to that effect!")
+                    .withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal("Use /cosmetics effects list to see available effects")
+                    .withStyle(ChatFormatting.GRAY));
+                return;
+            }
+
+            player.sendSystemMessage(Component.literal("💫 Effect '" + effectId + "' is always active!")
+                .withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("Effects cannot be toggled on/off - they are passive abilities.")
+                .withStyle(ChatFormatting.GRAY));
+        });
+
+        return 1;
+    }
+
+    private static int toggleEffect(CommandContext<CommandSourceStack> ctx) {
+        if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
+            return 0;
+        }
+
+        player.sendSystemMessage(Component.literal("💫 Effects are always active!")
+            .withStyle(ChatFormatting.YELLOW));
+        player.sendSystemMessage(Component.literal("Effects cannot be toggled - they work automatically.")
+            .withStyle(ChatFormatting.GRAY));
 
         return 1;
     }

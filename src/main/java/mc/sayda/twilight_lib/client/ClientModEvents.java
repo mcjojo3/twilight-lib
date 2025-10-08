@@ -67,6 +67,9 @@ public class ClientModEvents {
     public static void onClientSetup(FMLClientSetupEvent event) {
         // Register trail renderer to tick event
         MinecraftForge.EVENT_BUS.register(TrailRenderer.class);
+
+        // Register respawn effect handler
+        MinecraftForge.EVENT_BUS.register(mc.sayda.twilight_lib.cosmetics.RespawnEffectHandler.class);
     }
 
     @SubscribeEvent

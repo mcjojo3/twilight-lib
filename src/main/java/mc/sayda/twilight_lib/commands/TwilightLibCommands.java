@@ -6,10 +6,12 @@ import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.MorphProvider;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
+import mc.sayda.twilight_lib.capabilities.EffectsProvider;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncMorphPacket;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
+import mc.sayda.twilight_lib.network.SyncEffectsPacket;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -53,6 +55,13 @@ public class TwilightLibCommands {
         for (TrailType type : TrailType.values()) {
             builder.suggest(type.getId());
         }
+        return builder.buildFuture();
+    };
+
+    // Suggestion provider for effect types
+    private static final SuggestionProvider<CommandSourceStack> EFFECT_SUGGESTIONS = (context, builder) -> {
+        // For now, only respawn_twilight
+        builder.suggest("respawn_twilight");
         return builder.buildFuture();
     };
 
@@ -188,6 +197,46 @@ public class TwilightLibCommands {
                                     .then(Commands.literal("list")
                                             .executes(ctx -> {
                                                 return executeListTrails(ctx.getSource(), null);
+                                            })))
+                            // effect set <effect> - targets executor
+                            .then(Commands.literal("effect")
+                                    .then(Commands.literal("set")
+                                            .then(Commands.argument("effect", StringArgumentType.word())
+                                                    .suggests(EFFECT_SUGGESTIONS)
+                                                    .executes(ctx -> {
+                                                        ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                                        if (target == null) {
+                                                            ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                            return 0;
+                                                        }
+                                                        return executeSetEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
+                                                    })
+                                                    // effect set <effect> <target> - targets specific player
+                                                    .then(Commands.argument("target", EntityArgument.player())
+                                                            .executes(ctx -> {
+                                                                ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                return executeSetEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
+                                                            }))))
+                                    // effect toggle - targets executor
+                                    .then(Commands.literal("toggle")
+                                            .executes(ctx -> {
+                                                ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                                if (target == null) {
+                                                    ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                    return 0;
+                                                }
+                                                return executeToggleEffect(ctx.getSource(), target);
+                                            })
+                                            // effect toggle <target> - targets specific player
+                                            .then(Commands.argument("target", EntityArgument.player())
+                                                    .executes(ctx -> {
+                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                        return executeToggleEffect(ctx.getSource(), target);
+                                                    })))
+                                    // effect list
+                                    .then(Commands.literal("list")
+                                            .executes(ctx -> {
+                                                return executeListEffects(ctx.getSource());
                                             })))
             );
         }
@@ -340,6 +389,37 @@ public class TwilightLibCommands {
         String status = newState[0] ? "enabled" : "disabled";
         source.sendSuccess(() -> Component.literal("Trail " + status + " for " + target.getGameProfile().getName()), true);
 
+        return 1;
+    }
+
+    private static int executeSetEffect(CommandSourceStack source, ServerPlayer target, String effectId) {
+        target.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+            effects.addEffect(effectId);
+
+            // Save to persistent NBT
+            target.getPersistentData().put("TwilightLibEffects", effects.serialize());
+
+            // Sync to all clients
+            NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(target.getUUID(), effects.getEffects()));
+        });
+
+        // Send feedback
+        boolean shouldSendFeedback = shouldSendFeedbackToSource(source, target);
+        if (shouldSendFeedback) {
+            source.sendSuccess(() -> Component.literal("Added effect '" + effectId + "' to " + target.getGameProfile().getName()), true);
+        }
+
+        return 1;
+    }
+
+    private static int executeToggleEffect(CommandSourceStack source, ServerPlayer target) {
+        source.sendFailure(Component.literal("Effect toggle is not implemented. Effects are always active when granted."));
+        return 0;
+    }
+
+    private static int executeListEffects(CommandSourceStack source) {
+        // Admin command - list ALL available effect types
+        source.sendSuccess(() -> Component.literal("Available effects: respawn_twilight"), false);
         return 1;
     }
 

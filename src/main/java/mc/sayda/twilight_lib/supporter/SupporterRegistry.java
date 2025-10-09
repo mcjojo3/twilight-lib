@@ -11,6 +11,9 @@ import java.util.Set;
 public class SupporterRegistry {
 
     // ===== TRAILS =====
+    public static final Set<String> STONE_TRAILS = Set.of(
+    );
+
     public static final Set<String> BRONZE_TRAILS = Set.of(
             "hearts"
     );
@@ -29,7 +32,19 @@ public class SupporterRegistry {
             "stars"
     );
 
+    public static final Set<String> PLATINUM_TRAILS = Set.of(
+            "hearts",
+            "sparkles",
+            "cherry_blossom",
+            "twilight",
+            "stars"
+    );
+
     // ===== ADDONS =====
+    public static final Set<String> STONE_ADDONS = Set.of(
+            // None yet
+    );
+
     public static final Set<String> BRONZE_ADDONS = Set.of(
             // None yet
     );
@@ -45,7 +60,18 @@ public class SupporterRegistry {
             "twilight_wings"
     );
 
+    public static final Set<String> PLATINUM_ADDONS = Set.of(
+            "galaxy_tail",
+            "starlight_ears",
+            "halo",
+            "twilight_wings"
+    );
+
     // ===== MORPHS =====
+    public static final Set<String> STONE_MORPHS = Set.of(
+            // None yet - example: "minecraft:fox"
+    );
+
     public static final Set<String> BRONZE_MORPHS = Set.of(
             // None yet - example: "minecraft:fox"
     );
@@ -58,7 +84,15 @@ public class SupporterRegistry {
             // None yet
     );
 
+    public static final Set<String> PLATINUM_MORPHS = Set.of(
+            // None yet
+    );
+
     // ===== EFFECTS =====
+    public static final Set<String> STONE_EFFECTS = Set.of(
+            // None yet
+    );
+
     public static final Set<String> BRONZE_EFFECTS = Set.of(
             // None yet
     );
@@ -71,14 +105,20 @@ public class SupporterRegistry {
             "respawn_twilight"
     );
 
+    public static final Set<String> PLATINUM_EFFECTS = Set.of(
+            "respawn_twilight"
+    );
+
     /**
      * Get all supporter trails for a given tier
      */
     public static Set<String> getTrailsForTier(String tier) {
         return switch (tier.toLowerCase()) {
+            case "stone" -> STONE_ADDONS;
             case "bronze" -> BRONZE_TRAILS;
             case "silver" -> SILVER_TRAILS;
             case "gold" -> GOLD_TRAILS;
+            case "platinum" -> PLATINUM_TRAILS;
             default -> Set.of();
         };
     }
@@ -88,9 +128,11 @@ public class SupporterRegistry {
      */
     public static Set<String> getAddonsForTier(String tier) {
         return switch (tier.toLowerCase()) {
+            case "stone" -> STONE_ADDONS;
             case "bronze" -> BRONZE_ADDONS;
             case "silver" -> SILVER_ADDONS;
             case "gold" -> GOLD_ADDONS;
+            case "platinum" -> PLATINUM_ADDONS;
             default -> Set.of();
         };
     }
@@ -100,9 +142,11 @@ public class SupporterRegistry {
      */
     public static Set<String> getMorphsForTier(String tier) {
         return switch (tier.toLowerCase()) {
+            case "stone" -> STONE_MORPHS;
             case "bronze" -> BRONZE_MORPHS;
             case "silver" -> SILVER_MORPHS;
             case "gold" -> GOLD_MORPHS;
+            case "platinum" -> PLATINUM_MORPHS;
             default -> Set.of();
         };
     }
@@ -112,9 +156,11 @@ public class SupporterRegistry {
      */
     public static Set<String> getEffectsForTier(String tier) {
         return switch (tier.toLowerCase()) {
+            case "stone" -> STONE_EFFECTS;
             case "bronze" -> BRONZE_EFFECTS;
             case "silver" -> SILVER_EFFECTS;
             case "gold" -> GOLD_EFFECTS;
+            case "platinum" -> PLATINUM_EFFECTS;
             default -> Set.of();
         };
     }
@@ -124,9 +170,11 @@ public class SupporterRegistry {
      */
     public static Set<String> getAllSupporterTrails() {
         Set<String> all = new HashSet<>();
+        all.addAll(STONE_TRAILS);
         all.addAll(BRONZE_TRAILS);
         all.addAll(SILVER_TRAILS);
         all.addAll(GOLD_TRAILS);
+        all.addAll(PLATINUM_TRAILS);
         return all;
     }
 
@@ -135,9 +183,11 @@ public class SupporterRegistry {
      */
     public static Set<String> getAllSupporterAddons() {
         Set<String> all = new HashSet<>();
+        all.addAll(STONE_ADDONS);
         all.addAll(BRONZE_ADDONS);
         all.addAll(SILVER_ADDONS);
         all.addAll(GOLD_ADDONS);
+        all.addAll(PLATINUM_ADDONS);
         return all;
     }
 
@@ -146,9 +196,11 @@ public class SupporterRegistry {
      */
     public static Set<String> getAllSupporterMorphs() {
         Set<String> all = new HashSet<>();
+        all.addAll(STONE_MORPHS);
         all.addAll(BRONZE_MORPHS);
         all.addAll(SILVER_MORPHS);
         all.addAll(GOLD_MORPHS);
+        all.addAll(PLATINUM_MORPHS);
         return all;
     }
 
@@ -157,9 +209,11 @@ public class SupporterRegistry {
      */
     public static Set<String> getAllSupporterEffects() {
         Set<String> all = new HashSet<>();
+        all.addAll(STONE_EFFECTS);
         all.addAll(BRONZE_EFFECTS);
         all.addAll(SILVER_EFFECTS);
         all.addAll(GOLD_EFFECTS);
+        all.addAll(PLATINUM_EFFECTS);
         return all;
     }
 

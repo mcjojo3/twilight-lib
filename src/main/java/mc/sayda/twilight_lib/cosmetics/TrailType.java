@@ -1,13 +1,12 @@
 package mc.sayda.twilight_lib.cosmetics;
 
+import mc.sayda.twilight_lib.particle.ModParticles;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 
-/**
- * Defines available trail types for supporters
- */
 public enum TrailType {
     HEARTS("hearts", null, 2), // Tier-based, particle determined dynamically
+    RATVENOM("ratvenom", ModParticles.RATVENOM.get(), 3),
     SPARKLES("sparkles", ParticleTypes.WAX_ON, 3),
     CHERRY_BLOSSOM("cherry_blossom", ParticleTypes.CHERRY_LEAVES, 2),
     TWILIGHT("twilight", ParticleTypes.PORTAL, 2),

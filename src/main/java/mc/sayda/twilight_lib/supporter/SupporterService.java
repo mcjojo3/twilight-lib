@@ -18,9 +18,10 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Service that fetches and caches supporter data from GitHub
  */
+
 public class SupporterService {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String SUPPORTERS_URL = "https://raw.githubusercontent.com/mcjojo3/patreon-supporters/main/supporters.json";
+    private static final String SUPPORTERS_URL = "https://raw.githubusercontent.com/mcjojo3/twilight-database/main/supporters.json";
     private static final long CACHE_DURATION_MS = 3600000; // 1 hour
 
     private static final Map<String, SupporterData> supporterCache = new ConcurrentHashMap<>();

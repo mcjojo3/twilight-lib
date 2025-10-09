@@ -6,10 +6,7 @@ import mc.sayda.twilight_lib.client.renderer.CustomFoxRenderer;
 import mc.sayda.twilight_lib.client.renderer.PlayerAddonLayer;
 import mc.sayda.twilight_lib.cosmetics.TrailRenderer;
 import mc.sayda.twilight_lib.entity.ModEntities;
-import mc.sayda.twilight_lib.particle.BronzeHeartParticle;
-import mc.sayda.twilight_lib.particle.GoldHeartParticle;
-import mc.sayda.twilight_lib.particle.ModParticles;
-import mc.sayda.twilight_lib.particle.SilverHeartParticle;
+import mc.sayda.twilight_lib.particle.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
@@ -77,5 +74,6 @@ public class ClientModEvents {
         event.registerSpriteSet(ModParticles.BRONZE_HEART.get(), BronzeHeartParticle::provider);
         event.registerSpriteSet(ModParticles.SILVER_HEART.get(), SilverHeartParticle::provider);
         event.registerSpriteSet(ModParticles.GOLD_HEART.get(), GoldHeartParticle::provider);
+        event.registerSpriteSet(ModParticles.RATVENOM.get(), RatvenomParticle::provider);
     }
 }

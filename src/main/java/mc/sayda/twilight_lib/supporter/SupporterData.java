@@ -12,7 +12,7 @@ import java.util.Set;
 public class SupporterData {
     private final String uuid;
     private final String name;
-    private final String tier; // "bronze", "silver", "gold", "none", or null = not a supporter
+    private final String tier; // "stone", "bronze", "silver", "gold", "platinum", "none", or null/none = not a supporter
     private final Set<String> manualTrails; // Manual overrides (persist forever)
     private final Set<String> manualAddons;
     private final Set<String> manualEffects;

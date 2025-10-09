@@ -2,11 +2,7 @@ package mc.sayda.twilight_lib.addon;
 
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.TwilightLib;
-import mc.sayda.twilight_lib.client.model.addon.PlayerTailModel;
-import mc.sayda.twilight_lib.client.model.addon.KitsuneEarsModel;
-import mc.sayda.twilight_lib.client.model.addon.KitsuneSnoutModel;
-import mc.sayda.twilight_lib.client.model.addon.KitsuneTailsModel;
-import mc.sayda.twilight_lib.client.model.addon.KitsuneTailsVariantModel;
+import mc.sayda.twilight_lib.client.model.addon.*;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
@@ -25,12 +21,20 @@ public class AddonInit {
         LOGGER.info("I should come here every millennium! Registering built-in addons...");
 
         // Register player tail addon
-        AddonRegistry.registerAddon(
+        /*AddonRegistry.registerAddon(
             "player_tail",
             PlayerTailModel.LAYER_LOCATION,
             PlayerTailModel::createBodyLayer,
             PlayerTailModel::new,
             new ResourceLocation(TwilightLib.MODID, "textures/addon/player_tail.png")
+        );*/
+
+        AddonRegistry.registerAddon(
+                "tiara",                    // ID used in commands
+                TiaraModel.LAYER_LOCATION,      // Your model's LAYER_LOCATION
+                TiaraModel::createBodyLayer,    // Your model's createBodyLayer method
+                TiaraModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/tiara.png")
         );
 
         // Register kitsune addons - multiple color variants

@@ -1,0 +1,94 @@
+ Here's how to add a custom particle trail:
+
+  1. Create the Particle Texture
+
+  Location: src/main/resources/assets/twilight_lib/textures/particle/
+
+  Create your texture file (e.g., my_particle.png)
+  - Recommended size: 8x8 pixels
+  - Can be animated by making it taller (8x16 for 2 frames, 8x24 for 3 frames, etc.)
+
+  2. Create the Particle JSON
+
+  Location: src/main/resources/assets/twilight_lib/particles/
+
+  Create my_particle.json:
+  {
+    "textures": [
+      "twilight_lib:my_particle"
+    ]
+  }
+
+  3. Register the Particle Type
+
+  In ModParticles.java, add:
+  public static final RegistryObject<SimpleParticleType> MY_PARTICLE = PARTICLES.register(
+      "my_particle",
+      () -> new SimpleParticleType(true)
+  );
+
+  4. Create the Particle Provider
+
+  Create: src/main/java/mc/sayda/twilight_lib/particle/MyParticle.java
+
+  Copy the structure from BronzeHeartParticle.java:
+  public class MyParticle extends TextureSheetParticle {
+      protected MyParticle(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+          super(level, x, y, z, xSpeed, ySpeed, zSpeed);
+          this.lifetime = 20; // How long it lasts (ticks)
+          this.gravity = 0.0F; // 0 = floats, positive = falls
+          this.hasPhysics = false;
+      }
+
+      @Override
+      public ParticleRenderType getRenderType() {
+          return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+      }
+
+      public static ParticleProvider<SimpleParticleType> provider(SpriteSet spriteSet) {
+          return (type, level, x, y, z, xSpeed, ySpeed, zSpeed) -> {
+              MyParticle particle = new MyParticle(level, x, y, z, xSpeed, ySpeed, zSpeed);
+              particle.pickSprite(spriteSet);
+              return particle;
+          };
+      }
+  }
+
+  5. Register the Provider
+
+  In ClientModEvents.java, add to registerParticleProviders():
+  event.registerSpriteSet(ModParticles.MY_PARTICLE.get(), MyParticle::provider);
+
+  6. Add to TrailType Enum
+
+  In TrailType.java, add your trail:
+  MY_TRAIL("my_trail", ModParticles.MY_PARTICLE::get, 3, false),
+
+  Parameters:
+  - "my_trail" - Trail ID (used in commands)
+  - ModParticles.MY_PARTICLE::get - Your particle supplier
+  - 3 - Particle count per tick
+  - false - Not tier-based (for tier-based hearts, use true)
+
+  7. Add to Supporter Tiers (Optional)
+
+  In SupporterRegistry.java, add to desired tier:
+  public static final Set<String> GOLD_TRAILS = Set.of(
+      "hearts",
+      "sparkles",
+      "cherry_blossom",
+      "twilight",
+      "stars",
+      "my_trail"  // Add here
+  );
+
+  8. Rebuild
+
+  ./gradlew build
+
+  That's it! Players can now use /tl trail set my_trail or /cosmetics trail set my_trail
+
+  Key files to reference:
+  - BronzeHeartParticle.java:TwilightLibCommands.java:54 - Particle implementation example
+  - ModParticles.java:TwilightLibCommands.java:20 - Particle registration
+  - TrailType.java:TwilightLibCommands.java:28 - Trail enum

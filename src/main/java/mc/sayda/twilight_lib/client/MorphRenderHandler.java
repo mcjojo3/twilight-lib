@@ -33,18 +33,22 @@ public class MorphRenderHandler {
 
     @SubscribeEvent
     public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut evt) {
-        // Discard all cached entities before clearing to release resources
-        CACHE.values().forEach(LivingEntity::discard);
-        CACHE.clear();
-        LOGGER.debug("Goodbye, my new friend! Clearing morph cache on disconnect.");
+        synchronized (CACHE) {
+            // Discard all cached entities before clearing to release resources
+            CACHE.values().forEach(LivingEntity::discard);
+            CACHE.clear();
+            LOGGER.debug("Goodbye, my new friend! Clearing morph cache on disconnect.");
+        }
     }
 
     @SubscribeEvent
     public static void onEntityLeavelevel(net.minecraftforge.event.level.LevelEvent.Unload evt) {
-        // Discard all cached entities before clearing to release resources
-        CACHE.values().forEach(LivingEntity::discard);
-        CACHE.clear();
-        LOGGER.debug("I hope this world survives... Clearing morph cache on level unload.");
+        synchronized (CACHE) {
+            // Discard all cached entities before clearing to release resources
+            CACHE.values().forEach(LivingEntity::discard);
+            CACHE.clear();
+            LOGGER.debug("I hope this world survives... Clearing morph cache on level unload.");
+        }
     }
 
     /** Tick proxies so animations and timers advance client-side. */
@@ -65,17 +69,14 @@ public class MorphRenderHandler {
         Player player = evt.getEntity();
         LazyOptional<IMorph> cap = player.getCapability(MorphProvider.MORPH_CAP);
         if (!cap.isPresent()) {
-            // LOGGER.debug("No morph capability for player {}", player.getName().getString());
             return;
         }
 
         IMorph morph = cap.orElse(null);
         if (morph == null) {
-            // LOGGER.debug("Morph capability is null for player {}", player.getName().getString());
             return;
         }
         Optional<ResourceLocation> rlOpt = morph.getEntityType();
-        // LOGGER.debug("Player {} has morph type: {}", player.getName().getString(), rlOpt);
         if (rlOpt.isEmpty()) {
             // Discard old entity before removing from cache
             LivingEntity old = CACHE.remove(player.getUUID());
@@ -275,8 +276,12 @@ public class MorphRenderHandler {
             Method method = net.minecraft.world.entity.animal.Fox.class.getDeclaredMethod(methodName, boolean.class);
             method.setAccessible(true);
             method.invoke(fox, value);
+        } catch (NoSuchMethodException e) {
+            // Method doesn't exist - expected if Minecraft version changed
+            LOGGER.trace("Fox animation method not found: {}", stateName);
         } catch (Exception e) {
-            // Silently fail - animation states are cosmetic only
+            // Unexpected error - log for debugging
+            LOGGER.warn("Failed to set fox state {}: {}", stateName, e.getMessage());
         }
     }
 }

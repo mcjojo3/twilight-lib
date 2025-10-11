@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib;
 
 import mc.sayda.twilight_lib.capabilities.MorphProvider;
+import mc.sayda.twilight_lib.config.TwilightConfig;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Pose;
@@ -13,11 +14,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TwilightEventHandler {
 
-    private static final float PLAYER_HEIGHT = 1.8f;
-    private static final float BASE_STEP_HEIGHT = 0.6f;
-    private static final float MIN_STEP_SCALE = 0.3f;
-    private static final float MAX_STEP_SCALE = 2.0f;
-    private static final float EYE_HEIGHT_MULTIPLIER = 0.85f;
+    private static final float PLAYER_HEIGHT = TwilightConstants.PLAYER_DEFAULT_HEIGHT;
 
     @SubscribeEvent
     public static void onEntitySize(EntityEvent.Size evt) {
@@ -37,7 +34,7 @@ public class TwilightEventHandler {
             }
 
             evt.setNewSize(morphDims, true);
-            evt.setNewEyeHeight(morphDims.height * EYE_HEIGHT_MULTIPLIER);
+            evt.setNewEyeHeight(morphDims.height * TwilightConfig.EYE_HEIGHT_MULTIPLIER.get().floatValue());
         });
     }
 
@@ -54,7 +51,11 @@ public class TwilightEventHandler {
             EntityDimensions dims = type.getDimensions();
             float scale = dims.height / PLAYER_HEIGHT;
 
-            player.setMaxUpStep(BASE_STEP_HEIGHT * Math.max(MIN_STEP_SCALE, Math.min(scale, MAX_STEP_SCALE)));
+            float baseStepHeight = TwilightConfig.BASE_STEP_HEIGHT.get().floatValue();
+            float minScale = TwilightConfig.MIN_STEP_SCALE.get().floatValue();
+            float maxScale = TwilightConfig.MAX_STEP_SCALE.get().floatValue();
+
+            player.setMaxUpStep(baseStepHeight * Math.max(minScale, Math.min(scale, maxScale)));
         });
     }
 }

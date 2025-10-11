@@ -1,11 +1,13 @@
 package mc.sayda.twilight_lib.network;
 
+import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.NetworkEvent;
+import org.slf4j.Logger;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -14,6 +16,7 @@ import java.util.function.Supplier;
  * Packet to sync trails data between server and clients
  */
 public class SyncTrailsPacket {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private final UUID playerUuid;
     private final CompoundTag trailsData;
 
@@ -30,6 +33,11 @@ public class SyncTrailsPacket {
     public static SyncTrailsPacket decode(FriendlyByteBuf buf) {
         UUID playerUuid = buf.readUUID();
         CompoundTag trailsData = buf.readNbt();
+        // Handle null NBT (network error or malformed packet)
+        if (trailsData == null) {
+            LOGGER.warn("Received null NBT in SyncTrailsPacket for player {}", playerUuid);
+            trailsData = new CompoundTag();
+        }
         return new SyncTrailsPacket(playerUuid, trailsData);
     }
 

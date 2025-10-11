@@ -69,20 +69,10 @@ public class NetworkHandler {
         if (recipient.level() == null) return;
         LOGGER.debug("Want to see something neat? Syncing all morphs to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
+            if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             LazyOptional<IMorph> cap = p.getCapability(MorphProvider.MORPH_CAP);
             cap.ifPresent(m -> m.getEntityType().ifPresent(rl ->
                 sendToPlayer(recipient, SyncMorphPacket.of(p.getUUID(), rl))
-            ));
-        }
-    }
-
-    @Deprecated
-    public static void broadcastAllMorphs(Level level) {
-        if (level == null) return;
-        for (Player p : level.players()) {
-            LazyOptional<IMorph> cap = p.getCapability(MorphProvider.MORPH_CAP);
-            cap.ifPresent(m -> m.getEntityType().ifPresent(rl ->
-                sendToAll(SyncMorphPacket.of(p.getUUID(), rl))
             ));
         }
     }
@@ -103,9 +93,10 @@ public class NetworkHandler {
         if (recipient.level() == null) return;
         LOGGER.debug("Every day, every season... ends. And begin something new! Syncing all addons to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
+            if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             p.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-                if (!addons.getAddons().isEmpty()) {
-                    sendAddonsToPlayer(recipient, new SyncAddonsPacket(p.getUUID(), addons.getAddons()));
+                if (!addons.getActiveAddons().isEmpty()) {
+                    sendAddonsToPlayer(recipient, new SyncAddonsPacket(p.getUUID(), addons.getActiveAddons()));
                 }
             });
         }
@@ -127,6 +118,7 @@ public class NetworkHandler {
         if (recipient.level() == null) return;
         LOGGER.debug("Sharing the sparkle! Syncing all trails to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
+            if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             p.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
                 sendTrailsToPlayer(recipient, new SyncTrailsPacket(p.getUUID(), trails.serialize()));
             });
@@ -149,6 +141,7 @@ public class NetworkHandler {
         if (recipient.level() == null) return;
         LOGGER.debug("Sharing the magic! Syncing all effects to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
+            if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             p.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
                 if (!effects.getEffects().isEmpty()) {
                     sendEffectsToPlayer(recipient, new SyncEffectsPacket(p.getUUID(), effects.getEffects()));

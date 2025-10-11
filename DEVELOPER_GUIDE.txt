@@ -1,0 +1,1191 @@
+# TwilightLib Mod - Comprehensive Developer Guide
+
+## Overview
+TwilightLib is a Minecraft Forge mod that provides player morphing, cosmetic addons (ears, tails, wings), particle trails, and special effects. The mod features a supporter tier system for unlocking exclusive cosmetics, with automatic synchronization across clients.
+
+---
+
+## Package Structure
+
+### Core (mc.sayda.twilight_lib)
+
+#### **TwilightLib.java**
+**Package:** `mc.sayda.twilight_lib`
+
+**Purpose:** Main mod entry point that initializes all systems and handles player lifecycle events.
+
+**Key Responsibilities:**
+- Registers capabilities (morph, addons, trails, effects) for player entities
+- Initializes network channels, entities, particles, and configuration
+- Handles player login, death/respawn, and capability persistence
+- Auto-grants cosmetics based on supporter tier from GitHub JSON
+- Synchronizes all player data (morphs, addons, trails, effects) across clients
+
+**Important Methods:**
+- `onRegisterCapabilities()` - Registers all four capability types
+- `attachEntityCaps()` - Attaches capability providers to player entities
+- `onPlayerLogin()` - Syncs player data on join, checks supporter status, auto-grants cosmetics
+- `onPlayerClone()` - Restores capabilities after death using persistent NBT
+- `onPlayerRespawn()` - Re-syncs all data after respawn
+
+**Dependencies:** NetworkHandler, SupporterService, all capability providers, ModEntities, ModParticles, TwilightConfig
+
+---
+
+#### **TwilightConstants.java**
+**Package:** `mc.sayda.twilight_lib`
+
+**Purpose:** Centralized constants to prevent typos and simplify refactoring.
+
+**Key Responsibilities:**
+- Defines NBT tag names for persistent data storage
+- Contains animation timing constants for addons
+
+**Important Fields:**
+- `NBT_MORPH`, `NBT_ADDONS`, `NBT_TRAILS`, `NBT_EFFECTS` - Persistent NBT keys
+- `Animation.*` - Tail swing/wave animation parameters
+
+**Dependencies:** None (pure constants)
+
+---
+
+#### **TwilightEventHandler.java**
+**Package:** `mc.sayda.twilight_lib`
+
+**Purpose:** Handles dynamic entity size and physics adjustments for morphed players.
+
+**Key Responsibilities:**
+- Adjusts player hitbox based on morphed entity dimensions
+- Scales hitbox for different poses (swimming, crouching, fall flying)
+- Dynamically adjusts step height based on morph size
+- Updates eye height for proper camera positioning
+
+**Important Methods:**
+- `onEntitySize()` - Modifies player dimensions to match morphed entity
+- `onPlayerTick()` - Updates step height every tick for seamless climbing
+
+**Dependencies:** MorphProvider, TwilightConfig
+
+---
+
+### Capabilities (mc.sayda.twilight_lib.capabilities)
+
+#### **IMorph.java / MorphData.java / MorphProvider.java**
+**Package:** `mc.sayda.twilight_lib.capabilities`
+
+**Purpose:** Manages player entity morphing (transforming into different mobs).
+
+**Key Responsibilities:**
+- Stores the ResourceLocation of the morphed entity type
+- Caches the resolved EntityType for performance
+- Serializes/deserializes morph state to NBT
+- Provides capability access via `MorphProvider.MORPH_CAP`
+
+**Important Methods/Fields:**
+- `getEntityType()` - Returns Optional<ResourceLocation> of current morph
+- `setEntityType()` - Changes morph and updates cached EntityType
+- `getCachedEntityType()` - Returns EntityType<?> for quick dimension queries
+- `serialize()/deserialize()` - NBT persistence
+
+**Dependencies:** Minecraft's entity registry
+
+---
+
+#### **IAddons.java / AddonsData.java / AddonsProvider.java**
+**Package:** `mc.sayda.twilight_lib.capabilities`
+
+**Purpose:** Manages player cosmetic addons (ears, tails, wings, accessories).
+
+**Key Responsibilities:**
+- Tracks owned addons (what player has access to)
+- Tracks active addons (what's currently equipped/visible)
+- Supports multiple addons active simultaneously
+- Serializes/deserializes addon state to NBT
+
+**Important Methods/Fields:**
+- `getAddons()` - Returns owned addons
+- `addAddon()/removeAddon()` - Modify ownership
+- `getActiveAddons()` - Returns currently equipped addons
+- `setActiveAddon(id, active)` - Equip/unequip an addon
+- `ADDONS_CAP` - Capability instance
+
+**Dependencies:** None (pure data storage)
+
+---
+
+#### **ITrails.java / TrailsData.java / TrailsProvider.java**
+**Package:** `mc.sayda.twilight_lib.capabilities`
+
+**Purpose:** Manages player particle trails (cosmetic effects that follow movement).
+
+**Key Responsibilities:**
+- Tracks owned trails (what player has access to)
+- Tracks active trail (only one can be active at a time)
+- Supports enabling/disabling trails without changing selection
+- Serializes/deserializes trail state to NBT
+
+**Important Methods/Fields:**
+- `getTrails()` - Returns owned trails
+- `addTrail()/removeTrail()` - Modify ownership
+- `getActiveTrail()` - Returns currently selected trail (or null)
+- `setActiveTrail()` - Changes active trail
+- `isTrailEnabled()/setTrailEnabled()` - Toggle rendering without losing selection
+- `TRAILS_CAP` - Capability instance
+
+**Dependencies:** None (pure data storage)
+
+---
+
+#### **IEffects.java / EffectsData.java / EffectsProvider.java**
+**Package:** `mc.sayda.twilight_lib.capabilities`
+
+**Purpose:** Manages player special effects (respawn effects, passive abilities).
+
+**Key Responsibilities:**
+- Tracks owned effects (what player has access to)
+- Effects are always active when owned (no toggle)
+- Serializes/deserializes effect state to NBT
+
+**Important Methods/Fields:**
+- `getEffects()` - Returns owned effects
+- `addEffect()/removeEffect()` - Modify ownership
+- `hasEffect()` - Check if player owns an effect
+- `EFFECTS_CAP` - Capability instance
+
+**Dependencies:** None (pure data storage)
+
+---
+
+### Commands (mc.sayda.twilight_lib.commands)
+
+#### **TwilightLibCommands.java**
+**Package:** `mc.sayda.twilight_lib.commands`
+
+**Purpose:** Admin-level commands for morphing, trails, and effects (requires permission level 2).
+
+**Key Responsibilities:**
+- Morph/unmorph players into any LivingEntity
+- Set/toggle trails for players
+- Set/toggle effects for players
+- List available options
+- Validate entity types (caches valid living entities for performance)
+- Support both command aliases (`/twilightlib` and `/tl`)
+
+**Important Methods:**
+- `registerCommands()` - Registers all command syntax
+- `executeMorph()` - Validates and applies morph
+- `executeSetTrail()` - Grants trail, activates it, and enables trails
+- `executeToggleTrail()` - Toggles trail rendering
+- `executeSetEffect()` - Grants effect to player
+- `initializeEntityCache()` - Builds cache of valid morphable entities
+
+**Dependencies:** MorphProvider, TrailsProvider, EffectsProvider, NetworkHandler, TrailType, CommandUtils
+
+---
+
+#### **AddonCommands.java**
+**Package:** `mc.sayda.twilight_lib.commands`
+
+**Purpose:** Admin commands for force-equipping/unequipping addons (requires permission level 2).
+
+**Key Responsibilities:**
+- Force-equip addons (bypasses ownership check)
+- Force-unequip addons
+- Clear all equipped addons
+- List all registered addons
+- Syncs changes across all clients
+
+**Important Methods:**
+- `registerCommands()` - Registers addon command syntax
+- `executeEquipAddon()` - Force-activates addon without ownership check
+- `executeUnequipAddon()` - Force-deactivates addon
+- `executeClearAddons()` - Removes all equipped addons
+
+**Dependencies:** AddonRegistry, AddonsProvider, NetworkHandler, CommandUtils
+
+---
+
+#### **CosmeticsCommand.java**
+**Package:** `mc.sayda.twilight_lib.commands`
+
+**Purpose:** Player-accessible commands for managing owned cosmetics (level 0, no permissions).
+
+**Key Responsibilities:**
+- Allow players to equip/unequip owned addons
+- Allow players to set/toggle owned trails
+- Display cosmetic ownership and tier information
+- Show supporter tier benefits
+- Prevent access to unowned cosmetics
+
+**Important Methods:**
+- `registerCommands()` - Registers `/cosmetics` command tree
+- `equipAddon()/unequipAddon()` - Manages player's addon equipment
+- `setTrail()/toggleTrail()` - Manages player's trail selection
+- `listTrails()/listAddons()/listEffects()` - Shows owned cosmetics and tier unlocks
+- `showInfo()` - Displays supporter status and cosmetic count
+
+**Dependencies:** TrailsProvider, AddonsProvider, EffectsProvider, SupporterRegistry, SupporterService, NetworkHandler
+
+---
+
+#### **CommandUtils.java**
+**Package:** `mc.sayda.twilight_lib.commands`
+
+**Purpose:** Utility methods for command handling and feedback.
+
+**Key Responsibilities:**
+- Determine if command feedback should be sent to source
+- Extract target player from command source
+
+**Important Methods:**
+- `shouldSendFeedbackToSource()` - Returns true if source is admin/console/different player
+- `getTargetPlayer()` - Gets ServerPlayer from CommandSourceStack (or null)
+
+**Dependencies:** Minecraft command API
+
+---
+
+### Network (mc.sayda.twilight_lib.network)
+
+#### **NetworkHandler.java**
+**Package:** `mc.sayda.twilight_lib.network`
+
+**Purpose:** Central network channel manager for client-server synchronization.
+
+**Key Responsibilities:**
+- Initializes Forge SimpleChannel for mod packets
+- Registers all packet types (morph, addons, trails, effects)
+- Provides helper methods to broadcast data to all clients or specific players
+- Syncs existing player data to newly joined players
+
+**Important Methods:**
+- `init()` - Registers all packet handlers
+- `sendToAll()/sendToPlayer()` - Broadcasts packets
+- `sendAllMorphsToPlayer()` - Syncs all existing morphs to new player
+- `sendAllAddonsToPlayer()` - Syncs all active addons to new player
+- `sendAllTrailsToPlayer()` - Syncs all trail data to new player
+- `sendAllEffectsToPlayer()` - Syncs all effects to new player
+
+**Dependencies:** All packet classes, all capability providers
+
+---
+
+#### **SyncMorphPacket.java**
+**Package:** `mc.sayda.twilight_lib.network`
+
+**Purpose:** Synchronizes player morph state from server to clients.
+
+**Key Responsibilities:**
+- Encodes/decodes player UUID and morph ResourceLocation
+- Applies morph to client-side player capability
+- Refreshes player dimensions after morph change
+- Handles morph removal (Optional.empty())
+
+**Important Methods:**
+- `encode()` - Writes UUID and Optional<ResourceLocation> to buffer
+- `decode()` - Reads packet data from buffer
+- `handle()` - Applies morph on client side and refreshes dimensions
+
+**Dependencies:** MorphProvider
+
+---
+
+#### **SyncAddonsPacket.java**
+**Package:** `mc.sayda.twilight_lib.network`
+
+**Purpose:** Synchronizes player active addons from server to clients.
+
+**Key Responsibilities:**
+- Encodes/decodes player UUID and active addon set
+- Replaces client-side active addons with server state
+- Clears old addons before applying new set
+
+**Important Methods:**
+- `encode()` - Writes UUID and Set<String> to buffer
+- `decode()` - Reads packet data from buffer
+- `handle()` - Applies active addons on client side
+
+**Dependencies:** AddonsProvider
+
+---
+
+#### **SyncTrailsPacket.java**
+**Package:** `mc.sayda.twilight_lib.network`
+
+**Purpose:** Synchronizes player trail data from server to clients.
+
+**Key Responsibilities:**
+- Encodes/decodes player UUID and full trail data (CompoundTag)
+- Deserializes trail data on client side
+- Handles null NBT gracefully
+
+**Important Methods:**
+- `encode()` - Writes UUID and CompoundTag to buffer
+- `decode()` - Reads packet data from buffer
+- `handle()` - Deserializes trail data on client side
+
+**Dependencies:** TrailsProvider
+
+---
+
+#### **SyncEffectsPacket.java**
+**Package:** `mc.sayda.twilight_lib.network`
+
+**Purpose:** Synchronizes player effects from server to clients.
+
+**Key Responsibilities:**
+- Encodes/decodes player UUID and effect set
+- Replaces client-side effects with server state
+
+**Important Methods:**
+- `encode()` - Writes UUID and Set<String> to buffer
+- `decode()` - Reads packet data from buffer
+- `handle()` - Applies effects on client side
+
+**Dependencies:** EffectsProvider
+
+---
+
+### Supporter System (mc.sayda.twilight_lib.supporter)
+
+#### **SupporterService.java**
+**Package:** `mc.sayda.twilight_lib.supporter`
+
+**Purpose:** Fetches and caches supporter data from GitHub JSON endpoint.
+
+**Key Responsibilities:**
+- Asynchronously fetches supporter list on mod startup
+- Caches data for 1 hour to reduce API calls
+- Parses JSON to extract tier and manual cosmetic grants
+- Provides thread-safe access to supporter data
+- Prevents duplicate concurrent fetches
+
+**Important Methods:**
+- `fetchSupporters()` - Async fetch with caching
+- `parseSupportersJson()` - Parses JSON into SupporterData objects
+- `getSupporterData(uuid)` - Returns Optional<SupporterData> for player
+- `isSupporter(uuid)` - Quick boolean check
+- `forceRefresh()` - Clears cache and re-fetches
+
+**Dependencies:** Gson for JSON parsing, SupporterData, SupporterRegistry
+
+---
+
+#### **SupporterData.java**
+**Package:** `mc.sayda.twilight_lib.supporter`
+
+**Purpose:** Data class representing a supporter's tier and cosmetic permissions.
+
+**Key Responsibilities:**
+- Stores supporter UUID, name, tier
+- Stores manual cosmetic grants (persist even if tier expires)
+- Combines tier unlocks with manual grants
+- Determines if user is an active supporter
+
+**Important Methods:**
+- `isActiveSupporter()` - Returns true if tier is not null/"none"
+- `getAllTrails()` - Merges tier unlocks + manual grants
+- `getAllAddons()` - Merges tier unlocks + manual grants
+- `getAllEffects()` - Merges tier unlocks + manual grants
+- `getManualTrails()/Addons()/Effects()` - Returns only manual grants
+
+**Dependencies:** SupporterRegistry for tier unlocks
+
+---
+
+#### **SupporterRegistry.java**
+**Package:** `mc.sayda.twilight_lib.supporter`
+
+**Purpose:** Defines which cosmetics are unlocked at each supporter tier.
+
+**Key Responsibilities:**
+- Hardcodes tier-based cosmetic unlocks (stone, bronze, silver, gold, platinum)
+- Provides tier lookup methods
+- Identifies supporter-exclusive cosmetics
+- Separate from data fetching (static configuration)
+
+**Important Methods:**
+- `getTrailsForTier(tier)` - Returns trails for specific tier
+- `getAddonsForTier(tier)` - Returns addons for specific tier
+- `getEffectsForTier(tier)` - Returns effects for specific tier
+- `isTrailSupporterExclusive()` - Checks if trail requires supporter status
+- `getAllSupporterTrails()` - Returns all supporter-exclusive trails
+
+**Dependencies:** None (static configuration)
+
+---
+
+### Addon System (mc.sayda.twilight_lib.addon)
+
+#### **AddonRegistry.java**
+**Package:** `mc.sayda.twilight_lib.addon`
+
+**Purpose:** Central registry for all player addon models (ears, tails, wings, etc.).
+
+**Key Responsibilities:**
+- Thread-safe registry using ConcurrentHashMap
+- Stores addon metadata (ID, model layer, texture, factory)
+- Provides lookup by addon ID
+- Lists all registered addons for commands
+
+**Important Methods:**
+- `registerAddon()` - Registers new addon with model info
+- `getAddon(id)` - Returns Optional<AddonModelInfo>
+- `getAllAddonIds()` - Returns all registered IDs
+- `hasAddon(id)` - Quick existence check
+- `clear()` - Clears registry (for reloading)
+
+**Dependencies:** AddonModelInfo
+
+---
+
+#### **AddonModelInfo.java**
+**Package:** `mc.sayda.twilight_lib.addon`
+
+**Purpose:** Immutable record storing addon model metadata.
+
+**Key Responsibilities:**
+- Stores addon ID, model layer location, layer definition supplier
+- Stores model factory function (creates model from ModelPart)
+- Stores texture ResourceLocation
+
+**Important Fields:**
+- `id` - Unique addon identifier
+- `layerLocation` - ModelLayerLocation for model baking
+- `layerDefinitionSupplier` - Creates LayerDefinition
+- `modelFactory` - Creates model instance from ModelPart
+- `texture` - Texture path
+
+**Dependencies:** Minecraft model API
+
+---
+
+#### **AddonInit.java**
+**Package:** `mc.sayda.twilight_lib.addon`
+
+**Purpose:** Registers all built-in addons during client setup.
+
+**Key Responsibilities:**
+- Registers tiara addon
+- Registers all kitsune variants (7 colors × 3 parts × 9 tail counts + alt variants)
+- Configures tail visibility patterns for each variant
+- Logs total addon count
+
+**Important Methods:**
+- `registerAddons()` - Registers all built-in addons
+- `registerKitsuneVariants()` - Registers 250+ kitsune color/tail combinations
+
+**Dependencies:** AddonRegistry, all addon model classes
+
+---
+
+### Cosmetics (mc.sayda.twilight_lib.cosmetics)
+
+#### **TrailType.java**
+**Package:** `mc.sayda.twilight_lib.cosmetics`
+
+**Purpose:** Enum defining all available particle trail types.
+
+**Key Responsibilities:**
+- Maps trail IDs to particle types and spawn counts
+- Supports tier-based trails (hearts) where particle changes by tier
+- Provides lookup by ID
+
+**Important Fields/Methods:**
+- `getId()` - Returns trail identifier
+- `getParticleType()` - Returns ParticleOptions (or null for tier-based)
+- `getParticleCount()` - Returns spawn count per tick
+- `isTierBased()` - Returns true for trails that change by tier
+- `fromId()` - Looks up TrailType by string ID
+
+**Dependencies:** ModParticles, vanilla ParticleTypes
+
+---
+
+#### **TrailRenderer.java**
+**Package:** `mc.sayda.twilight_lib.cosmetics`
+
+**Purpose:** Client-side renderer that spawns particle trails behind moving players.
+
+**Key Responsibilities:**
+- Ticks on client to spawn particles for all players
+- Checks if trail is enabled and player is moving
+- Spawns particles at player's feet (works with morphs)
+- Handles tier-based trails (looks up supporter tier for hearts)
+- Respects config for update frequency
+
+**Important Methods:**
+- `onClientTick()` - Main tick handler
+- `renderTrailForPlayer()` - Spawns particles for one player
+
+**Dependencies:** TrailsProvider, TrailType, SupporterService, TwilightConfig, ModParticles
+
+---
+
+#### **RespawnEffectHandler.java**
+**Package:** `mc.sayda.twilight_lib.cosmetics`
+
+**Purpose:** Client-side handler for respawn visual effects (Gold tier perk).
+
+**Key Responsibilities:**
+- Listens for player respawn events
+- Checks if player has "respawn_twilight" effect
+- Spawns beautiful twilight particle burst on respawn
+- Uses portal, enchant, and soul particles
+
+**Important Methods:**
+- `onPlayerRespawn()` - Event handler
+- `spawnTwilightRespawnEffect()` - Creates particle burst
+
+**Dependencies:** EffectsProvider, vanilla ParticleTypes
+
+---
+
+### Entity (mc.sayda.twilight_lib.entity)
+
+#### **CustomFoxEntity.java**
+**Package:** `mc.sayda.twilight_lib.entity`
+
+**Purpose:** Custom fox entity with color variants (white, black, blue, yellow, orange, purple, red).
+
+**Key Responsibilities:**
+- Extends vanilla Fox entity
+- Stores custom color information
+- Used for morph system (7 colored fox morphs)
+
+**Important Fields:**
+- `foxColor` - Enum defining fox color variant
+
+**Dependencies:** Minecraft Fox entity
+
+---
+
+#### **ModEntities.java**
+**Package:** `mc.sayda.twilight_lib.entity`
+
+**Purpose:** Registers all custom entity types for the mod.
+
+**Key Responsibilities:**
+- Uses Forge DeferredRegister for entity registration
+- Registers 7 colored fox variants
+- Configures entity dimensions and tracking
+
+**Important Fields:**
+- `WHITE_FOX`, `BLACK_FOX`, `BLUE_FOX`, etc. - RegistryObjects for each fox
+
+**Dependencies:** CustomFoxEntity
+
+---
+
+#### **ModEntityAttributes.java**
+**Package:** `mc.sayda.twilight_lib.entity`
+
+**Purpose:** Registers entity attributes for custom entities.
+
+**Key Responsibilities:**
+- Subscribes to EntityAttributeCreationEvent
+- Assigns vanilla Fox attributes to all custom fox variants
+
+**Important Methods:**
+- `registerAttributes()` - Registers attributes for all foxes
+
+**Dependencies:** ModEntities, vanilla Fox
+
+---
+
+### Particle (mc.sayda.twilight_lib.particle)
+
+#### **ModParticles.java**
+**Package:** `mc.sayda.twilight_lib.particle`
+
+**Purpose:** Registers all custom particle types.
+
+**Key Responsibilities:**
+- Uses Forge DeferredRegister for particle registration
+- Registers bronze, silver, gold heart particles
+- Registers ratvenom particle
+
+**Important Fields:**
+- `BRONZE_HEART`, `SILVER_HEART`, `GOLD_HEART` - Tier-based heart particles
+- `RATVENOM` - Custom particle type
+
+**Dependencies:** None (registry only)
+
+---
+
+#### **BronzeHeartParticle.java** (+ SilverHeartParticle, GoldHeartParticle, RatvenomParticle)
+**Package:** `mc.sayda.twilight_lib.particle`
+
+**Purpose:** Custom particle implementations for supporter trails.
+
+**Key Responsibilities:**
+- Extends TextureSheetParticle for custom rendering
+- Configures lifetime, gravity, size
+- Provides particle provider factory
+- Uses sprite sheets from assets
+
+**Important Methods:**
+- `provider()` - Creates particle provider
+- `tick()` - Updates particle state
+
+**Dependencies:** Minecraft particle API
+
+---
+
+### Config (mc.sayda.twilight_lib.config)
+
+#### **TwilightConfig.java**
+**Package:** `mc.sayda.twilight_lib.config`
+
+**Purpose:** Forge configuration file for server/client settings.
+
+**Key Responsibilities:**
+- Defines enable/disable toggles for features
+- Performance settings (cache size, update frequency)
+- Morph physics settings (step height, eye height)
+- Uses ForgeConfigSpec for validation
+
+**Important Fields:**
+- `ENABLE_TRAILS/ADDONS/EFFECTS/MORPHS` - Feature toggles
+- `MAX_CACHED_ADDON_MODELS` - LRU cache size (10-500)
+- `TRAIL_UPDATE_FREQUENCY` - Trail render interval (1-20 ticks)
+- `BASE_STEP_HEIGHT` - Player step height
+- `EYE_HEIGHT_MULTIPLIER` - Eye height as % of morph height
+
+**Dependencies:** Forge config API
+
+---
+
+### Client (mc.sayda.twilight_lib.client)
+
+#### **ClientModEvents.java**
+**Package:** `mc.sayda.twilight_lib.client`
+
+**Purpose:** Handles all client-side registration events.
+
+**Key Responsibilities:**
+- Registers entity renderers for custom foxes
+- Registers model layer definitions for addons
+- Adds PlayerAddonLayer to all player renderers
+- Registers particle providers
+- Registers event listeners (trail renderer, respawn effects)
+
+**Important Methods:**
+- `registerRenderers()` - Registers fox renderers
+- `registerLayerDefinitions()` - Registers addon model layers
+- `addLayers()` - Adds addon render layer to players
+- `registerParticleProviders()` - Registers custom particles
+- `onClientSetup()` - Registers event bus listeners
+
+**Dependencies:** AddonInit, AddonRegistry, TrailRenderer, RespawnEffectHandler, CustomFoxRenderer, PlayerAddonLayer, all particle classes
+
+---
+
+#### **MorphRenderHandler.java**
+**Package:** `mc.sayda.twilight_lib.client`
+
+**Purpose:** Client-side renderer that replaces player model with morphed entity.
+
+**Key Responsibilities:**
+- Intercepts player rendering pre-event
+- Creates and caches proxy entities for morphs
+- Syncs player state to proxy (position, rotation, animations, equipment)
+- Ticks proxy entities for animations
+- Handles special cases (fox sleeping/sitting/crouching)
+- Cleans up cache on disconnect/level unload
+
+**Important Methods:**
+- `onRenderPlayerPre()` - Main render interception
+- `getOrCreateProxy()` - Creates/retrieves cached entity
+- `onClientTick()` - Ticks cached entities for animations
+- `setFoxState()` - Uses reflection to set fox animation states
+- `onClientDisconnect()/onEntityLeavelevel()` - Cache cleanup
+
+**Dependencies:** MorphProvider, Minecraft entity rendering
+
+---
+
+### Client Renderer (mc.sayda.twilight_lib.client.renderer)
+
+#### **PlayerAddonLayer.java**
+**Package:** `mc.sayda.twilight_lib.client.renderer`
+
+**Purpose:** Render layer that draws equipped addons on player model.
+
+**Key Responsibilities:**
+- Extends RenderLayer for player rendering pipeline
+- Maintains LRU cache of baked addon models (configurable size)
+- Syncs addon model parts with player model parts (head, body, arms, legs)
+- Calls setupAnim() for custom animations AFTER sync
+- Renders each equipped addon with its texture
+
+**Important Methods:**
+- `render()` - Main render method called by Minecraft
+- `getOrBakeModel()` - Gets cached model or bakes new one
+- `copyModelPart()` - Copies rotation/position from player to addon
+
+**Dependencies:** AddonRegistry, AddonsProvider, IAddonModel, TwilightConfig
+
+---
+
+#### **CustomFoxRenderer.java**
+**Package:** `mc.sayda.twilight_lib.client.renderer`
+
+**Purpose:** Custom renderer for colored fox entities (morphs).
+
+**Key Responsibilities:**
+- Extends vanilla FoxRenderer
+- Applies custom texture based on fox color
+- Used when players morph into colored foxes
+
+**Important Methods:**
+- `getTextureLocation()` - Returns custom texture path
+
+**Dependencies:** CustomFoxEntity, vanilla FoxRenderer
+
+---
+
+#### **CustomFoxHeldItemLayer.java**
+**Package:** `mc.sayda.twilight_lib.client.renderer`
+
+**Purpose:** Render layer for foxes holding items in their mouth.
+
+**Key Responsibilities:**
+- Extends RenderLayer for fox rendering
+- Positions held items correctly in fox's mouth
+- Handles item rendering transformations
+
+**Dependencies:** CustomFoxEntity, Minecraft item rendering
+
+---
+
+### Client Model (mc.sayda.twilight_lib.client.model)
+
+#### **IAddonModel.java**
+**Package:** `mc.sayda.twilight_lib.client.model`
+
+**Purpose:** Interface for addon models to expose body parts for syncing.
+
+**Key Responsibilities:**
+- Defines Optional getters for 6 body parts (head, body, arms, legs)
+- Returns Optional.empty() by default (gracefully handles missing parts)
+- Allows addons to only define the parts they need
+
+**Important Methods:**
+- `getHead()/getBody()/getRightArm()/getLeftArm()/getRightLeg()/getLeftLeg()` - Returns Optional<ModelPart>
+
+**Dependencies:** Minecraft ModelPart
+
+---
+
+#### **BaseAddonModel.java**
+**Package:** `mc.sayda.twilight_lib.client.model.addon`
+
+**Purpose:** Base class that simplifies addon model creation.
+
+**Key Responsibilities:**
+- Extends EntityModel and implements IAddonModel
+- Automatically handles rendering of defined parts
+- Provides safe child part getter (returns null if missing)
+- setupAnim() runs AFTER sync, allowing custom animations on top of player animations
+
+**Important Methods:**
+- `getChildSafe()` - Gets child part without throwing exception
+- `setupAnim()` - Override for custom idle animations (tail wagging, wing flapping)
+- `renderToBuffer()` - Renders all non-null parts
+
+**Dependencies:** IAddonModel, EntityModel
+
+---
+
+#### **PlayerRigModel.java**
+**Package:** `mc.sayda.twilight_lib.client.model`
+
+**Purpose:** Base player rig model (currently unused, reserved for future features).
+
+**Key Responsibilities:**
+- Defines player model structure
+- Can be used for custom player model modifications
+
+**Dependencies:** Minecraft player model API
+
+---
+
+### Client Model Addons (mc.sayda.twilight_lib.client.model.addon)
+
+#### **TiaraModel.java**
+**Package:** `mc.sayda.twilight_lib.client.model.addon`
+
+**Purpose:** Crown/tiara addon that sits on player's head.
+
+**Key Responsibilities:**
+- Extends BaseAddonModel
+- Defines head part only
+- No custom animations (follows head rotation)
+
+**Dependencies:** BaseAddonModel
+
+---
+
+#### **KitsuneEarsModel.java**
+**Package:** `mc.sayda.twilight_lib.client.model.addon`
+
+**Purpose:** Fox ear addon with standard and alt variants.
+
+**Key Responsibilities:**
+- Extends BaseAddonModel
+- Defines head part only
+- Two layer locations for different ear positions
+- Follows head rotation
+
+**Dependencies:** BaseAddonModel
+
+---
+
+#### **KitsuneSnoutModel.java**
+**Package:** `mc.sayda.twilight_lib.client.model.addon`
+
+**Purpose:** Fox snout/muzzle addon.
+
+**Key Responsibilities:**
+- Extends BaseAddonModel
+- Defines head part only
+- Follows head rotation
+
+**Dependencies:** BaseAddonModel
+
+---
+
+#### **KitsuneTailsModel.java**
+**Package:** `mc.sayda.twilight_lib.client.model.addon`
+
+**Purpose:** Basic kitsune tail addon (1 tail).
+
+**Key Responsibilities:**
+- Extends BaseAddonModel
+- Defines body part only
+- Custom tail wagging animation in setupAnim()
+
+**Dependencies:** BaseAddonModel, TwilightConstants for animation parameters
+
+---
+
+#### **KitsuneTailsVariantModel.java**
+**Package:** `mc.sayda.twilight_lib.client.model.addon`
+
+**Purpose:** Multi-tail kitsune addon (1-9 tails) with configurable visibility.
+
+**Key Responsibilities:**
+- Extends BaseAddonModel
+- Defines body part with 9 tail model parts
+- Constructor accepts Set<Integer> to control which tails are visible
+- Custom tail wagging animation with wave effect across multiple tails
+- Supports standard and alt tail arrangements
+
+**Important Methods:**
+- Constructor with `visibleTails` Set<Integer> - Controls which tails render
+- `setupAnim()` - Animates multiple tails with wave pattern
+
+**Dependencies:** BaseAddonModel, TwilightConstants for animation parameters
+
+---
+
+## Data Flow
+
+### Player Login Flow
+1. Player connects → `TwilightLib.onPlayerLogin()`
+2. Check supporter status via `SupporterService.getSupporterData(uuid)`
+3. Auto-grant tier-based + manual cosmetics to capabilities
+4. Save to persistent NBT
+5. Sync all morphs/addons/trails/effects from existing players to new player
+6. Sync new player's data to all existing players
+
+### Morph Application Flow
+1. Admin runs `/tl morph minecraft:fox Player123`
+2. `TwilightLibCommands.executeMorph()` validates entity type
+3. `setMorph()` updates capability and persistent NBT
+4. `NetworkHandler.sendToAll()` broadcasts SyncMorphPacket
+5. Clients receive packet → `SyncMorphPacket.handle()` updates capability
+6. `TwilightEventHandler.onEntitySize()` adjusts hitbox
+7. `MorphRenderHandler.onRenderPlayerPre()` replaces player render with entity
+
+### Addon Rendering Flow
+1. Player equips addon via `/cosmetics addons equip kitsune_ears_white`
+2. Capability updated, synced via SyncAddonsPacket
+3. Client receives addon list in capability
+4. `PlayerAddonLayer.render()` iterates active addons
+5. For each addon: get/bake model, sync parts with player, call setupAnim(), render
+
+### Trail Rendering Flow
+1. `TrailRenderer.onClientTick()` runs every tick
+2. Check if trail enabled, player moving, update frequency
+3. Look up `TrailType.fromId(activeTrail)`
+4. If tier-based (hearts), look up supporter tier from `SupporterService`
+5. Spawn particles at player's feet with randomized offsets
+
+---
+
+## Architecture Patterns
+
+### Capability Pattern
+All player data uses Forge capabilities for:
+- Automatic attachment to player entities
+- Serialization/deserialization to NBT
+- Network synchronization
+- Clean separation of concerns
+
+### Registry Pattern
+Addons use a central registry for:
+- Thread-safe concurrent mod loading
+- Lookup by ID for commands
+- Enumeration for listings
+- Decoupled registration from usage
+
+### Packet Pattern
+All client-server sync uses dedicated packet classes:
+- Type-safe encoding/decoding
+- Clear data contracts
+- Single responsibility per packet
+- Consistent handling pattern
+
+### LRU Cache Pattern
+Addon models use LRU caching for:
+- Performance (avoid rebaking)
+- Memory management (evict old models)
+- Configurable size limits
+- Access-ordered eviction
+
+---
+
+## Extension Points
+
+### Adding New Addons
+1. Create model class extending `BaseAddonModel`
+2. Override body part getters (head, body, arms, legs)
+3. Optionally override `setupAnim()` for custom animations
+4. Register in `AddonInit.registerAddons()` with ID, layer, texture
+5. Add to supporter tier in `SupporterRegistry` if exclusive
+
+### Adding New Trail Types
+1. Add enum value to `TrailType` with particle and count
+2. Add to supporter tier in `SupporterRegistry` if exclusive
+3. Trail automatically works with existing rendering system
+
+### Adding New Effects
+1. Add effect ID string to `SupporterRegistry` tier
+2. Create handler class subscribing to relevant events
+3. Check for effect in `EffectsProvider` capability
+4. Implement effect logic (particles, sounds, gameplay changes)
+
+### Adding New Commands
+1. Create command class with `registerCommands()` method
+2. Use `CommandUtils` for target player resolution
+3. Register in `TwilightLib` event bus listener
+4. Use `NetworkHandler` to sync changes to clients
+
+---
+
+## Performance Considerations
+
+### Addon Model Caching
+- LRU cache prevents memory bloat from hundreds of models
+- Default 150 models cached (configurable 10-500)
+- Access-ordered eviction removes unused models first
+- No manual cleanup needed (GC handles evicted models)
+
+### Trail Rendering
+- Update frequency configurable (default 3 ticks)
+- Movement check prevents spawning when standing still
+- Horizontal velocity only (ignores jumping/falling)
+- Per-player capability check (no global iteration)
+
+### Entity Morph Caching
+- Single proxy entity per player (reused across frames)
+- Cached EntityType for dimension queries
+- Entity registry cache for command suggestions
+- Cache invalidation on registry changes
+
+### Network Optimization
+- Only sync changes, not full state every tick
+- Packet batching for multiple players
+- CompoundTag for complex data (trails)
+- Primitive sets for simple lists (addons, effects)
+
+---
+
+## Configuration
+
+All settings in `twilightlib-common.toml`:
+
+**Features:**
+- `enable_trails`, `enable_addons`, `enable_effects`, `enable_morphs` - Master toggles
+
+**Performance:**
+- `max_cached_addon_models` - LRU cache size (10-500, default 150)
+- `trail_update_frequency` - Ticks between trail updates (1-20, default 3)
+
+**Morph Physics:**
+- `base_step_height` - Player step height (0.0-2.0, default 0.6)
+- `min_step_scale` - Min step height multiplier (0.0-1.0, default 0.3)
+- `max_step_scale` - Max step height multiplier (1.0-5.0, default 2.0)
+- `eye_height_multiplier` - Eye height % of morph height (0.0-1.0, default 0.85)
+
+---
+
+## Supporter System
+
+### JSON Format (GitHub)
+```json
+{
+  "supporters": [
+    {
+      "uuid": "player-uuid-here",
+      "name": "PlayerName",
+      "tier": "gold",
+      "cosmetics": {
+        "trails": ["special_trail"],
+        "addons": ["exclusive_addon"],
+        "effects": ["rare_effect"]
+      }
+    }
+  ]
+}
+```
+
+### Tier Hierarchy
+- **Stone**: Entry tier (no cosmetics yet)
+- **Bronze**: Basic trails (hearts)
+- **Silver**: More trails (hearts, sparkles, cherry_blossom), galaxy_tail addon
+- **Gold**: All trails + exclusive effects (respawn_twilight)
+- **Platinum**: All benefits (future-proof tier)
+
+### Manual Grants
+- Stored in `cosmetics` field of JSON
+- Persist even if tier expires or changes
+- Used for gifts, event rewards, grandfathered perks
+- Combined with tier unlocks in `SupporterData.getAllTrails/Addons/Effects()`
+
+---
+
+## Common Debugging Tips
+
+### Player not morphing?
+- Check capability attached: Log in `attachEntityCaps()`
+- Check packet received: Log in `SyncMorphPacket.handle()`
+- Check entity type valid: Look for validation errors in morph command
+- Check cache: Entity might not be LivingEntity
+
+### Addons not rendering?
+- Check addon registered: `/tl addon list`
+- Check player has addon: Check capability data
+- Check model baked: Log in `getOrBakeModel()`
+- Check texture path: Ensure texture exists in assets
+
+### Trails not showing?
+- Check trail enabled: `ITrails.isTrailEnabled()`
+- Check player moving: Horizontal velocity > 0.01
+- Check update frequency: Config might be too high
+- Check particle registered: Verify in ModParticles
+
+### Supporter data not loading?
+- Check network connection: GitHub fetch might fail
+- Check JSON format: Parse errors logged
+- Check UUID matches: Use player's UUID string
+- Force refresh: Restart server or use debug command
+
+---
+
+## Testing Checklist
+
+### Morphing
+- [ ] Morph into small entity (chicken) - hitbox shrinks
+- [ ] Morph into large entity (giant) - hitbox grows
+- [ ] Morph persists through death
+- [ ] Morph syncs to other players
+- [ ] Unmorph restores normal player
+
+### Addons
+- [ ] Equip multiple addons simultaneously
+- [ ] Addons follow player animations
+- [ ] Addons persist through death
+- [ ] Addons visible to other players
+- [ ] Tail wagging animation works
+
+### Trails
+- [ ] Trail appears when moving
+- [ ] Trail stops when standing still
+- [ ] Trail toggle works
+- [ ] Trail changes by supporter tier (hearts)
+- [ ] Trail persists through death
+
+### Effects
+- [ ] Respawn effect triggers on death
+- [ ] Effect syncs to other players
+- [ ] Effect persists through logout
+
+### Commands
+- [ ] Admin commands require permission level 2
+- [ ] Player commands work without permissions
+- [ ] Tab completion shows valid options
+- [ ] Commands sync data to all clients
+- [ ] Feedback messages show correctly
+
+---
+
+## Known Limitations
+
+### Morphing
+- Only works with LivingEntity types
+- Player entity type (minecraft:player) not allowed
+- Some entities may have rendering issues (e.g., ender dragon)
+- Hitbox changes might cause clipping through blocks
+
+### Addons
+- Limited to 6 body parts (head, body, arms, legs)
+- No dynamic model part creation
+- Texture must be predefined (no runtime generation)
+- Cache eviction might cause brief lag when rebaking
+
+### Trails
+- No particle collision detection
+- Particle count fixed per trail type
+- No per-player particle limits (could lag with many players)
+- Tier-based trails require supporter service fetch
+
+### Supporter System
+- Requires GitHub access (fails if offline/blocked)
+- 1-hour cache delay before new supporters appear
+- Manual grants can't be modified in-game (requires JSON edit + restart)
+- No in-game tier management
+
+---
+
+## Future Enhancement Ideas
+
+### Gameplay
+- Morph abilities (flying as bat, water breathing as fish)
+- Morph disguise system (mobs ignore you)
+- Addon stat bonuses (configurable, balanced)
+- Trail particle effects (damage nearby mobs, heal players)
+
+### Cosmetics
+- Custom addon models from resource packs
+- Dynamic addon coloring (RGB selector)
+- Trail particle patterns (spirals, circles, waves)
+- Effect sound customization
+
+### Technical
+- Client-side morphing (no server permission needed)
+- Addon conflict detection (prevent overlapping models)
+- Performance profiler for trail rendering
+- Automatic supporter JSON validation
+
+### UX
+- GUI for cosmetic selection
+- Preview system for trying cosmetics
+- Favorites system for quick switching
+- Cosmetic presets (save/load combinations)
+
+---
+
+This guide provides a complete reference for understanding and extending the TwilightLib mod. Each class is documented with its purpose, responsibilities, and integration points, making it easy for future developers to navigate the codebase.

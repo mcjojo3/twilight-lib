@@ -2,6 +2,7 @@ package mc.sayda.twilight_lib.cosmetics;
 
 import mc.sayda.twilight_lib.capabilities.ITrails;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
+import mc.sayda.twilight_lib.config.TwilightConfig;
 import mc.sayda.twilight_lib.particle.ModParticles;
 import mc.sayda.twilight_lib.supporter.SupporterService;
 import mc.sayda.twilight_lib.supporter.SupporterData;
@@ -47,8 +48,9 @@ public class TrailRenderer {
                 return;
             }
 
-            // Don't render trails too frequently
-            if (tickCounter % 3 != 0) return;
+            // Don't render trails too frequently (configurable)
+            int updateFrequency = Math.max(1, TwilightConfig.TRAIL_UPDATE_FREQUENCY.get());
+            if (tickCounter % updateFrequency != 0) return;
 
             // Don't render trails when player is standing still
             // Check horizontal movement only (ignore Y for gravity/jumping)

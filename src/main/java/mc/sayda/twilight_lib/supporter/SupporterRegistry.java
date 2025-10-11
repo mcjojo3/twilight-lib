@@ -4,9 +4,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Registry that defines which morphs/addons/trails/effects are supporter-exclusive
+ * Registry that defines which addons/trails/effects are supporter-exclusive
  * Items listed here require supporter status to be granted via /cosmetics
- * Admins can still grant these via /twilight_lib regardless
+ * Admins can still grant these via /twilightlib regardless
+ *
+ * NOTE: Morphs are NOT part of the supporter system and are admin-only via /twilightlib morph
  */
 public class SupporterRegistry {
 
@@ -20,12 +22,15 @@ public class SupporterRegistry {
 
     public static final Set<String> SILVER_TRAILS = Set.of(
             "hearts",
+            "ash",
             "sparkles",
             "cherry_blossom"
     );
 
     public static final Set<String> GOLD_TRAILS = Set.of(
             "hearts",
+            "ash",
+            "white_ash",
             "sparkles",
             "cherry_blossom",
             "twilight",
@@ -34,6 +39,8 @@ public class SupporterRegistry {
 
     public static final Set<String> PLATINUM_TRAILS = Set.of(
             "hearts",
+            "ash",
+            "white_ash",
             "sparkles",
             "cherry_blossom",
             "twilight",
@@ -50,41 +57,14 @@ public class SupporterRegistry {
     );
 
     public static final Set<String> SILVER_ADDONS = Set.of(
-            "galaxy_tail"
+            // None yet
     );
 
     public static final Set<String> GOLD_ADDONS = Set.of(
-            "galaxy_tail",
-            "starlight_ears",
-            "halo",
-            "twilight_wings"
+            // None yet
     );
 
     public static final Set<String> PLATINUM_ADDONS = Set.of(
-            "galaxy_tail",
-            "starlight_ears",
-            "halo",
-            "twilight_wings"
-    );
-
-    // ===== MORPHS =====
-    public static final Set<String> STONE_MORPHS = Set.of(
-            // None yet - example: "minecraft:fox"
-    );
-
-    public static final Set<String> BRONZE_MORPHS = Set.of(
-            // None yet - example: "minecraft:fox"
-    );
-
-    public static final Set<String> SILVER_MORPHS = Set.of(
-            // None yet
-    );
-
-    public static final Set<String> GOLD_MORPHS = Set.of(
-            // None yet
-    );
-
-    public static final Set<String> PLATINUM_MORPHS = Set.of(
             // None yet
     );
 
@@ -113,8 +93,11 @@ public class SupporterRegistry {
      * Get all supporter trails for a given tier
      */
     public static Set<String> getTrailsForTier(String tier) {
+        if (tier == null) {
+            return Set.of();
+        }
         return switch (tier.toLowerCase()) {
-            case "stone" -> STONE_ADDONS;
+            case "stone" -> STONE_TRAILS;
             case "bronze" -> BRONZE_TRAILS;
             case "silver" -> SILVER_TRAILS;
             case "gold" -> GOLD_TRAILS;
@@ -127,6 +110,9 @@ public class SupporterRegistry {
      * Get all supporter addons for a given tier
      */
     public static Set<String> getAddonsForTier(String tier) {
+        if (tier == null) {
+            return Set.of();
+        }
         return switch (tier.toLowerCase()) {
             case "stone" -> STONE_ADDONS;
             case "bronze" -> BRONZE_ADDONS;
@@ -138,23 +124,12 @@ public class SupporterRegistry {
     }
 
     /**
-     * Get all supporter morphs for a given tier
-     */
-    public static Set<String> getMorphsForTier(String tier) {
-        return switch (tier.toLowerCase()) {
-            case "stone" -> STONE_MORPHS;
-            case "bronze" -> BRONZE_MORPHS;
-            case "silver" -> SILVER_MORPHS;
-            case "gold" -> GOLD_MORPHS;
-            case "platinum" -> PLATINUM_MORPHS;
-            default -> Set.of();
-        };
-    }
-
-    /**
      * Get all supporter effects for a given tier
      */
     public static Set<String> getEffectsForTier(String tier) {
+        if (tier == null) {
+            return Set.of();
+        }
         return switch (tier.toLowerCase()) {
             case "stone" -> STONE_EFFECTS;
             case "bronze" -> BRONZE_EFFECTS;
@@ -192,19 +167,6 @@ public class SupporterRegistry {
     }
 
     /**
-     * Get ALL supporter-exclusive morphs (across all tiers)
-     */
-    public static Set<String> getAllSupporterMorphs() {
-        Set<String> all = new HashSet<>();
-        all.addAll(STONE_MORPHS);
-        all.addAll(BRONZE_MORPHS);
-        all.addAll(SILVER_MORPHS);
-        all.addAll(GOLD_MORPHS);
-        all.addAll(PLATINUM_MORPHS);
-        return all;
-    }
-
-    /**
      * Get ALL supporter-exclusive effects (across all tiers)
      */
     public static Set<String> getAllSupporterEffects() {
@@ -229,13 +191,6 @@ public class SupporterRegistry {
      */
     public static boolean isAddonSupporterExclusive(String addonId) {
         return getAllSupporterAddons().contains(addonId);
-    }
-
-    /**
-     * Check if a morph is supporter-exclusive
-     */
-    public static boolean isMorphSupporterExclusive(String morphId) {
-        return getAllSupporterMorphs().contains(morphId);
     }
 
     /**

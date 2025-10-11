@@ -24,6 +24,9 @@ public class ModParticles {
     public static final RegistryObject<SimpleParticleType> RATVENOM =
             PARTICLE_TYPES.register("ratvenom", () -> new SimpleParticleType(false));
 
+    public static final RegistryObject<SimpleParticleType> SILENT_HONEY =
+            PARTICLE_TYPES.register("silent_honey", () -> new SimpleParticleType(false));
+
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }

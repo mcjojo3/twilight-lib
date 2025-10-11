@@ -10,7 +10,11 @@ public enum TrailType {
     SPARKLES("sparkles", ParticleTypes.WAX_ON, 3),
     CHERRY_BLOSSOM("cherry_blossom", ParticleTypes.CHERRY_LEAVES, 2),
     TWILIGHT("twilight", ParticleTypes.PORTAL, 2),
-    STARS("stars", ParticleTypes.END_ROD, 1);
+    STARS("stars", ParticleTypes.END_ROD, 1),
+    ASH("ash", ParticleTypes.ASH, 6),
+    WHITE_ASH("white_ash", ParticleTypes.WHITE_ASH, 7),
+    BUBBLES("bubbles", ParticleTypes.BUBBLE_POP, 4),
+    HONEY("honey", ModParticles.SILENT_HONEY.get(), 2);
 
     private final String id;
     private final ParticleOptions particleType; // Can be null for tier-based trails

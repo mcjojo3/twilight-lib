@@ -4,8 +4,10 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
 import mc.sayda.twilight_lib.capabilities.AddonsProvider;
+import mc.sayda.twilight_lib.commands.CommandUtils;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncAddonsPacket;
+import mc.sayda.twilight_lib.TwilightConstants;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -46,7 +48,7 @@ public class AddonCommands {
                                 .suggests(ADDON_SUGGESTIONS)
                                 .executes(ctx -> {
                                     String addonId = ctx.getArgument("addonId", String.class);
-                                    ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                    ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
                                     if (target == null) {
                                         ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                         return 0;
@@ -65,7 +67,7 @@ public class AddonCommands {
                                 .suggests(ADDON_SUGGESTIONS)
                                 .executes(ctx -> {
                                     String addonId = ctx.getArgument("addonId", String.class);
-                                    ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                    ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
                                     if (target == null) {
                                         ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                         return 0;
@@ -81,7 +83,7 @@ public class AddonCommands {
                         // addon clear [target] - clear all addons
                         .then(Commands.literal("clear")
                             .executes(ctx -> {
-                                ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
                                 if (target == null) {
                                     ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                     return 0;
@@ -97,14 +99,6 @@ public class AddonCommands {
         }
     }
 
-    private static ServerPlayer getTargetPlayer(CommandSourceStack source) {
-        try {
-            return source.getPlayerOrException();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     private static int executeEquipAddon(CommandSourceStack source, ServerPlayer target, String addonId) {
         if (!AddonRegistry.hasAddon(addonId)) {
             source.sendFailure(Component.literal("Unknown addon: " + addonId));
@@ -113,77 +107,51 @@ public class AddonCommands {
         }
 
         target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-            addons.addAddon(addonId);
-            target.getPersistentData().put("TwilightLibAddons", addons.serialize());
+            // Admin command: Force activate without ownership requirement
+            addons.setActiveAddon(addonId, true);
+            target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
             // Sync to all clients
-            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getAddons()));
-            LOGGER.debug("Changed your mind about me yet? {} equipped addon: {}", target.getGameProfile().getName(), addonId);
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
+            LOGGER.debug("Changed your mind about me yet? {} force-activated addon: {}", target.getGameProfile().getName(), addonId);
         });
 
         // Only send feedback if source is NOT the target player (admin, command block, console)
-        boolean shouldSendFeedback = false;
-        try {
-            ServerPlayer sourcePlayer = source.getPlayerOrException();
-            shouldSendFeedback = !sourcePlayer.getUUID().equals(target.getUUID());
-        } catch (Exception e) {
-            // Source is not a player (command block, console, etc.)
-            shouldSendFeedback = true;
-        }
-
-        if (shouldSendFeedback) {
-            source.sendSuccess(() -> Component.literal("Equipped addon '" + addonId + "' on " + target.getGameProfile().getName()), true);
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+            source.sendSuccess(() -> Component.literal("Force-equipped addon '" + addonId + "' on " + target.getGameProfile().getName()), true);
         }
         return 1;
     }
 
     private static int executeUnequipAddon(CommandSourceStack source, ServerPlayer target, String addonId) {
         target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-            if (addons.hasAddon(addonId)) {
-                addons.removeAddon(addonId);
-                target.getPersistentData().put("TwilightLibAddons", addons.serialize());
-                // Sync to all clients
-                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getAddons()));
-                LOGGER.debug("It's so random! {} unequipped addon: {}", target.getGameProfile().getName(), addonId);
-            }
+            // Admin command: Force deactivate regardless of ownership
+            addons.setActiveAddon(addonId, false);
+            target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
+            // Sync to all clients
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
+            LOGGER.debug("It's so random! {} force-deactivated addon: {}", target.getGameProfile().getName(), addonId);
         });
 
         // Only send feedback if source is NOT the target player (admin, command block, console)
-        boolean shouldSendFeedback = false;
-        try {
-            ServerPlayer sourcePlayer = source.getPlayerOrException();
-            shouldSendFeedback = !sourcePlayer.getUUID().equals(target.getUUID());
-        } catch (Exception e) {
-            // Source is not a player (command block, console, etc.)
-            shouldSendFeedback = true;
-        }
-
-        if (shouldSendFeedback) {
-            source.sendSuccess(() -> Component.literal("Unequipped addon '" + addonId + "' from " + target.getGameProfile().getName()), true);
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+            source.sendSuccess(() -> Component.literal("Force-unequipped addon '" + addonId + "' from " + target.getGameProfile().getName()), true);
         }
         return 1;
     }
 
     private static int executeClearAddons(CommandSourceStack source, ServerPlayer target) {
         target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-            addons.clearAddons();
-            target.getPersistentData().remove("TwilightLibAddons");
+            // Admin command: Clear all active addons
+            addons.clearActiveAddons();
+            target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
             // Sync to all clients
-            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getAddons()));
-            LOGGER.debug("Dusk and dawn are the same. Cleared all addons for {}", target.getGameProfile().getName());
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
+            LOGGER.debug("Dusk and dawn are the same. Cleared all active addons for {}", target.getGameProfile().getName());
         });
 
         // Only send feedback if source is NOT the target player (admin, command block, console)
-        boolean shouldSendFeedback = false;
-        try {
-            ServerPlayer sourcePlayer = source.getPlayerOrException();
-            shouldSendFeedback = !sourcePlayer.getUUID().equals(target.getUUID());
-        } catch (Exception e) {
-            // Source is not a player (command block, console, etc.)
-            shouldSendFeedback = true;
-        }
-
-        if (shouldSendFeedback) {
-            source.sendSuccess(() -> Component.literal("Cleared all addons from " + target.getGameProfile().getName()), true);
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+            source.sendSuccess(() -> Component.literal("Cleared all equipped addons from " + target.getGameProfile().getName()), true);
         }
         return 1;
     }

@@ -75,5 +75,6 @@ public class ClientModEvents {
         event.registerSpriteSet(ModParticles.SILVER_HEART.get(), SilverHeartParticle::provider);
         event.registerSpriteSet(ModParticles.GOLD_HEART.get(), GoldHeartParticle::provider);
         event.registerSpriteSet(ModParticles.RATVENOM.get(), RatvenomParticle::provider);
+        event.registerSpriteSet(ModParticles.SILENT_HONEY.get(), SilentHoneyParticle::provider);
     }
 }

@@ -35,19 +35,15 @@ public class BronzeHeartParticle extends TextureSheetParticle {
         this.lifetime = 10;
         this.gravity = -0.3f;
         this.hasPhysics = true;
-        this.xd = vx * 0;
-        this.yd = vy * 0;
-        this.zd = vz * 0;
+        // Hearts float in place (no initial velocity)
+        this.xd = 0;
+        this.yd = 0;
+        this.zd = 0;
         this.pickSprite(spriteSet);
     }
 
     @Override
     public ParticleRenderType getRenderType() {
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
     }
 }

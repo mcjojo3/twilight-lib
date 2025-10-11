@@ -7,11 +7,13 @@ import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.MorphProvider;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
+import mc.sayda.twilight_lib.commands.CommandUtils;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncMorphPacket;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
 import mc.sayda.twilight_lib.network.SyncEffectsPacket;
+import mc.sayda.twilight_lib.TwilightConstants;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -27,6 +29,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import org.slf4j.Logger;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -36,9 +39,10 @@ public class TwilightLibCommands {
 
     // Cache of valid living entity types to avoid creating test entities repeatedly
     // Note: Cache is invalidated on world unload to detect dynamically registered entities
-    private static final Set<ResourceLocation> VALID_LIVING_ENTITIES = new HashSet<>();
-    private static boolean cacheInitialized = false;
-    private static int cachedRegistrySize = 0;
+    // Thread-safe: Synchronized set for concurrent command access
+    private static final Set<ResourceLocation> VALID_LIVING_ENTITIES = Collections.synchronizedSet(new HashSet<>());
+    private static volatile boolean cacheInitialized = false;
+    private static volatile int cachedRegistrySize = 0;
 
     // Suggestion provider for all entity types
     private static final SuggestionProvider<CommandSourceStack> ENTITY_SUGGESTIONS = (context, builder) -> {
@@ -104,6 +108,7 @@ public class TwilightLibCommands {
                 }
             } catch (Exception e) {
                 // Ignore entities that fail to create
+                LOGGER.trace("Failed to create test entity for {}: {}", rl, e.getMessage());
             } finally {
                 // Always discard test entity to prevent leak
                 if (testEntity != null) {
@@ -127,7 +132,7 @@ public class TwilightLibCommands {
                                     .then(Commands.argument("entity", ResourceLocationArgument.id())
                                             .suggests(ENTITY_SUGGESTIONS)
                                             .executes(ctx -> {
-                                                ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                                ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
                                                 if (target == null) {
                                                     ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                                     return 0;
@@ -143,7 +148,7 @@ public class TwilightLibCommands {
                             // unmorph - targets executor
                             .then(Commands.literal("unmorph")
                                     .executes(ctx -> {
-                                        ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                        ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
                                         if (target == null) {
                                             ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                             return 0;
@@ -164,7 +169,7 @@ public class TwilightLibCommands {
                                             .then(Commands.argument("trail", StringArgumentType.word())
                                                     .suggests(TRAIL_SUGGESTIONS)
                                                     .executes(ctx -> {
-                                                        ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                                        ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
                                                         if (target == null) {
                                                             ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                                             return 0;
@@ -180,7 +185,7 @@ public class TwilightLibCommands {
                                     // trail toggle - targets executor
                                     .then(Commands.literal("toggle")
                                             .executes(ctx -> {
-                                                ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                                ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
                                                 if (target == null) {
                                                     ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                                     return 0;
@@ -204,7 +209,7 @@ public class TwilightLibCommands {
                                             .then(Commands.argument("effect", StringArgumentType.word())
                                                     .suggests(EFFECT_SUGGESTIONS)
                                                     .executes(ctx -> {
-                                                        ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                                        ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
                                                         if (target == null) {
                                                             ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                                             return 0;
@@ -220,7 +225,7 @@ public class TwilightLibCommands {
                                     // effect toggle - targets executor
                                     .then(Commands.literal("toggle")
                                             .executes(ctx -> {
-                                                ServerPlayer target = getTargetPlayer(ctx.getSource());
+                                                ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
                                                 if (target == null) {
                                                     ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                                     return 0;
@@ -238,15 +243,10 @@ public class TwilightLibCommands {
                                             .executes(ctx -> {
                                                 return executeListEffects(ctx.getSource());
                                             })))
+                            // reload - refresh supporter data and caches
+                            .then(Commands.literal("reload")
+                                    .executes(ctx -> executeReload(ctx.getSource())))
             );
-        }
-    }
-
-    private static ServerPlayer getTargetPlayer(CommandSourceStack source) {
-        try {
-            return source.getPlayerOrException();
-        } catch (Exception e) {
-            return null;
         }
     }
 
@@ -288,9 +288,9 @@ public class TwilightLibCommands {
 
             // Save to persistent NBT for death persistence
             if (morph.isPresent()) {
-                target.getPersistentData().put("TwilightLibMorph", m.serialize());
+                target.getPersistentData().put(TwilightConstants.NBT_MORPH, m.serialize());
             } else {
-                target.getPersistentData().remove("TwilightLibMorph");
+                target.getPersistentData().remove(TwilightConstants.NBT_MORPH);
                 LOGGER.debug("Paradigm shift time! {} has been unmorphed", target.getGameProfile().getName());
             }
 
@@ -299,16 +299,7 @@ public class TwilightLibCommands {
         });
 
         // Only send feedback if source is NOT the target player (admin, command block, console)
-        boolean shouldSendFeedback = false;
-        try {
-            ServerPlayer sourcePlayer = source.getPlayerOrException();
-            shouldSendFeedback = !sourcePlayer.getUUID().equals(target.getUUID());
-        } catch (Exception e) {
-            // Source is not a player (command block, console, etc.)
-            shouldSendFeedback = true;
-        }
-
-        if (shouldSendFeedback) {
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             if (morph.isPresent()) {
                 source.sendSuccess(() -> Component.literal("Morphed " + target.getGameProfile().getName() + " -> " + morph.get()), true);
             } else {
@@ -333,15 +324,14 @@ public class TwilightLibCommands {
             trails.setTrailEnabled(true);
 
             // Save to persistent NBT
-            target.getPersistentData().put("TwilightLibTrails", trails.serialize());
+            target.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
 
             // Sync to all clients
             NetworkHandler.sendToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
         });
 
         // Send feedback
-        boolean shouldSendFeedback = shouldSendFeedbackToSource(source, target);
-        if (shouldSendFeedback) {
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             source.sendSuccess(() -> Component.literal("Set trail to '" + trailId + "' for " + target.getGameProfile().getName()), true);
         }
 
@@ -374,7 +364,7 @@ public class TwilightLibCommands {
             trails.setTrailEnabled(newState[0]);
 
             // Save to persistent NBT
-            target.getPersistentData().put("TwilightLibTrails", trails.serialize());
+            target.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
 
             // Sync to all clients
             NetworkHandler.sendToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
@@ -397,15 +387,14 @@ public class TwilightLibCommands {
             effects.addEffect(effectId);
 
             // Save to persistent NBT
-            target.getPersistentData().put("TwilightLibEffects", effects.serialize());
+            target.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
 
             // Sync to all clients
             NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(target.getUUID(), effects.getEffects()));
         });
 
         // Send feedback
-        boolean shouldSendFeedback = shouldSendFeedbackToSource(source, target);
-        if (shouldSendFeedback) {
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             source.sendSuccess(() -> Component.literal("Added effect '" + effectId + "' to " + target.getGameProfile().getName()), true);
         }
 
@@ -423,13 +412,41 @@ public class TwilightLibCommands {
         return 1;
     }
 
-    private static boolean shouldSendFeedbackToSource(CommandSourceStack source, ServerPlayer target) {
+    private static int executeReload(CommandSourceStack source) {
+        source.sendSuccess(() -> Component.literal("Reloading Twilight Lib..."), true);
+        LOGGER.info("Admin {} initiated reload command", source.getTextName());
+
         try {
-            ServerPlayer sourcePlayer = source.getPlayerOrException();
-            return !sourcePlayer.getUUID().equals(target.getUUID());
+            // Reload supporter data from GitHub
+            source.sendSuccess(() -> Component.literal("Fetching supporter data from GitHub..."), false);
+            mc.sayda.twilight_lib.supporter.SupporterService.fetchSupporters().thenRun(() -> {
+                source.sendSuccess(() -> Component.literal("✓ Supporter data reloaded successfully!"), false);
+                LOGGER.info("Supporter data reloaded via command");
+            }).exceptionally(ex -> {
+                source.sendFailure(Component.literal("✗ Failed to reload supporter data: " + ex.getMessage()));
+                LOGGER.error("Failed to reload supporter data via command: {}", ex.getMessage());
+                return null;
+            });
+
+            // Clear and reinitialize entity cache
+            source.sendSuccess(() -> Component.literal("Refreshing entity cache..."), false);
+            synchronized (VALID_LIVING_ENTITIES) {
+                VALID_LIVING_ENTITIES.clear();
+                cacheInitialized = false;
+                cachedRegistrySize = 0;
+            }
+            if (source.getLevel() != null) {
+                initializeEntityCache(source.getLevel());
+                source.sendSuccess(() -> Component.literal("✓ Entity cache refreshed with " + VALID_LIVING_ENTITIES.size() + " living entities"), false);
+                LOGGER.info("Entity cache refreshed via command");
+            }
+
+            source.sendSuccess(() -> Component.literal("Twilight Lib reload complete!"), true);
+            return 1;
         } catch (Exception e) {
-            // Source is not a player (command block, console, etc.)
-            return true;
+            source.sendFailure(Component.literal("Reload failed: " + e.getMessage()));
+            LOGGER.error("Reload command failed: {}", e.getMessage(), e);
+            return 0;
         }
     }
 }

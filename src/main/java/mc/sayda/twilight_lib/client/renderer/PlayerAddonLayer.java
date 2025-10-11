@@ -6,6 +6,7 @@ import mc.sayda.twilight_lib.addon.AddonModelInfo;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
 import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.client.model.IAddonModel;
+import mc.sayda.twilight_lib.config.TwilightConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.PlayerModel;
@@ -22,26 +23,20 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
-    /**
-     * Maximum number of baked addon models to cache before LRU eviction.
-     * Current addon count: 98 variants (7 colors × 14 types)
-     * Buffer allows for: future addon expansion + concurrent player rendering
-     * Models are pure Java objects (no native resources), so eviction is safe without explicit cleanup.
-     */
-    private static final int MAX_CACHE_SIZE = 150;
 
     /**
      * LRU cache for baked addon models.
      * Key: addon ID (e.g., "kitsune_ears_white")
      * Value: Baked EntityModel & IAddonModel instance
      * Access-ordered to evict least recently used models when capacity is exceeded.
+     * Max size is configurable via TwilightConfig.MAX_CACHED_ADDON_MODELS.
      */
     private final Map<String, Object> bakedModels = new LinkedHashMap<String, Object>(16, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<String, Object> eldest) {
             // No explicit cleanup needed - models don't hold native GPU resources
             // Minecraft's resource management handles texture/geometry lifecycle
-            return size() > MAX_CACHE_SIZE;
+            return size() > TwilightConfig.MAX_CACHED_ADDON_MODELS.get();
         }
     };
 
@@ -58,8 +53,8 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             PlayerModel<AbstractClientPlayer> playerModel = this.getParentModel();
 
-            // Render each equipped addon
-            for (String addonId : addons.getAddons()) {
+            // Render each active addon
+            for (String addonId : addons.getActiveAddons()) {
                 AddonRegistry.getAddon(addonId).ifPresent(addonInfo -> {
                     // Get or bake the model
                     var addonModel = getOrBakeModel(addonId, addonInfo);

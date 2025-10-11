@@ -20,15 +20,6 @@ public class AddonInit {
     public static void registerAddons() {
         LOGGER.info("I should come here every millennium! Registering built-in addons...");
 
-        // Register player tail addon
-        /*AddonRegistry.registerAddon(
-            "player_tail",
-            PlayerTailModel.LAYER_LOCATION,
-            PlayerTailModel::createBodyLayer,
-            PlayerTailModel::new,
-            new ResourceLocation(TwilightLib.MODID, "textures/addon/player_tail.png")
-        );*/
-
         AddonRegistry.registerAddon(
                 "tiara",                    // ID used in commands
                 TiaraModel.LAYER_LOCATION,      // Your model's LAYER_LOCATION

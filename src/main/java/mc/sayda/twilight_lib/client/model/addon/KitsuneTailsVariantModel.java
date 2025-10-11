@@ -1,5 +1,6 @@
 package mc.sayda.twilight_lib.client.model.addon;
 
+import mc.sayda.twilight_lib.TwilightConstants;
 import mc.sayda.twilight_lib.TwilightLib;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;

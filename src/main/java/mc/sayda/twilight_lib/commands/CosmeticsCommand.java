@@ -3,16 +3,20 @@ package mc.sayda.twilight_lib.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
 import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
+import mc.sayda.twilight_lib.network.SyncAddonsPacket;
 import mc.sayda.twilight_lib.supporter.SupporterRegistry;
+import mc.sayda.twilight_lib.TwilightConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -26,6 +30,39 @@ import java.util.Set;
  */
 public class CosmeticsCommand {
 
+    // Suggestion provider that shows only trails the player has access to
+    private static final SuggestionProvider<CommandSourceStack> PLAYER_TRAILS_SUGGESTIONS = (context, builder) -> {
+        if (context.getSource().getEntity() instanceof ServerPlayer player) {
+            player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+                Set<String> playerTrails = trails.getTrails();
+                SharedSuggestionProvider.suggest(playerTrails.stream(), builder);
+            });
+        }
+        return builder.buildFuture();
+    };
+
+    // Suggestion provider that shows only addons the player has access to
+    private static final SuggestionProvider<CommandSourceStack> PLAYER_ADDONS_SUGGESTIONS = (context, builder) -> {
+        if (context.getSource().getEntity() instanceof ServerPlayer player) {
+            player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+                Set<String> playerAddons = addons.getAddons();
+                SharedSuggestionProvider.suggest(playerAddons.stream(), builder);
+            });
+        }
+        return builder.buildFuture();
+    };
+
+    // Suggestion provider that shows only effects the player has access to
+    private static final SuggestionProvider<CommandSourceStack> PLAYER_EFFECTS_SUGGESTIONS = (context, builder) -> {
+        if (context.getSource().getEntity() instanceof ServerPlayer player) {
+            player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+                Set<String> playerEffects = effects.getEffects();
+                SharedSuggestionProvider.suggest(playerEffects.stream(), builder);
+            });
+        }
+        return builder.buildFuture();
+    };
+
     public static void registerCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
 
@@ -33,6 +70,7 @@ public class CosmeticsCommand {
             .then(Commands.literal("trail")
                 .then(Commands.literal("set")
                     .then(Commands.argument("type", StringArgumentType.word())
+                        .suggests(PLAYER_TRAILS_SUGGESTIONS)
                         .executes(CosmeticsCommand::setTrail)
                     )
                 )
@@ -44,6 +82,18 @@ public class CosmeticsCommand {
                 )
             )
             .then(Commands.literal("addons")
+                .then(Commands.literal("equip")
+                    .then(Commands.argument("addon", StringArgumentType.word())
+                        .suggests(PLAYER_ADDONS_SUGGESTIONS)
+                        .executes(CosmeticsCommand::equipAddon)
+                    )
+                )
+                .then(Commands.literal("unequip")
+                    .then(Commands.argument("addon", StringArgumentType.word())
+                        .suggests(PLAYER_ADDONS_SUGGESTIONS)
+                        .executes(CosmeticsCommand::unequipAddon)
+                    )
+                )
                 .then(Commands.literal("list")
                     .executes(CosmeticsCommand::listAddons)
                 )
@@ -51,6 +101,7 @@ public class CosmeticsCommand {
             .then(Commands.literal("effects")
                 .then(Commands.literal("set")
                     .then(Commands.argument("type", StringArgumentType.word())
+                        .suggests(PLAYER_EFFECTS_SUGGESTIONS)
                         .executes(CosmeticsCommand::setEffect)
                     )
                 )
@@ -92,8 +143,6 @@ public class CosmeticsCommand {
 
             player.sendSystemMessage(Component.literal("✨ Trail set to: " + trailId)
                 .withStyle(ChatFormatting.GREEN));
-            //player.sendSystemMessage(Component.literal("💜 Cosmetic Only - No Gameplay Advantage")
-            //    .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         });
 
         return 1;
@@ -462,8 +511,80 @@ public class CosmeticsCommand {
         player.sendSystemMessage(Component.literal("💜 All cosmetics are purely visual!")
             .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         player.sendSystemMessage(Component.literal(""));
-        //player.sendSystemMessage(Component.literal("═══════════════════════════")
-            //.withStyle(ChatFormatting.LIGHT_PURPLE));
+
+        return 1;
+    }
+
+    private static int equipAddon(CommandContext<CommandSourceStack> ctx) {
+        if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
+            return 0;
+        }
+
+        String addonId = StringArgumentType.getString(ctx, "addon");
+
+        player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+            // Check if player has access to this addon
+            if (!addons.hasAddon(addonId)) {
+                player.sendSystemMessage(Component.literal("❌ You don't have access to that addon!")
+                    .withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal("Use /cosmetics addons list to see available addons")
+                    .withStyle(ChatFormatting.GRAY));
+                return;
+            }
+
+            // Check if already active
+            if (addons.isAddonActive(addonId)) {
+                player.sendSystemMessage(Component.literal("⚠️ Addon '" + addonId + "' is already active!")
+                    .withStyle(ChatFormatting.YELLOW));
+                return;
+            }
+
+            // Activate the addon
+            addons.setActiveAddon(addonId, true);
+            player.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
+
+            // Sync to all clients
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
+
+            player.sendSystemMessage(Component.literal("✅ Equipped addon: " + addonId)
+                .withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("You have " + addons.getActiveAddons().size() + " addon(s) equipped")
+                .withStyle(ChatFormatting.GRAY));
+        });
+
+        return 1;
+    }
+
+    private static int unequipAddon(CommandContext<CommandSourceStack> ctx) {
+        if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
+            return 0;
+        }
+
+        String addonId = StringArgumentType.getString(ctx, "addon");
+
+        player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+            // Check if addon is active
+            if (!addons.isAddonActive(addonId)) {
+                player.sendSystemMessage(Component.literal("❌ Addon '" + addonId + "' is not equipped!")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            // Deactivate the addon
+            addons.setActiveAddon(addonId, false);
+            player.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
+
+            // Sync to all clients
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
+
+            player.sendSystemMessage(Component.literal("✅ Unequipped addon: " + addonId)
+                .withStyle(ChatFormatting.GREEN));
+            int remaining = addons.getActiveAddons().size();
+            if (remaining > 0) {
+                player.sendSystemMessage(Component.literal("You have " + remaining + " addon(s) still equipped")
+                    .withStyle(ChatFormatting.GRAY));
+            }
+        });
 
         return 1;
     }

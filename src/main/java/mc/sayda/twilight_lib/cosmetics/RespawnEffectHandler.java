@@ -1,5 +1,6 @@
 package mc.sayda.twilight_lib.cosmetics;
 
+import mc.sayda.twilight_lib.TwilightConstants;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -39,10 +40,10 @@ public class RespawnEffectHandler {
 
         // Spawn a beautiful twilight burst
         // Purple and blue particles spiraling upward
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < TwilightConstants.RespawnEffect.TWILIGHT_PARTICLE_COUNT; i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
-            double radius = RANDOM.nextDouble() * 2.0;
-            double height = RANDOM.nextDouble() * 3.0;
+            double radius = RANDOM.nextDouble() * TwilightConstants.RespawnEffect.MAX_RADIUS;
+            double height = RANDOM.nextDouble() * TwilightConstants.RespawnEffect.MAX_HEIGHT;
 
             double offsetX = Math.cos(angle) * radius;
             double offsetZ = Math.sin(angle) * radius;
@@ -54,9 +55,9 @@ public class RespawnEffectHandler {
                 pos.x + offsetX,
                 pos.y + offsetY,
                 pos.z + offsetZ,
-                (RANDOM.nextDouble() - 0.5) * 0.2,
-                0.2,
-                (RANDOM.nextDouble() - 0.5) * 0.2
+                (RANDOM.nextDouble() - 0.5) * TwilightConstants.RespawnEffect.PARTICLE_VELOCITY_HORIZONTAL,
+                TwilightConstants.RespawnEffect.PARTICLE_VELOCITY_HORIZONTAL,
+                (RANDOM.nextDouble() - 0.5) * TwilightConstants.RespawnEffect.PARTICLE_VELOCITY_HORIZONTAL
             );
 
             // Blue portal particles
@@ -66,18 +67,18 @@ public class RespawnEffectHandler {
                     pos.x + offsetX,
                     pos.y + offsetY,
                     pos.z + offsetZ,
-                    (RANDOM.nextDouble() - 0.5) * 0.3,
-                    0.3,
-                    (RANDOM.nextDouble() - 0.5) * 0.3
+                    (RANDOM.nextDouble() - 0.5) * (TwilightConstants.RespawnEffect.PARTICLE_VELOCITY_HORIZONTAL * 1.5),
+                    TwilightConstants.RespawnEffect.PARTICLE_VELOCITY_HORIZONTAL * 1.5,
+                    (RANDOM.nextDouble() - 0.5) * (TwilightConstants.RespawnEffect.PARTICLE_VELOCITY_HORIZONTAL * 1.5)
                 );
             }
         }
 
         // Add some soul particles at the center
-        for (int i = 0; i < 20; i++) {
-            double offsetX = (RANDOM.nextDouble() - 0.5) * 0.5;
-            double offsetY = RANDOM.nextDouble() * 2.0;
-            double offsetZ = (RANDOM.nextDouble() - 0.5) * 0.5;
+        for (int i = 0; i < TwilightConstants.RespawnEffect.SOUL_PARTICLE_COUNT; i++) {
+            double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.RespawnEffect.CENTER_SPAWN_RADIUS;
+            double offsetY = RANDOM.nextDouble() * TwilightConstants.RespawnEffect.MAX_RADIUS;
+            double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.RespawnEffect.CENTER_SPAWN_RADIUS;
 
             player.level().addParticle(
                 ParticleTypes.SOUL,
@@ -85,7 +86,7 @@ public class RespawnEffectHandler {
                 pos.y + offsetY,
                 pos.z + offsetZ,
                 0,
-                0.1,
+                TwilightConstants.RespawnEffect.PARTICLE_VELOCITY_VERTICAL,
                 0
             );
         }

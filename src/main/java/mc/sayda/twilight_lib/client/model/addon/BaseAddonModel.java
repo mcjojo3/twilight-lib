@@ -39,18 +39,7 @@ public abstract class BaseAddonModel<T extends Entity> extends EntityModel<T> im
     public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
         // Base animation is handled by syncing with player model parts in PlayerAddonLayer
         // This runs AFTER the sync, so player animations take priority
-
-        // TODO: Add custom idle animations here (e.g., wagging tail, flapping wings)
-        // Example for tail wagging:
-        // if (body != null) {
-        //     body.zRot += Mth.cos(ageInTicks * 0.2F) * 0.1F;  // Note the += to preserve player movement
-        // }
-
-        // Example for wing flapping:
-        // if (rightArm != null && leftArm != null) {
-        //     rightArm.zRot += Mth.cos(ageInTicks * 0.4F) * 0.3F;
-        //     leftArm.zRot += -Mth.cos(ageInTicks * 0.4F) * 0.3F;
-        // }
+        // Override this method in your addon model to add custom idle animations (e.g., wagging tail, flapping wings)
     }
 
     @Override

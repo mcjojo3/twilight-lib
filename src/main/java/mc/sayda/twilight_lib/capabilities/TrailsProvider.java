@@ -5,13 +5,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.INBTSerializable;
+import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class TrailsProvider implements ICapabilityProvider, INBTSerializable<CompoundTag> {
+public class TrailsProvider implements ICapabilitySerializable<CompoundTag> {
 
     public static final Capability<ITrails> TRAILS_CAP = CapabilityManager.get(new CapabilityToken<>() {});
 

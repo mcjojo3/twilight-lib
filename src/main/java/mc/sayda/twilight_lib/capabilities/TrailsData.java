@@ -26,6 +26,10 @@ public class TrailsData implements ITrails {
     @Override
     public void removeTrail(String trailId) {
         trails.remove(trailId);
+        // Clear active trail if the removed trail was active
+        if (trailId != null && trailId.equals(activeTrail)) {
+            activeTrail = null;
+        }
     }
 
     @Override
@@ -36,6 +40,8 @@ public class TrailsData implements ITrails {
     @Override
     public void clearTrails() {
         trails.clear();
+        // Clear active trail when clearing all trails
+        activeTrail = null;
     }
 
     @Override
@@ -48,6 +54,11 @@ public class TrailsData implements ITrails {
         if (trail == null || trails.contains(trail)) {
             this.activeTrail = trail;
         }
+    }
+
+    @Override
+    public boolean isTrailActive(String trailId) {
+        return trailId != null && trailId.equals(activeTrail) && trailEnabled;
     }
 
     @Override
@@ -81,6 +92,8 @@ public class TrailsData implements ITrails {
     @Override
     public void deserialize(CompoundTag tag) {
         trails.clear();
+        activeTrail = null;  // Reset to null before loading
+
         if (tag.contains("Trails", Tag.TAG_LIST)) {
             ListTag trailsList = tag.getList("Trails", Tag.TAG_STRING);
             for (int i = 0; i < trailsList.size(); i++) {
@@ -91,6 +104,7 @@ public class TrailsData implements ITrails {
         if (tag.contains("ActiveTrail")) {
             activeTrail = tag.getString("ActiveTrail");
         }
-        trailEnabled = tag.getBoolean("TrailEnabled");
+
+        trailEnabled = !tag.contains("TrailEnabled") || tag.getBoolean("TrailEnabled");
     }
 }

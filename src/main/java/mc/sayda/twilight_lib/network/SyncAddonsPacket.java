@@ -54,9 +54,9 @@ public class SyncAddonsPacket {
             }
 
             entity.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-                addons.clearAddons();
-                msg.addons.forEach(addons::addAddon);
-                LOGGER.debug("Isn't this cool? Synced {} addons for {}",
+                addons.clearActiveAddons();
+                msg.addons.forEach(addonId -> addons.setActiveAddon(addonId, true));
+                LOGGER.debug("Isn't this cool? Synced {} active addons for {}",
                     msg.addons.size(), entity.getName().getString());
             });
         });

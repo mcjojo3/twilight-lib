@@ -14,6 +14,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Service that fetches and caches supporter data from GitHub
@@ -26,7 +27,7 @@ public class SupporterService {
 
     private static final Map<String, SupporterData> supporterCache = new ConcurrentHashMap<>();
     private static long lastFetchTime = 0;
-    private static boolean fetchInProgress = false;
+    private static final AtomicBoolean fetchInProgress = new AtomicBoolean(false);
 
     /**
      * Fetch supporters list from GitHub (async, cached)
@@ -39,19 +40,18 @@ public class SupporterService {
             return CompletableFuture.completedFuture(null);
         }
 
-        // Prevent duplicate fetches
-        if (fetchInProgress) {
+        // Prevent duplicate fetches with atomic compare-and-set
+        if (!fetchInProgress.compareAndSet(false, true)) {
             LOGGER.debug("Fetch already in progress, skipping");
             return CompletableFuture.completedFuture(null);
         }
 
-        fetchInProgress = true;
-
         return CompletableFuture.runAsync(() -> {
+            HttpURLConnection conn = null;
             try {
                 LOGGER.info("Fetching supporter list from GitHub...");
                 URL url = new URL(SUPPORTERS_URL);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
@@ -59,25 +59,27 @@ public class SupporterService {
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode == 200) {
-                    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    StringBuilder content = new StringBuilder();
-                    String line;
-                    while ((line = in.readLine()) != null) {
-                        content.append(line);
-                    }
-                    in.close();
+                    try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                        StringBuilder content = new StringBuilder();
+                        String line;
+                        while ((line = in.readLine()) != null) {
+                            content.append(line);
+                        }
 
-                    parseSupportersJson(content.toString());
-                    lastFetchTime = System.currentTimeMillis();
-                    LOGGER.info("Successfully fetched {} supporters! Thank you for your support! 💜", supporterCache.size());
+                        parseSupportersJson(content.toString());
+                        lastFetchTime = System.currentTimeMillis();
+                        LOGGER.info("Successfully fetched {} supporters! Thank you for your support! 💜", supporterCache.size());
+                    }
                 } else {
                     LOGGER.warn("Failed to fetch supporters list. Response code: {}", responseCode);
                 }
-                conn.disconnect();
             } catch (Exception e) {
                 LOGGER.error("Error fetching supporters list: {}", e.getMessage());
             } finally {
-                fetchInProgress = false;
+                if (conn != null) {
+                    conn.disconnect();
+                }
+                fetchInProgress.set(false);
             }
         });
     }

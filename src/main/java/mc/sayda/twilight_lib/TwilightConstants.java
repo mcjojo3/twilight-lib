@@ -33,4 +33,12 @@ public class TwilightConstants {
         public static final double PARTICLE_VELOCITY_VERTICAL = 0.1;
         public static final double CENTER_SPAWN_RADIUS = 0.5;
     }
+
+    // Trail Rendering Parameters
+    public static final class Trail {
+        public static final double MIN_HORIZONTAL_SPEED = 0.01;
+        public static final double FEET_OFFSET_Y = 0.1;
+        public static final double PARTICLE_SPREAD_HORIZONTAL = 0.4;
+        public static final double PARTICLE_SPREAD_VERTICAL = 0.3;
+    }
 }

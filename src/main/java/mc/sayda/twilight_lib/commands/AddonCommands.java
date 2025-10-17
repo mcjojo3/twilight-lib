@@ -102,7 +102,7 @@ public class AddonCommands {
     private static int executeEquipAddon(CommandSourceStack source, ServerPlayer target, String addonId) {
         if (!AddonRegistry.hasAddon(addonId)) {
             source.sendFailure(Component.literal("Unknown addon: " + addonId));
-            LOGGER.warn("There is another reality inside all of us. Maybe not this addon though: {}", addonId);
+            LOGGER.warn("Or, what. Unknown addon requested: {}", addonId);
             return 0;
         }
 
@@ -112,12 +112,12 @@ public class AddonCommands {
             target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
             // Sync to all clients
             NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
-            LOGGER.debug("Changed your mind about me yet? {} force-activated addon: {}", target.getGameProfile().getName(), addonId);
+            LOGGER.debug("Changed your mind about me yet? {} activated addon: {}", target.getGameProfile().getName(), addonId);
         });
 
         // Only send feedback if source is NOT the target player (admin, command block, console)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
-            source.sendSuccess(() -> Component.literal("Force-equipped addon '" + addonId + "' on " + target.getGameProfile().getName()), true);
+            source.sendSuccess(() -> Component.literal("Equipped addon '" + addonId + "' on " + target.getGameProfile().getName()), true);
         }
         return 1;
     }
@@ -129,12 +129,12 @@ public class AddonCommands {
             target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
             // Sync to all clients
             NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
-            LOGGER.debug("It's so random! {} force-deactivated addon: {}", target.getGameProfile().getName(), addonId);
+            LOGGER.debug("It's so random! {} deactivated addon: {}", target.getGameProfile().getName(), addonId);
         });
 
         // Only send feedback if source is NOT the target player (admin, command block, console)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
-            source.sendSuccess(() -> Component.literal("Force-unequipped addon '" + addonId + "' from " + target.getGameProfile().getName()), true);
+            source.sendSuccess(() -> Component.literal("Unequipped addon '" + addonId + "' from " + target.getGameProfile().getName()), true);
         }
         return 1;
     }

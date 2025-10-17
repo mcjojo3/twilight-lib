@@ -49,6 +49,11 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                        float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks,
                        float netHeadYaw, float headPitch) {
 
+        // Don't render addons for invisible players
+        if (player.isInvisible()) {
+            return;
+        }
+
         // Get player's equipped addons
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             PlayerModel<AbstractClientPlayer> playerModel = this.getParentModel();

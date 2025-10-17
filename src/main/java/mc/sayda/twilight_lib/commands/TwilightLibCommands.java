@@ -14,6 +14,7 @@ import mc.sayda.twilight_lib.network.SyncMorphPacket;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
 import mc.sayda.twilight_lib.network.SyncEffectsPacket;
 import mc.sayda.twilight_lib.TwilightConstants;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -76,7 +77,7 @@ public class TwilightLibCommands {
     private static boolean shouldRefreshCache(net.minecraft.world.level.Level level) {
         int currentSize = BuiltInRegistries.ENTITY_TYPE.size();
         if (currentSize != cachedRegistrySize) {
-            LOGGER.debug("Every system has a weakness. Entity registry changed: {} -> {}", cachedRegistrySize, currentSize);
+            LOGGER.debug("Do not look into the eyes of a god, or fly into its ears. Entity registry changed: {} -> {}", cachedRegistrySize, currentSize);
             return true;
         }
         return false;
@@ -86,39 +87,46 @@ public class TwilightLibCommands {
      * Initialize cache of valid living entity types.
      * Called once on first command suggestion to avoid creating test entities on every keystroke.
      * Automatically invalidates and refreshes if registry size changes.
+     * Thread-safe with double-check locking pattern.
      */
-    private static void initializeEntityCache(net.minecraft.world.level.Level level) {
-        // Clear cache if refreshing
-        if (cacheInitialized) {
-            VALID_LIVING_ENTITIES.clear();
-            cacheInitialized = false;
+    private static synchronized void initializeEntityCache(net.minecraft.world.level.Level level) {
+        // Double-check pattern to avoid repeated initialization
+        if (cacheInitialized && cachedRegistrySize == BuiltInRegistries.ENTITY_TYPE.size()) {
+            return;
         }
 
-        LOGGER.debug("Let's de-encrypt this whole reality! Initializing entity type cache...");
-        for (ResourceLocation rl : BuiltInRegistries.ENTITY_TYPE.keySet()) {
-            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(rl);
-            if (type == null || type == EntityType.PLAYER) continue;
+        synchronized (VALID_LIVING_ENTITIES) {
+            // Clear cache if refreshing
+            if (cacheInitialized) {
+                VALID_LIVING_ENTITIES.clear();
+            }
 
-            // Create test entity with proper cleanup
-            net.minecraft.world.entity.Entity testEntity = null;
-            try {
-                testEntity = type.create(level);
-                if (testEntity instanceof LivingEntity) {
-                    VALID_LIVING_ENTITIES.add(rl);
-                }
-            } catch (Exception e) {
-                // Ignore entities that fail to create
-                LOGGER.trace("Failed to create test entity for {}: {}", rl, e.getMessage());
-            } finally {
-                // Always discard test entity to prevent leak
-                if (testEntity != null) {
-                    testEntity.discard();
+            LOGGER.debug("There are holes in reality. And... in donuts. Initializing entity type cache...");
+            for (ResourceLocation rl : BuiltInRegistries.ENTITY_TYPE.keySet()) {
+                EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(rl);
+                if (type == null || type == EntityType.PLAYER) continue;
+
+                // Create test entity with proper cleanup
+                net.minecraft.world.entity.Entity testEntity = null;
+                try {
+                    testEntity = type.create(level);
+                    if (testEntity instanceof LivingEntity) {
+                        VALID_LIVING_ENTITIES.add(rl);
+                    }
+                } catch (Exception e) {
+                    // Ignore entities that fail to create
+                    LOGGER.trace("Failed to create test entity for {}: {}", rl, e.getMessage());
+                } finally {
+                    // Always discard test entity to prevent leak
+                    if (testEntity != null) {
+                        testEntity.discard();
+                    }
                 }
             }
+            cachedRegistrySize = BuiltInRegistries.ENTITY_TYPE.size();
+            cacheInitialized = true;
+            LOGGER.debug("This should be fun. Fun~! Entity type cache initialized with {} living entities", VALID_LIVING_ENTITIES.size());
         }
-        cachedRegistrySize = BuiltInRegistries.ENTITY_TYPE.size();
-        cacheInitialized = true;
-        LOGGER.debug("Okay, we're in! Entity type cache initialized with {} living entities", VALID_LIVING_ENTITIES.size());
     }
 
     public static void registerCommands(RegisterCommandsEvent evt) {
@@ -203,9 +211,9 @@ public class TwilightLibCommands {
                                             .executes(ctx -> {
                                                 return executeListTrails(ctx.getSource(), null);
                                             })))
-                            // effect set <effect> - targets executor
-                            .then(Commands.literal("effect")
-                                    .then(Commands.literal("set")
+                            // effects equip <effect> - targets executor
+                            .then(Commands.literal("effects")
+                                    .then(Commands.literal("equip")
                                             .then(Commands.argument("effect", StringArgumentType.word())
                                                     .suggests(EFFECT_SUGGESTIONS)
                                                     .executes(ctx -> {
@@ -214,31 +222,33 @@ public class TwilightLibCommands {
                                                             ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                                             return 0;
                                                         }
-                                                        return executeSetEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
+                                                        return executeEquipEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
                                                     })
-                                                    // effect set <effect> <target> - targets specific player
+                                                    // effects equip <effect> <target> - targets specific player
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
-                                                                return executeSetEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
+                                                                return executeEquipEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
                                                             }))))
-                                    // effect toggle - targets executor
-                                    .then(Commands.literal("toggle")
-                                            .executes(ctx -> {
-                                                ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
-                                                if (target == null) {
-                                                    ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
-                                                    return 0;
-                                                }
-                                                return executeToggleEffect(ctx.getSource(), target);
-                                            })
-                                            // effect toggle <target> - targets specific player
-                                            .then(Commands.argument("target", EntityArgument.player())
+                                    // effects unequip <effect> - targets executor
+                                    .then(Commands.literal("unequip")
+                                            .then(Commands.argument("effect", StringArgumentType.word())
+                                                    .suggests(EFFECT_SUGGESTIONS)
                                                     .executes(ctx -> {
-                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
-                                                        return executeToggleEffect(ctx.getSource(), target);
-                                                    })))
-                                    // effect list
+                                                        ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
+                                                        if (target == null) {
+                                                            ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                            return 0;
+                                                        }
+                                                        return executeUnequipEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
+                                                    })
+                                                    // effects unequip <effect> <target> - targets specific player
+                                                    .then(Commands.argument("target", EntityArgument.player())
+                                                            .executes(ctx -> {
+                                                                ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                return executeUnequipEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
+                                                            }))))
+                                    // effects list
                                     .then(Commands.literal("list")
                                             .executes(ctx -> {
                                                 return executeListEffects(ctx.getSource());
@@ -267,13 +277,17 @@ public class TwilightLibCommands {
             return 0;
         }
 
-        boolean isLiving = testEntity instanceof LivingEntity;
-        testEntity.discard();
+        try {
+            boolean isLiving = testEntity instanceof LivingEntity;
 
-        if (!isLiving) {
-            source.sendFailure(Component.literal("Entity must be a LivingEntity."));
-            LOGGER.warn("Is this the best physical representation you can manifest? It completely lacks zazz! {}", rl);
-            return 0;
+            if (!isLiving) {
+                source.sendFailure(Component.literal("Entity must be a LivingEntity."));
+                LOGGER.warn("Is this the best physical representation you can manifest? It completely lacks zazz! {}", rl);
+                return 0;
+            }
+        } finally {
+            // Always discard test entity to prevent leaks
+            testEntity.discard();
         }
 
         setMorph(source, target, Optional.of(rl));
@@ -298,12 +312,18 @@ public class TwilightLibCommands {
             target.refreshDimensions();
         });
 
-        // Only send feedback if source is NOT the target player (admin, command block, console)
+        // Send feedback to source
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             if (morph.isPresent()) {
-                source.sendSuccess(() -> Component.literal("Morphed " + target.getGameProfile().getName() + " -> " + morph.get()), true);
+                source.sendSuccess(() -> Component.literal("Morph '" + morph.get() + "' set for " + target.getGameProfile().getName()), true);
             } else {
-                source.sendSuccess(() -> Component.literal("Unmorphed " + target.getGameProfile().getName()), true);
+                source.sendSuccess(() -> Component.literal("Morph removed for " + target.getGameProfile().getName()), true);
+            }
+        } else {
+            if (morph.isPresent()) {
+                source.sendSuccess(() -> Component.literal("Morph set to '" + morph.get() + "'"), true);
+            } else {
+                source.sendSuccess(() -> Component.literal("Morph removed"), true);
             }
         }
     }
@@ -317,22 +337,23 @@ public class TwilightLibCommands {
         }
 
         target.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            trails.addTrail(trailId);
-
-            // Auto-activate the trail and enable trails
-            trails.setActiveTrail(trailId);
+            // Only temporarily activate - do NOT grant ownership
+            // Use forceSetActiveTrail() to bypass ownership check
+            ((mc.sayda.twilight_lib.capabilities.TrailsData) trails).forceSetActiveTrail(trailId);
             trails.setTrailEnabled(true);
 
-            // Save to persistent NBT
+            // Save to persistent NBT (will be validated on next login)
             target.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
 
             // Sync to all clients
             NetworkHandler.sendToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
         });
 
-        // Send feedback
+        // Send feedback to source
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
-            source.sendSuccess(() -> Component.literal("Set trail to '" + trailId + "' for " + target.getGameProfile().getName()), true);
+            source.sendSuccess(() -> Component.literal("Trail '" + trailId + "' temporarily set for " + target.getGameProfile().getName() + " (until logout)"), true);
+        } else {
+            source.sendSuccess(() -> Component.literal("Trail temporarily set to '" + trailId + "' (until logout)"), true);
         }
 
         return 1;
@@ -369,41 +390,64 @@ public class TwilightLibCommands {
             // Sync to all clients
             NetworkHandler.sendToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
 
-            LOGGER.debug("Sparkles {}! Trail {} for {}",
-                newState[0] ? "activated" : "deactivated",
+            LOGGER.debug("Paradigm shift time! Trail {} for {}",
                 newState[0] ? "enabled" : "disabled",
                 target.getGameProfile().getName());
         });
 
-        // Always send feedback showing current state
+        // Send feedback to source
         String status = newState[0] ? "enabled" : "disabled";
-        source.sendSuccess(() -> Component.literal("Trail " + status + " for " + target.getGameProfile().getName()), true);
-
-        return 1;
-    }
-
-    private static int executeSetEffect(CommandSourceStack source, ServerPlayer target, String effectId) {
-        target.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-            effects.addEffect(effectId);
-
-            // Save to persistent NBT
-            target.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
-
-            // Sync to all clients
-            NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(target.getUUID(), effects.getEffects()));
-        });
-
-        // Send feedback
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
-            source.sendSuccess(() -> Component.literal("Added effect '" + effectId + "' to " + target.getGameProfile().getName()), true);
+            source.sendSuccess(() -> Component.literal("Trail " + status + " for " + target.getGameProfile().getName()), true);
+        } else {
+            source.sendSuccess(() -> Component.literal("Trail " + status), true);
         }
 
         return 1;
     }
 
-    private static int executeToggleEffect(CommandSourceStack source, ServerPlayer target) {
-        source.sendFailure(Component.literal("Effect toggle is not implemented. Effects are always active when granted."));
-        return 0;
+    private static int executeEquipEffect(CommandSourceStack source, ServerPlayer target, String effectId) {
+        target.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+            // Only activate temporarily - do NOT grant ownership
+            // Ownership comes from supporter tier or manual overrides in supporters.json
+            effects.setActiveEffect(effectId, true);
+
+            // Save to persistent NBT (will be validated on next login)
+            target.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
+
+            // Sync to all clients (we only sync active effects now)
+            NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(target.getUUID(), effects.getActiveEffects()));
+        });
+
+        // Send feedback to source
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+            source.sendSuccess(() -> Component.literal("Effect '" + effectId + "' temporarily equipped for " + target.getGameProfile().getName() + " (until logout)"), true);
+        } else {
+            source.sendSuccess(() -> Component.literal("Effect '" + effectId + "' temporarily equipped (until logout)"), true);
+        }
+
+        return 1;
+    }
+
+    private static int executeUnequipEffect(CommandSourceStack source, ServerPlayer target, String effectId) {
+        target.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+            effects.setActiveEffect(effectId, false);
+
+            // Save to persistent NBT
+            target.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
+
+            // Sync to all clients
+            NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(target.getUUID(), effects.getActiveEffects()));
+        });
+
+        // Send feedback to source
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+            source.sendSuccess(() -> Component.literal("Effect '" + effectId + "' unequipped for " + target.getGameProfile().getName()), true);
+        } else {
+            source.sendSuccess(() -> Component.literal("Effect unequipped '" + effectId + "'"), true);
+        }
+
+        return 1;
     }
 
     private static int executeListEffects(CommandSourceStack source) {
@@ -414,17 +458,17 @@ public class TwilightLibCommands {
 
     private static int executeReload(CommandSourceStack source) {
         source.sendSuccess(() -> Component.literal("Reloading Twilight Lib..."), true);
-        LOGGER.info("Admin {} initiated reload command", source.getTextName());
+        LOGGER.info("Hey, whatcha doing? Admin {} initiated reload command", source.getTextName());
 
         try {
             // Reload supporter data from GitHub
             source.sendSuccess(() -> Component.literal("Fetching supporter data from GitHub..."), false);
             mc.sayda.twilight_lib.supporter.SupporterService.fetchSupporters().thenRun(() -> {
                 source.sendSuccess(() -> Component.literal("✓ Supporter data reloaded successfully!"), false);
-                LOGGER.info("Supporter data reloaded via command");
+                LOGGER.info("Gotcha! Now that was more sparkles. Supporter data reloaded via command");
             }).exceptionally(ex -> {
                 source.sendFailure(Component.literal("✗ Failed to reload supporter data: " + ex.getMessage()));
-                LOGGER.error("Failed to reload supporter data via command: {}", ex.getMessage());
+                LOGGER.error("Dang! Failed to reload supporter data via command: {}", ex.getMessage());
                 return null;
             });
 
@@ -438,14 +482,14 @@ public class TwilightLibCommands {
             if (source.getLevel() != null) {
                 initializeEntityCache(source.getLevel());
                 source.sendSuccess(() -> Component.literal("✓ Entity cache refreshed with " + VALID_LIVING_ENTITIES.size() + " living entities"), false);
-                LOGGER.info("Entity cache refreshed via command");
+                LOGGER.info("THAT WAS AWESOME-AWESOME! Right? Entity cache refreshed via command");
             }
 
             source.sendSuccess(() -> Component.literal("Twilight Lib reload complete!"), true);
             return 1;
         } catch (Exception e) {
             source.sendFailure(Component.literal("Reload failed: " + e.getMessage()));
-            LOGGER.error("Reload command failed: {}", e.getMessage(), e);
+            LOGGER.error("Oh, farn it! Reload command failed: {}", e.getMessage(), e);
             return 0;
         }
     }

@@ -35,7 +35,7 @@ public class SyncTrailsPacket {
         CompoundTag trailsData = buf.readNbt();
         // Handle null NBT (network error or malformed packet)
         if (trailsData == null) {
-            LOGGER.warn("Received null NBT in SyncTrailsPacket for player {}", playerUuid);
+            LOGGER.warn("What's with all the negative waves? Received null NBT in SyncTrailsPacket for player {}", playerUuid);
             trailsData = new CompoundTag();
         }
         return new SyncTrailsPacket(playerUuid, trailsData);
@@ -43,6 +43,12 @@ public class SyncTrailsPacket {
 
     public static void handle(SyncTrailsPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
+            // Validate packet data
+            if (msg.trailsData == null || msg.trailsData.isEmpty()) {
+                LOGGER.warn("What's with all the negative waves? Received invalid trail data for player {}", msg.playerUuid);
+                return;
+            }
+
             // Client-side handling
             Minecraft mc = Minecraft.getInstance();
             if (mc.level != null) {

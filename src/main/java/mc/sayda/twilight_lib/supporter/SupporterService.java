@@ -25,7 +25,7 @@ public class SupporterService {
     private static final String SUPPORTERS_URL = "https://raw.githubusercontent.com/mcjojo3/twilight-database/main/supporters.json";
     private static final long CACHE_DURATION_MS = 3600000; // 1 hour
 
-    private static final Map<String, SupporterData> supporterCache = new ConcurrentHashMap<>();
+    private static volatile Map<String, SupporterData> supporterCache = new ConcurrentHashMap<>();
     private static long lastFetchTime = 0;
     private static final AtomicBoolean fetchInProgress = new AtomicBoolean(false);
 
@@ -49,7 +49,7 @@ public class SupporterService {
         return CompletableFuture.runAsync(() -> {
             HttpURLConnection conn = null;
             try {
-                LOGGER.info("Fetching supporter list from GitHub...");
+                LOGGER.info("I wonder who's around. Fetching supporter list from GitHub...");
                 URL url = new URL(SUPPORTERS_URL);
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
@@ -68,13 +68,13 @@ public class SupporterService {
 
                         parseSupportersJson(content.toString());
                         lastFetchTime = System.currentTimeMillis();
-                        LOGGER.info("Successfully fetched {} supporters! Thank you for your support! 💜", supporterCache.size());
+                        LOGGER.info("We are going to be best friends! Successfully fetched {} supporters", supporterCache.size());
                     }
                 } else {
-                    LOGGER.warn("Failed to fetch supporters list. Response code: {}", responseCode);
+                    LOGGER.warn("Are we done in this reality yet? Hello? Hellooo? Failed to fetch supporters list. Response code: {}", responseCode);
                 }
             } catch (Exception e) {
-                LOGGER.error("Error fetching supporters list: {}", e.getMessage());
+                LOGGER.error("How did I?! Uuuughh! Error fetching supporters list: {}", e.getMessage());
             } finally {
                 if (conn != null) {
                     conn.disconnect();
@@ -129,10 +129,10 @@ public class SupporterService {
                 newCache.put(uuid, data);
             }
 
-            supporterCache.clear();
-            supporterCache.putAll(newCache);
+            // Atomic replacement instead of clear+putAll to avoid empty cache window
+            supporterCache = newCache;
         } catch (Exception e) {
-            LOGGER.error("Error parsing supporters JSON: {}", e.getMessage());
+            LOGGER.error("Oh, dung beetles! Error parsing supporters JSON: {}", e.getMessage());
         }
     }
 

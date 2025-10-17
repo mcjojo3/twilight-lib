@@ -1,41 +1,73 @@
 package mc.sayda.twilight_lib.cosmetics;
 
+import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.TwilightConstants;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.slf4j.Logger;
 
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Client-side respawn effects for Gold supporters
- * Creates a beautiful twilight particle burst when respawning
+ * Client-side spawn effects for Gold supporters
+ * Creates a beautiful twilight particle burst when spawning (login, respawn, etc)
  */
 public class RespawnEffectHandler {
 
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final Random RANDOM = new Random();
+    // Thread-safe map to prevent ConcurrentModificationException from network thread
+    private static final Map<UUID, Integer> PENDING_EFFECTS = new ConcurrentHashMap<>();
+    private static final int EFFECT_DELAY_TICKS = 5; // Wait 5 ticks after spawn
 
-    @SubscribeEvent
-    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
-        Player player = event.getEntity();
-
-        // Only handle on client side
-        if (!player.level().isClientSide) return;
-
-        // Check if player has respawn_twilight effect
-        player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-            if (effects.hasEffect("respawn_twilight")) {
-                spawnTwilightRespawnEffect(player);
-            }
-        });
+    /**
+     * Called by the network handler when effects are synced on spawn.
+     * Triggers on any spawn event: login, respawn after death, etc.
+     */
+    public static void scheduleSpawnEffect(UUID playerId) {
+        PENDING_EFFECTS.put(playerId, EFFECT_DELAY_TICKS);
+        LOGGER.debug("Something good is going to happen. With sparkles! Scheduled spawn effect for player UUID: {}", playerId);
     }
 
-    private static void spawnTwilightRespawnEffect(Player player) {
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) return;
+
+        // Process pending effects using computeIfPresent for thread-safe atomic updates
+        // Create snapshot of keys to avoid modification during iteration
+        List<UUID> keys = new ArrayList<>(PENDING_EFFECTS.keySet());
+
+        for (UUID playerId : keys) {
+            PENDING_EFFECTS.computeIfPresent(playerId, (id, ticksLeft) -> {
+                if (ticksLeft <= 0) {
+                    // Time to trigger effect
+                    Player player = mc.level.getPlayerByUUID(id);
+                    if (player != null && !player.isInvisible()) {
+                        player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+                            if (effects.isEffectActive("respawn_twilight")) {
+                                spawnTwilightSpawnEffect(player);
+                                LOGGER.debug("More sparkles, now! Triggered spawn effect for player {}", player.getName().getString());
+                            }
+                        });
+                    }
+                    return null; // Remove this entry
+                } else {
+                    return ticksLeft - 1; // Decrement counter atomically
+                }
+            });
+        }
+    }
+
+    private static void spawnTwilightSpawnEffect(Player player) {
         Vec3 pos = player.position();
 
         // Spawn a beautiful twilight burst

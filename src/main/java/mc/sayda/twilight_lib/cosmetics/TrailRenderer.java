@@ -1,6 +1,6 @@
 package mc.sayda.twilight_lib.cosmetics;
 
-import mc.sayda.twilight_lib.capabilities.ITrails;
+import mc.sayda.twilight_lib.TwilightConstants;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
 import mc.sayda.twilight_lib.config.TwilightConfig;
 import mc.sayda.twilight_lib.particle.ModParticles;
@@ -25,6 +25,9 @@ public class TrailRenderer {
     private static final Random RANDOM = new Random();
     private static int tickCounter = 0;
 
+    // Track last positions for accurate velocity calculation (for remote players)
+    private static final java.util.Map<java.util.UUID, Vec3> lastPositions = new java.util.concurrent.ConcurrentHashMap<>();
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
@@ -43,6 +46,11 @@ public class TrailRenderer {
     }
 
     private static void renderTrailForPlayer(AbstractClientPlayer player) {
+        // Don't render trails for invisible players
+        if (player.isInvisible()) {
+            return;
+        }
+
         player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
             if (!trails.isTrailEnabled() || trails.getActiveTrail() == null) {
                 return;
@@ -52,11 +60,27 @@ public class TrailRenderer {
             int updateFrequency = Math.max(1, TwilightConfig.TRAIL_UPDATE_FREQUENCY.get());
             if (tickCounter % updateFrequency != 0) return;
 
+            // Calculate velocity based on position change for more accurate movement detection
+            Vec3 currentPos = player.position();
+            Vec3 lastPos = lastPositions.get(player.getUUID());
+
+            double horizontalSpeed;
+            if (lastPos != null) {
+                // Calculate actual movement since last check
+                double dx = currentPos.x - lastPos.x;
+                double dz = currentPos.z - lastPos.z;
+                horizontalSpeed = Math.sqrt(dx * dx + dz * dz);
+            } else {
+                // First time seeing this player, use getDeltaMovement as fallback
+                Vec3 velocity = player.getDeltaMovement();
+                horizontalSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+            }
+
+            // Update last position for next tick
+            lastPositions.put(player.getUUID(), currentPos);
+
             // Don't render trails when player is standing still
-            // Check horizontal movement only (ignore Y for gravity/jumping)
-            Vec3 velocity = player.getDeltaMovement();
-            double horizontalSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-            if (horizontalSpeed < 0.01) return; // Standing still or barely moving
+            if (horizontalSpeed < TwilightConstants.Trail.MIN_HORIZONTAL_SPEED) return; // Standing still or barely moving
 
             TrailType trailType = TrailType.fromId(trails.getActiveTrail());
             if (trailType == null) return;
@@ -66,7 +90,11 @@ public class TrailRenderer {
             if (trailType.isTierBased()) {
                 // Hearts - look up tier from supporter service
                 Optional<SupporterData> supporterData = SupporterService.getSupporterData(player.getStringUUID());
-                String tier = supporterData.map(SupporterData::getTier).orElse("bronze").toLowerCase();
+                String tier = supporterData
+                    .map(SupporterData::getTier)
+                    .filter(t -> t != null && !t.equalsIgnoreCase("none"))
+                    .orElse("bronze")
+                    .toLowerCase();
 
                 particleType = switch (tier) {
                     case "gold" -> ModParticles.GOLD_HEART.get();
@@ -82,12 +110,12 @@ public class TrailRenderer {
 
             // Spawn particles at player's feet (accounts for morphs)
             Vec3 pos = player.position();
-            double offsetY = 0.1; // Start at feet level (works for all entity heights)
+            double offsetY = TwilightConstants.Trail.FEET_OFFSET_Y; // Start at feet level (works for all entity heights)
 
             for (int i = 0; i < trailType.getParticleCount(); i++) {
-                double offsetX = (RANDOM.nextDouble() - 0.5) * 0.4;
-                double offsetZ = (RANDOM.nextDouble() - 0.5) * 0.4;
-                double randomY = RANDOM.nextDouble() * 0.3;
+                double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.Trail.PARTICLE_SPREAD_HORIZONTAL;
+                double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.Trail.PARTICLE_SPREAD_HORIZONTAL;
+                double randomY = RANDOM.nextDouble() * TwilightConstants.Trail.PARTICLE_SPREAD_VERTICAL;
 
                 player.level().addParticle(
                     particleType,

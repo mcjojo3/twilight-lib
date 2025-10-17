@@ -2,6 +2,7 @@ package mc.sayda.twilight_lib.network;
 
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
+import mc.sayda.twilight_lib.cosmetics.RespawnEffectHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -42,22 +43,28 @@ public class SyncEffectsPacket {
 
     public static void handle(SyncEffectsPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            var level = Minecraft.getInstance().level;
+            var mc = Minecraft.getInstance();
+            var level = mc.level;
             if (level == null) {
-                LOGGER.warn("Twilight fades... Cannot sync effects - level is null");
+                LOGGER.warn("Daylight is too bright, the night is too dark! Cannot sync effects - level is null");
                 return;
             }
             var entity = level.getPlayerByUUID(msg.playerId);
             if (entity == null) {
-                LOGGER.warn("Where did they go? Player {} not found in level", msg.playerId);
+                LOGGER.warn("I wonder who's around... Player {} not found in level", msg.playerId);
                 return;
             }
 
             entity.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-                effects.clearEffects();
-                msg.effects.forEach(effects::addEffect);
-                LOGGER.debug("Magic flows! Synced {} effects for {}",
-                    msg.effects.size(), entity.getName().getString());
+                effects.clearActiveEffects();
+                msg.effects.forEach(effectId -> effects.setActiveEffect(effectId, true));
+                LOGGER.debug("Time to change! Synced {} active effects for {}", msg.effects.size(), entity.getName().getString());
+
+                // If any player has respawn_twilight active, trigger spawn effect (visible to all clients)
+                if (msg.effects.contains("respawn_twilight")) {
+                    LOGGER.debug("C'mon! Try and catch me! Scheduling spawn effect for player {}", entity.getName().getString());
+                    RespawnEffectHandler.scheduleSpawnEffect(msg.playerId);
+                }
             });
         });
         ctx.get().setPacketHandled(true);

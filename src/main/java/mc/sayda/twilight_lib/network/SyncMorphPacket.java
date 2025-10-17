@@ -59,10 +59,13 @@ public class SyncMorphPacket {
                 return;
             }
             cap.ifPresent(m -> {
+                // CLIENT-SIDE CAPABILITY MODIFICATION: This is intentional and safe
+                // Server is authoritative and sends sync packets on login/respawn
+                // Client capabilities are read-only cache for rendering, no gameplay logic depends on them
                 m.setEntityType(msg.entity);
                 // CRITICAL: Refresh dimensions on the client side after capability update
                 entity.refreshDimensions();
-                LOGGER.debug("Trickster changes the rules! Synced morph {} for {}", msg.entity, entity.getName().getString());
+                LOGGER.debug("Trickster never loses. Because Zoe changes the rules. Synced morph {} for {}", msg.entity, entity.getName().getString());
             });
         });
         ctx.get().setPacketHandled(true);

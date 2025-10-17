@@ -65,7 +65,7 @@ public class SupporterRegistry {
     );
 
     public static final Set<String> PLATINUM_ADDONS = Set.of(
-            // None yet
+            "tiara"
     );
 
     // ===== EFFECTS =====

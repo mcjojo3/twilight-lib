@@ -8,8 +8,11 @@ import java.util.Set;
  * Capability interface for player cosmetic effects.
  * Effects are special event-triggered cosmetics (e.g., respawn particle bursts).
  *
- * <p>Unlike trails, effects do NOT have an active/equipped state.
- * All owned effects are automatically active and trigger when their event occurs.
+ * <p>Effects have two states:
+ * <ul>
+ *   <li><b>Owned</b>: Effects the player has unlocked (via supporter tier or admin grant)</li>
+ *   <li><b>Active</b>: Effects currently equipped and triggering (multiple can be active simultaneously)</li>
+ * </ul>
  *
  * <p>Effects are granted additively via supporter tier (never removed on login).
  * Admin grants via /twilightlib persist independently of supporter status.
@@ -22,22 +25,22 @@ import java.util.Set;
  * <p>Players manage effects via /cosmetics effects commands.
  */
 public interface IEffects {
+    // Owned effects (what the player has access to)
     /**
      * Get all owned effects.
-     * All owned effects are automatically active.
      * @return Set of effect IDs the player has unlocked
      */
     Set<String> getEffects();
 
     /**
      * Grant an effect to the player.
-     * The effect becomes immediately active.
      * @param effectId The effect ID to grant
      */
     void addEffect(String effectId);
 
     /**
      * Remove an owned effect from the player.
+     * Also deactivates the effect if currently active.
      * @param effectId The effect ID to remove
      */
     void removeEffect(String effectId);
@@ -51,12 +54,40 @@ public interface IEffects {
 
     /**
      * Remove all owned effects.
+     * Also clears all active effects.
      */
     void clearEffects();
 
+    // Active effects (what's currently equipped) - plural because multiple can be active
+    /**
+     * Get all currently active (equipped) effects.
+     * @return Set of effect IDs currently being triggered
+     */
+    Set<String> getActiveEffects();
+
+    /**
+     * Set whether an effect is active (equipped).
+     * Player must own the effect to activate it.
+     * @param effectId The effect ID to activate/deactivate
+     * @param active true to activate, false to deactivate
+     */
+    void setActiveEffect(String effectId, boolean active);
+
+    /**
+     * Check if an effect is currently active.
+     * @param effectId The effect ID to check
+     * @return true if the effect is both owned and active
+     */
+    boolean isEffectActive(String effectId);
+
+    /**
+     * Deactivate all effects without removing ownership.
+     */
+    void clearActiveEffects();
+
     /**
      * Serialize effect data to NBT for persistence.
-     * @return CompoundTag containing effect data
+     * @return CompoundTag containing owned and active effect data
      */
     CompoundTag serialize();
 

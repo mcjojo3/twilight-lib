@@ -18,7 +18,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
-import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MorphRenderHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Map<UUID, LivingEntity> CACHE = new ConcurrentHashMap<>();
+
 
     public static void register() { /* no-op - static subscriber */ }
 
@@ -67,6 +67,12 @@ public class MorphRenderHandler {
     @SubscribeEvent
     public static void onRenderPlayerPre(RenderPlayerEvent.Pre evt) {
         Player player = evt.getEntity();
+
+        // Don't render morphs for invisible players
+        if (player.isInvisible()) {
+            return;
+        }
+
         LazyOptional<IMorph> cap = player.getCapability(MorphProvider.MORPH_CAP);
         if (!cap.isPresent()) {
             return;
@@ -162,14 +168,15 @@ public class MorphRenderHandler {
                 fox.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, mainHandItem);
             }
 
-            // Sync fox-specific states based on player pose using entity data (accessible)
+            // Sync fox-specific states based on player pose
             boolean isSleeping = player.getPose() == net.minecraft.world.entity.Pose.SLEEPING;
             boolean isCrouching = player.getPose() == net.minecraft.world.entity.Pose.CROUCHING;
             boolean shouldSit = player.isPassenger() && player.getDeltaMovement().lengthSqr() < 0.01;
 
-            setFoxState(fox, "Crouching", isCrouching);
-            setFoxState(fox, "Sleeping", isSleeping);
-            setFoxState(fox, "Sitting", shouldSit);
+            // For CustomFoxEntity, we can directly control the sleeping state
+            if (fox instanceof mc.sayda.twilight_lib.entity.CustomFoxEntity customFox) {
+                customFox.setForceSleeping(isSleeping);
+            }
 
             // Calculate Y offset based on fox state
             if (shouldSit) {
@@ -201,17 +208,19 @@ public class MorphRenderHandler {
 
             if (isSleeping) {
                 // Calculate bed-relative offset based on player's yaw
+                // Player sleeps with head pointing in the direction of yaw
                 float yaw = (float) Math.toRadians(player.getYRot());
-                double xOffset = -Math.sin(yaw) * 0.2;
-                double zOffset = Math.cos(yaw) * 0.2;
+                double xOffset = Math.sin(yaw) * 0.15; // Reduced from 0.2, inverted direction
+                double zOffset = -Math.cos(yaw) * 0.15; // Reduced from 0.2, inverted direction
 
                 // Apply bed-relative centering offset
                 poseStack.translate(xOffset, 0.0, zOffset);
 
-                // Rotate fox 270 degrees (90 + 180) to lie on its back properly
-                poseStack.translate(0.0, 0.35, 0.0);
+                // Rotate fox 270 degrees around Z axis to lie on side
+                // Move to rotation center, rotate, then move back
+                poseStack.translate(0.0, 0.3, 0.0); // Adjusted rotation center
                 poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(270.0f));
-                poseStack.translate(0.0, -0.35, 0.0);
+                poseStack.translate(0.0, -0.3, 0.0);
             }
 
             disp.render(proxy, 0.0, 0.0, 0.0, player.getYRot(), pt, poseStack, buffer, packedLight);
@@ -229,16 +238,11 @@ public class MorphRenderHandler {
                 return cached;
             }
 
-            // Discard old entity before creating new one to prevent memory leak
-            if (cached != null) {
-                cached.discard();
-            }
-
-            // Otherwise create new entity
+            // Create new entity BEFORE discarding old one (to keep old on failure)
             var level = Minecraft.getInstance().level;
             if (level == null) {
-                LOGGER.warn("This virtual reality is so lifelike! But level is null...");
-                return null;
+                LOGGER.warn("Are we done in this reality yet? Hello? Hellooo? Level is null...");
+                return cached; // Keep old entity if level unavailable
             }
 
             EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(rl);
@@ -246,14 +250,21 @@ public class MorphRenderHandler {
 
             if (e == null) {
                 LOGGER.error("Oh, dung beetles! Failed to create entity for morph: {}", rl);
-                return null;
+                return cached; // Keep old entity on failure
             }
 
             if (!(e instanceof LivingEntity le)) {
                 LOGGER.warn("Is this the best physical representation you can manifest? Entity {} is not a LivingEntity", rl);
-                return null;
+                e.discard(); // Discard failed entity
+                return cached; // Keep old entity on failure
             }
 
+            // Only discard old entity after successful creation
+            if (cached != null) {
+                cached.discard();
+            }
+
+            // Setup new entity
             if (le instanceof Mob mob) {
                 mob.setNoAi(true);
                 mob.setAggressive(false);
@@ -266,22 +277,4 @@ public class MorphRenderHandler {
         });
     }
 
-    /**
-     * Sets fox animation states using reflection to access package-private methods.
-     * Falls back gracefully if reflection fails.
-     */
-    private static void setFoxState(net.minecraft.world.entity.animal.Fox fox, String stateName, boolean value) {
-        try {
-            String methodName = "set" + stateName;
-            Method method = net.minecraft.world.entity.animal.Fox.class.getDeclaredMethod(methodName, boolean.class);
-            method.setAccessible(true);
-            method.invoke(fox, value);
-        } catch (NoSuchMethodException e) {
-            // Method doesn't exist - expected if Minecraft version changed
-            LOGGER.trace("Fox animation method not found: {}", stateName);
-        } catch (Exception e) {
-            // Unexpected error - log for debugging
-            LOGGER.warn("Failed to set fox state {}: {}", stateName, e.getMessage());
-        }
-    }
 }

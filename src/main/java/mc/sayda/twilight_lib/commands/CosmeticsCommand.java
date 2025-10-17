@@ -66,8 +66,10 @@ public class CosmeticsCommand {
     public static void registerCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
 
-        dispatcher.register(Commands.literal("cosmetics")
-            .then(Commands.literal("trail")
+        // Register all command aliases
+        for (String alias : new String[]{"cosmetics", "tlc", "tlcosmetics", "twilightlibcosmetics"}) {
+            dispatcher.register(Commands.literal(alias)
+                .then(Commands.literal("trail")
                 .then(Commands.literal("set")
                     .then(Commands.argument("type", StringArgumentType.word())
                         .suggests(PLAYER_TRAILS_SUGGESTIONS)
@@ -99,23 +101,27 @@ public class CosmeticsCommand {
                 )
             )
             .then(Commands.literal("effects")
-                .then(Commands.literal("set")
+                .then(Commands.literal("equip")
                     .then(Commands.argument("type", StringArgumentType.word())
                         .suggests(PLAYER_EFFECTS_SUGGESTIONS)
-                        .executes(CosmeticsCommand::setEffect)
+                        .executes(CosmeticsCommand::equipEffect)
                     )
                 )
-                .then(Commands.literal("toggle")
-                    .executes(CosmeticsCommand::toggleEffect)
+                .then(Commands.literal("unequip")
+                    .then(Commands.argument("type", StringArgumentType.word())
+                        .suggests(PLAYER_EFFECTS_SUGGESTIONS)
+                        .executes(CosmeticsCommand::unequipEffect)
+                    )
                 )
                 .then(Commands.literal("list")
                     .executes(CosmeticsCommand::listEffects)
                 )
             )
-            .then(Commands.literal("info")
-                .executes(CosmeticsCommand::showInfo)
-            )
-        );
+                .then(Commands.literal("info")
+                    .executes(CosmeticsCommand::showInfo)
+                )
+            );
+        }
     }
 
     private static int setTrail(CommandContext<CommandSourceStack> ctx) {
@@ -141,7 +147,7 @@ public class CosmeticsCommand {
             // Sync to all clients
             NetworkHandler.sendToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
 
-            player.sendSystemMessage(Component.literal("✨ Trail set to: " + trailId)
+            player.sendSystemMessage(Component.literal("Trail set to '" + trailId + "'")
                 .withStyle(ChatFormatting.GREEN));
         });
 
@@ -161,11 +167,11 @@ public class CosmeticsCommand {
             NetworkHandler.sendToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
 
             if (newState) {
-                player.sendSystemMessage(Component.literal("✨ Trail enabled!")
+                player.sendSystemMessage(Component.literal("Trail enabled")
                     .withStyle(ChatFormatting.GREEN));
             } else {
                 player.sendSystemMessage(Component.literal("Trail disabled")
-                    .withStyle(ChatFormatting.GRAY));
+                    .withStyle(ChatFormatting.GREEN));
             }
         });
 
@@ -200,20 +206,31 @@ public class CosmeticsCommand {
                 player.sendSystemMessage(Component.literal("💜 Support to unlock exclusive trails!")
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
             } else {
+                String activeTrail = trails.getActiveTrail();
                 for (String trail : supporterTrailsOwned) {
-                    String marker = trail.equals(trails.getActiveTrail()) ? "➤ " : "  • ";
+                    boolean isActive = trail.equals(activeTrail);
+                    String marker = isActive ? "➤ " : "  • ";
                     player.sendSystemMessage(Component.literal(marker + trail)
-                        .withStyle(trail.equals(trails.getActiveTrail()) ? ChatFormatting.GOLD : ChatFormatting.WHITE));
+                        .withStyle(isActive ? ChatFormatting.GOLD : ChatFormatting.WHITE));
                 }
                 player.sendSystemMessage(Component.literal(""));
                 player.sendSystemMessage(Component.literal("Use /cosmetics trail set <type> to change trail")
                     .withStyle(ChatFormatting.GRAY));
+                player.sendSystemMessage(Component.literal("Use /cosmetics trail toggle to toggle the trail")
+                        .withStyle(ChatFormatting.GRAY));
             }
 
             // Show available supporter trails by tier (dynamic from SupporterRegistry)
             player.sendSystemMessage(Component.literal(""));
             player.sendSystemMessage(Component.literal("💜 Supporter Trail Tiers:")
                 .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
+
+            //For future expansion?
+            /*Set<String> stoneTrails = SupporterRegistry.getTrailsForTier("stone");
+            if (!stoneTrails.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🏅 Stone: " + String.join(", ", stoneTrails))
+                        .withStyle(ChatFormatting.GRAY));
+            }*/
 
             Set<String> bronzeTrails = SupporterRegistry.getTrailsForTier("bronze");
             if (!bronzeTrails.isEmpty()) {
@@ -231,6 +248,12 @@ public class CosmeticsCommand {
             if (!goldTrails.isEmpty()) {
                 player.sendSystemMessage(Component.literal("🥇 Gold: " + String.join(", ", goldTrails))
                     .withStyle(ChatFormatting.GRAY));
+            }
+
+            Set<String> platinumTrails = SupporterRegistry.getTrailsForTier("platinum");
+            if (!platinumTrails.isEmpty()) {
+                player.sendSystemMessage(Component.literal("💎 Platinum: " + String.join(", ", platinumTrails))
+                        .withStyle(ChatFormatting.GRAY));
             }
 
             player.sendSystemMessage(Component.literal(""));
@@ -270,12 +293,24 @@ public class CosmeticsCommand {
                     player.sendSystemMessage(Component.literal("  • " + addon)
                         .withStyle(ChatFormatting.WHITE));
                 }
+                player.sendSystemMessage(Component.literal(""));
+                player.sendSystemMessage(Component.literal("Use /cosmetics addons equip <type> to add an addon")
+                        .withStyle(ChatFormatting.GRAY));
+                player.sendSystemMessage(Component.literal("Use /cosmetics addons unequip <type> to remove an addon")
+                        .withStyle(ChatFormatting.GRAY));
             }
 
             // Show available supporter addons by tier (dynamic from SupporterRegistry)
             player.sendSystemMessage(Component.literal(""));
             player.sendSystemMessage(Component.literal("💜 Supporter Addon Tiers:")
                 .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
+
+            //For future expansion?
+            /*Set<String> stoneAddons = SupporterRegistry.getAddonsForTier("stone");
+            if (!stoneAddons.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🏅 Stone: " + String.join(", ", stoneAddons))
+                        .withStyle(ChatFormatting.GRAY));
+            }*/
 
             Set<String> bronzeAddons = SupporterRegistry.getAddonsForTier("bronze");
             if (!bronzeAddons.isEmpty()) {
@@ -295,6 +330,12 @@ public class CosmeticsCommand {
                     .withStyle(ChatFormatting.GRAY));
             }
 
+            Set<String> platinumAddons = SupporterRegistry.getAddonsForTier("platinum");
+            if (!platinumAddons.isEmpty()) {
+                player.sendSystemMessage(Component.literal("💎 Platinum: " + String.join(", ", platinumAddons))
+                        .withStyle(ChatFormatting.GRAY));
+            }
+
             player.sendSystemMessage(Component.literal(""));
         });
 
@@ -308,6 +349,7 @@ public class CosmeticsCommand {
 
         player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
             Set<String> playerEffects = effects.getEffects();
+            Set<String> activeEffects = effects.getActiveEffects();
 
             // Filter to only show effects that are supporter-exclusive
             Set<String> supporterEffectsOwned = playerEffects.stream()
@@ -329,15 +371,30 @@ public class CosmeticsCommand {
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
             } else {
                 for (String effect : supporterEffectsOwned) {
-                    player.sendSystemMessage(Component.literal("  • " + effect)
-                        .withStyle(ChatFormatting.WHITE));
+                    boolean isEquipped = activeEffects.contains(effect);
+                    String marker = isEquipped ? "✓ " : "  • ";
+                    ChatFormatting color = isEquipped ? ChatFormatting.GOLD : ChatFormatting.WHITE;
+                    player.sendSystemMessage(Component.literal(marker + effect)
+                        .withStyle(color));
                 }
+                player.sendSystemMessage(Component.literal(""));
+                player.sendSystemMessage(Component.literal("Use /cosmetics effects equip <type> to equip an effect")
+                    .withStyle(ChatFormatting.GRAY));
+                player.sendSystemMessage(Component.literal("Use /cosmetics effects unequip <type> to unequip an effect")
+                    .withStyle(ChatFormatting.GRAY));
             }
 
             // Show available supporter effects by tier (dynamic from SupporterRegistry)
             player.sendSystemMessage(Component.literal(""));
             player.sendSystemMessage(Component.literal("💜 Supporter Effect Tiers:")
                 .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
+
+            //For future expansion?
+            /*Set<String> stoneEffects = SupporterRegistry.getEffectsForTier("stone");
+            if (!stoneEffects.isEmpty()) {
+                player.sendSystemMessage(Component.literal("🏅 Stone: " + String.join(", ", stoneEffects))
+                        .withStyle(ChatFormatting.GRAY));
+            }*/
 
             Set<String> bronzeEffects = SupporterRegistry.getEffectsForTier("bronze");
             if (!bronzeEffects.isEmpty()) {
@@ -357,13 +414,19 @@ public class CosmeticsCommand {
                     .withStyle(ChatFormatting.GRAY));
             }
 
+            Set<String> platinumEffects = SupporterRegistry.getEffectsForTier("platinum");
+            if (!platinumEffects.isEmpty()) {
+                player.sendSystemMessage(Component.literal("💎 Platinum: " + String.join(", ", platinumEffects))
+                        .withStyle(ChatFormatting.GRAY));
+            }
+
             player.sendSystemMessage(Component.literal(""));
         });
 
         return 1;
     }
 
-    private static int setEffect(CommandContext<CommandSourceStack> ctx) {
+    private static int equipEffect(CommandContext<CommandSourceStack> ctx) {
         if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
             return 0;
         }
@@ -371,33 +434,66 @@ public class CosmeticsCommand {
         String effectId = StringArgumentType.getString(ctx, "type");
 
         player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-            // Check if player has this effect
+            // Check ownership - players can only interact with effects they own
             if (!effects.hasEffect(effectId)) {
-                player.sendSystemMessage(Component.literal("❌ You don't have access to that effect!")
+                player.sendSystemMessage(Component.literal("❌ You don't own '" + effectId + "'!")
                     .withStyle(ChatFormatting.RED));
-                player.sendSystemMessage(Component.literal("Use /cosmetics effects list to see available effects")
-                    .withStyle(ChatFormatting.GRAY));
                 return;
             }
 
-            player.sendSystemMessage(Component.literal("💫 Effect '" + effectId + "' is always active!")
+            // Check if already active
+            if (effects.isEffectActive(effectId)) {
+                player.sendSystemMessage(Component.literal("⚠ Effect '" + effectId + "' is already equipped!")
+                    .withStyle(ChatFormatting.YELLOW));
+                return;
+            }
+
+            // Activate the effect
+            effects.setActiveEffect(effectId, true);
+            player.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
+
+            // Sync to all clients
+            NetworkHandler.sendEffectsToAll(new mc.sayda.twilight_lib.network.SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
+
+            player.sendSystemMessage(Component.literal("Effect equipped '" + effectId + "'")
                 .withStyle(ChatFormatting.GREEN));
-            player.sendSystemMessage(Component.literal("Effects cannot be toggled on/off - they are passive abilities.")
-                .withStyle(ChatFormatting.GRAY));
         });
 
         return 1;
     }
 
-    private static int toggleEffect(CommandContext<CommandSourceStack> ctx) {
+    private static int unequipEffect(CommandContext<CommandSourceStack> ctx) {
         if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
             return 0;
         }
 
-        player.sendSystemMessage(Component.literal("💫 Effects are always active!")
-            .withStyle(ChatFormatting.YELLOW));
-        player.sendSystemMessage(Component.literal("Effects cannot be toggled - they work automatically.")
-            .withStyle(ChatFormatting.GRAY));
+        String effectId = StringArgumentType.getString(ctx, "type");
+
+        player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+            // Check ownership - players can only interact with effects they own
+            if (!effects.hasEffect(effectId)) {
+                player.sendSystemMessage(Component.literal("❌ You don't own '" + effectId + "'!")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            // Check if effect is active
+            if (!effects.isEffectActive(effectId)) {
+                player.sendSystemMessage(Component.literal("❌ Effect '" + effectId + "' is not equipped!")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            // Deactivate the effect
+            effects.setActiveEffect(effectId, false);
+            player.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
+
+            // Sync to all clients
+            NetworkHandler.sendEffectsToAll(new mc.sayda.twilight_lib.network.SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
+
+            player.sendSystemMessage(Component.literal("Effect unequipped '" + effectId + "'")
+                .withStyle(ChatFormatting.GREEN));
+        });
 
         return 1;
     }
@@ -426,9 +522,11 @@ public class CosmeticsCommand {
             if (data.isActiveSupporter()) {
                 String tier = data.getTier();
                 String tierDisplay = switch(tier.toLowerCase()) {
+                    case "stone" -> "🏅 Stone";
                     case "bronze" -> "🥉 Bronze";
                     case "silver" -> "🥈 Silver";
                     case "gold" -> "🥇 Gold";
+                    case "platinum" -> "💎 Platinum";
                     default -> tier;
                 };
 
@@ -445,42 +543,97 @@ public class CosmeticsCommand {
                     .withStyle(ChatFormatting.YELLOW));
             }
 
-            // Count cosmetics
-            java.util.Set<String> allTrails = data.getAllTrails();
-            java.util.Set<String> allAddons = data.getAllAddons();
-            java.util.Set<String> allEffects = data.getAllEffects();
+            // Count cosmetics from capabilities (actual active cosmetics)
+            final String[] activeTrail = {"none"};
+            final int[] trailCount = {0};
+            final int[] addonCount = {0};
+            final int[] addonEquippedCount = {0};
+            final int[] effectCount = {0};
+            final int[] effectEquippedCount = {0};
 
-            int totalCosmetics = allTrails.size() + allAddons.size() + allEffects.size();
+            player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+                // Count all trails (including manual overrides not in registry)
+                trailCount[0] = trails.getTrails().size();
+
+                // Get active trail if enabled
+                if (trails.isTrailEnabled() && trails.getActiveTrail() != null) {
+                    activeTrail[0] = trails.getActiveTrail();
+                }
+            });
+
+            player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+                addonCount[0] = addons.getAddons().stream()
+                    .filter(SupporterRegistry::isAddonSupporterExclusive)
+                    .collect(java.util.stream.Collectors.toSet()).size();
+                addonEquippedCount[0] = addons.getActiveAddons().stream()
+                    .filter(SupporterRegistry::isAddonSupporterExclusive)
+                    .collect(java.util.stream.Collectors.toSet()).size();
+            });
+
+            player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+                effectCount[0] = effects.getEffects().stream()
+                    .filter(SupporterRegistry::isEffectSupporterExclusive)
+                    .collect(java.util.stream.Collectors.toSet()).size();
+                effectEquippedCount[0] = effects.getActiveEffects().stream()
+                    .filter(SupporterRegistry::isEffectSupporterExclusive)
+                    .collect(java.util.stream.Collectors.toSet()).size();
+            });
+
+            int totalCosmetics = trailCount[0] + addonCount[0] + effectCount[0];
 
             player.sendSystemMessage(Component.literal(""));
             player.sendSystemMessage(Component.literal("Your Cosmetics:")
                 .withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
-            player.sendSystemMessage(Component.literal("  ✨ Trails: " + allTrails.size())
+            player.sendSystemMessage(Component.literal("  ✨ Trails: " + activeTrail[0] + " / " + trailCount[0] + " owned")
                 .withStyle(ChatFormatting.AQUA));
-            player.sendSystemMessage(Component.literal("  🎨 Addons: " + allAddons.size())
+            player.sendSystemMessage(Component.literal("  🎨 Addons: " + addonEquippedCount[0] + " equipped / " + addonCount[0] + " owned")
                 .withStyle(ChatFormatting.AQUA));
-            player.sendSystemMessage(Component.literal("  💫 Effects: " + allEffects.size())
+            player.sendSystemMessage(Component.literal("  💫 Effects: " + effectEquippedCount[0] + " equipped / " + effectCount[0] + " owned")
                 .withStyle(ChatFormatting.AQUA));
             player.sendSystemMessage(Component.literal("  Total: " + totalCosmetics)
                 .withStyle(ChatFormatting.GREEN));
 
-            // Show manual grants if any
+            // Show manual grants if any (reading from capabilities)
             if (!data.isActiveSupporter()) {
-                player.sendSystemMessage(Component.literal(""));
-                player.sendSystemMessage(Component.literal("Manual Grants:")
-                    .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD));
+                final java.util.Set<String>[] manualTrails = new java.util.Set[]{java.util.Collections.emptySet()};
+                final java.util.Set<String>[] manualAddons = new java.util.Set[]{java.util.Collections.emptySet()};
+                final java.util.Set<String>[] manualEffects = new java.util.Set[]{java.util.Collections.emptySet()};
 
-                if (!data.getManualTrails().isEmpty()) {
-                    player.sendSystemMessage(Component.literal("  Trails: " + String.join(", ", data.getManualTrails()))
-                        .withStyle(ChatFormatting.GRAY));
-                }
-                if (!data.getManualAddons().isEmpty()) {
-                    player.sendSystemMessage(Component.literal("  Addons: " + String.join(", ", data.getManualAddons()))
-                        .withStyle(ChatFormatting.GRAY));
-                }
-                if (!data.getManualEffects().isEmpty()) {
-                    player.sendSystemMessage(Component.literal("  Effects: " + String.join(", ", data.getManualEffects()))
-                        .withStyle(ChatFormatting.GRAY));
+                player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+                    manualTrails[0] = trails.getTrails().stream()
+                        .filter(SupporterRegistry::isTrailSupporterExclusive)
+                        .collect(java.util.stream.Collectors.toSet());
+                });
+
+                player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+                    manualAddons[0] = addons.getAddons().stream()
+                        .filter(SupporterRegistry::isAddonSupporterExclusive)
+                        .collect(java.util.stream.Collectors.toSet());
+                });
+
+                player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+                    manualEffects[0] = effects.getEffects().stream()
+                        .filter(SupporterRegistry::isEffectSupporterExclusive)
+                        .collect(java.util.stream.Collectors.toSet());
+                });
+
+                if (!manualTrails[0].isEmpty() || !manualAddons[0].isEmpty() || !manualEffects[0].isEmpty()) {
+                    player.sendSystemMessage(Component.literal(""));
+                    player.sendSystemMessage(Component.literal("Manual Grants:")
+                        .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD));
+
+                    if (!manualTrails[0].isEmpty()) {
+                        player.sendSystemMessage(Component.literal("  Trails: " + String.join(", ", manualTrails[0]))
+                            .withStyle(ChatFormatting.GRAY));
+                    }
+                    if (!manualAddons[0].isEmpty()) {
+                        player.sendSystemMessage(Component.literal("  Addons: " + String.join(", ", manualAddons[0]))
+                            .withStyle(ChatFormatting.GRAY));
+                    }
+                    if (!manualEffects[0].isEmpty()) {
+                        player.sendSystemMessage(Component.literal("  Effects: " + String.join(", ", manualEffects[0]))
+                            .withStyle(ChatFormatting.GRAY));
+                    }
                 }
             }
         } else {
@@ -523,18 +676,16 @@ public class CosmeticsCommand {
         String addonId = StringArgumentType.getString(ctx, "addon");
 
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-            // Check if player has access to this addon
+            // Check ownership - players can only interact with addons they own
             if (!addons.hasAddon(addonId)) {
-                player.sendSystemMessage(Component.literal("❌ You don't have access to that addon!")
+                player.sendSystemMessage(Component.literal("❌ You don't own '" + addonId + "'!")
                     .withStyle(ChatFormatting.RED));
-                player.sendSystemMessage(Component.literal("Use /cosmetics addons list to see available addons")
-                    .withStyle(ChatFormatting.GRAY));
                 return;
             }
 
             // Check if already active
             if (addons.isAddonActive(addonId)) {
-                player.sendSystemMessage(Component.literal("⚠️ Addon '" + addonId + "' is already active!")
+                player.sendSystemMessage(Component.literal("⚠ Addon '" + addonId + "' is already equipped!")
                     .withStyle(ChatFormatting.YELLOW));
                 return;
             }
@@ -546,10 +697,8 @@ public class CosmeticsCommand {
             // Sync to all clients
             NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
 
-            player.sendSystemMessage(Component.literal("✅ Equipped addon: " + addonId)
+            player.sendSystemMessage(Component.literal("Addon equipped '" + addonId + "'")
                 .withStyle(ChatFormatting.GREEN));
-            player.sendSystemMessage(Component.literal("You have " + addons.getActiveAddons().size() + " addon(s) equipped")
-                .withStyle(ChatFormatting.GRAY));
         });
 
         return 1;
@@ -563,6 +712,13 @@ public class CosmeticsCommand {
         String addonId = StringArgumentType.getString(ctx, "addon");
 
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+            // Check ownership - players can only interact with addons they own
+            if (!addons.hasAddon(addonId)) {
+                player.sendSystemMessage(Component.literal("❌ You don't own '" + addonId + "'!")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+
             // Check if addon is active
             if (!addons.isAddonActive(addonId)) {
                 player.sendSystemMessage(Component.literal("❌ Addon '" + addonId + "' is not equipped!")
@@ -577,13 +733,8 @@ public class CosmeticsCommand {
             // Sync to all clients
             NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
 
-            player.sendSystemMessage(Component.literal("✅ Unequipped addon: " + addonId)
+            player.sendSystemMessage(Component.literal("Addon unequipped '" + addonId + "'")
                 .withStyle(ChatFormatting.GREEN));
-            int remaining = addons.getActiveAddons().size();
-            if (remaining > 0) {
-                player.sendSystemMessage(Component.literal("You have " + remaining + " addon(s) still equipped")
-                    .withStyle(ChatFormatting.GRAY));
-            }
         });
 
         return 1;

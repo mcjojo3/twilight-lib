@@ -50,10 +50,18 @@ public class TrailsData implements ITrails {
     }
 
     @Override
-    public void setActiveTrail(String trail) {
+    public synchronized void setActiveTrail(String trail) {
         if (trail == null || trails.contains(trail)) {
             this.activeTrail = trail;
         }
+    }
+
+    /**
+     * Force set active trail without ownership check (for admin commands).
+     * Used by /twilightlib trail set to temporarily activate trails.
+     */
+    public synchronized void forceSetActiveTrail(String trail) {
+        this.activeTrail = trail;
     }
 
     @Override
@@ -102,7 +110,11 @@ public class TrailsData implements ITrails {
         }
 
         if (tag.contains("ActiveTrail")) {
-            activeTrail = tag.getString("ActiveTrail");
+            String loadedTrail = tag.getString("ActiveTrail");
+            // Validate that the loaded trail exists in the trails set
+            if (trails.contains(loadedTrail)) {
+                activeTrail = loadedTrail;
+            }
         }
 
         trailEnabled = !tag.contains("TrailEnabled") || tag.getBoolean("TrailEnabled");

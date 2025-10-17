@@ -105,18 +105,18 @@ public class NetworkHandler {
     // Trails packet methods
     public static void sendToAll(SyncTrailsPacket pkt) {
         CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
-        LOGGER.debug("Sparkles and twilight! Sending trails packet to all players.");
+        LOGGER.debug("The wheel turns, day becomes night... time to make colors! Sending trails packet to all players.");
     }
 
     public static void sendTrailsToPlayer(Player player, SyncTrailsPacket pkt) {
         if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
-        LOGGER.debug("Sending supporter trails to {}", player.getGameProfile().getName());
+        LOGGER.debug("Whoo! Sending trails to {}", player.getGameProfile().getName());
     }
 
     public static void sendAllTrailsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("Sharing the sparkle! Syncing all trails to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("I wanna wanna, go to some place, place place! Syncing all trails to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             p.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
@@ -128,23 +128,23 @@ public class NetworkHandler {
     // Effects packet methods
     public static void sendEffectsToAll(SyncEffectsPacket pkt) {
         CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
-        LOGGER.debug("Twilight magic spreads! Sending effects packet to all players.");
+        LOGGER.debug("Yes, more magic! Sending effects packet to all players.");
     }
 
     public static void sendEffectsToPlayer(Player player, SyncEffectsPacket pkt) {
         if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
-        LOGGER.debug("Sending effects to {}", player.getGameProfile().getName());
+        LOGGER.debug("Ooh! Oooooh! Sending effects to {}", player.getGameProfile().getName());
     }
 
     public static void sendAllEffectsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("Sharing the magic! Syncing all effects to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("Aw, this spell is neat! Syncing all effects to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             p.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-                if (!effects.getEffects().isEmpty()) {
-                    sendEffectsToPlayer(recipient, new SyncEffectsPacket(p.getUUID(), effects.getEffects()));
+                if (!effects.getActiveEffects().isEmpty()) {
+                    sendEffectsToPlayer(recipient, new SyncEffectsPacket(p.getUUID(), effects.getActiveEffects()));
                 }
             });
         }

@@ -26,7 +26,8 @@ If applicable, add screenshots to help explain your problem.
 **Computer specs(please complete the following information):**
  - OS: [e.g. Windows, Linux]
  - Java version [e.g. java-17, java-21]
- - Version [e.g. 1.1.0.1, 1.1.0.2_01]
+ - MCVersion [e.g. 1.20.1, 1.21.1]
+ - Version [e.g. 1.1.0.1, 1.2.0.0]
 
 **Additional context**
 Add any other context about the problem here.

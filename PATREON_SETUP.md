@@ -1,6 +1,6 @@
 # Patreon Supporters Setup Guide
 
-This guide explains how to set up the patreon-supporters repository to enable cosmetic rewards for your supporters
+This guide explains how to set up the patreon-supporters repository to enable cosmetic rewards for your supporters.
 
 ## Repository Setup
 

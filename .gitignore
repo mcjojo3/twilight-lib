@@ -52,6 +52,9 @@ tmp/
 *.orig
 .env
 
-# Exclude personal/assistant folder
+# Exclude misc folders/files
 .claude/
 DEVELOPER_GUIDE.txt
+ADDON_CONVERSION_TUTORIAL.txt
+TRAIL_TUTORIAL.txt
+zoe_quotes_reference.txt

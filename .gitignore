@@ -54,3 +54,4 @@ tmp/
 
 # Exclude personal/assistant folder
 .claude/
+DEVELOPER_GUIDE.txt

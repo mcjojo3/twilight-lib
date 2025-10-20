@@ -18,22 +18,34 @@ Edit the `supporters.json` file in the `patreon-supporters` repository:
 ```json
 {
   "version": 1,
-  "last_updated": "2025-10-07",
+  "last_updated": "2025-10-20",
   "supporters": [
     {
       "uuid": "player-uuid-here",
       "name": "PlayerName",
-      "tier": "patreon",
+      "tier": "gold",
       "joined": "2025-10-01",
       "cosmetics": {
-        "trails": ["hearts", "sparkles", "cherry_blossom", "twilight", "stars"],
-        "addons": ["galaxy_tail", "starlight_ears"],
-        "effects": ["respawn_twilight"]
+        "trails": ["custom_trail"],
+        "addons": ["exclusive_addon"],
+        "effects": []
       }
     }
   ]
 }
 ```
+
+### Available Tiers
+
+The tier system unlocks cosmetics automatically:
+
+- **stone** - Entry tier (no cosmetics yet, reserved for future use)
+- **bronze** - Basic heart trail (bronze hearts)
+- **silver** - Bronze perks + silver hearts, sparkles, cherry_blossom trails, galaxy_tail addon
+- **gold** - Silver perks + gold hearts, twilight, stars trails, respawn_twilight effect
+- **platinum** - All benefits (future-proof tier for new cosmetics)
+
+**Note:** Higher tiers inherit all cosmetics from lower tiers.
 
 ### Finding Player UUIDs
 
@@ -45,20 +57,26 @@ Use one of these methods:
 ### Available Cosmetics
 
 **Trails** (Particle effects that follow the player):
-- `hearts` - Pink heart particles
-- `sparkles` - Golden sparkle trail
-- `cherry_blossom` - Cherry blossom petals
-- `twilight` - Purple twilight particles
-- `stars` - Shooting star trail
+- `hearts` - Tier-based heart particles (bronze/silver/gold based on supporter tier)
+- `sparkles` - Golden sparkle trail (Silver tier+)
+- `cherry_blossom` - Cherry blossom petals (Silver tier+)
+- `twilight` - Purple twilight particles (Gold tier+)
+- `stars` - Shooting star trail (Gold tier+)
 
-**Addons** (Cosmetic models - to be implemented):
-- `galaxy_tail` - Galaxy-textured tail variant
-- `starlight_ears` - Glowing starlight ears
-- `halo` - Floating halo accessory
-- `twilight_wings` - Ethereal twilight wings
+**Addons** (Cosmetic models worn by the player):
+- `galaxy_tail` - Galaxy-textured kitsune tail (Silver tier+)
+- `tiara` - Crown accessory (available to all)
+- Kitsune sets (ears, snout, tails) - 250+ color/variant combinations
 
 **Effects** (Special visual effects):
-- `respawn_twilight` - Special twilight respawn effect
+- `respawn_twilight` - Special twilight particle burst on respawn (Gold tier+)
+
+**Manual Grants** (in `cosmetics` section):
+These persist even if tier changes and can be used for:
+- Event rewards
+- Gifts to specific players
+- Grandfathered perks
+- Custom exclusive cosmetics
 
 ## How It Works
 
@@ -69,12 +87,51 @@ Use one of these methods:
 
 ## Commands
 
-Players can manage their cosmetics with these commands:
+### Player Commands (No permissions required)
 
-- `/cosmetics info` - Check supporter status
-- `/cosmetics trail list` - List available trails
-- `/cosmetics trail set <type>` - Set active trail
-- `/cosmetics trail toggle` - Enable/disable trails
+Players can manage their **owned** cosmetics with these commands:
+
+- `/cosmetics info` - Check supporter status and cosmetic counts
+- `/cosmetics trails list` - List available trails
+- `/cosmetics trails set <type>` - Set active trail
+- `/cosmetics trails toggle` - Enable/disable trails
+- `/cosmetics addons list` - List owned addons
+- `/cosmetics addons equip <id>` - Equip an addon
+- `/cosmetics addons unequip <id>` - Unequip an addon
+- `/cosmetics effects list` - List owned effects
+
+### Admin Commands (Permission level 2 required)
+
+Admins can force-apply cosmetics to any player:
+
+**Morphing:**
+- `/tl morph <entity> [player]` - Transform into any living entity
+- `/tl unmorph [player]` - Remove morph
+
+**Trails:**
+- `/tl trail set <trail> [player] [persistent]` - Set trail with optional persistent flag
+- `/tl trail toggle [player]` - Toggle trail rendering
+- `/tl trail list` - List all available trails
+
+**Effects:**
+- `/tl effects equip <effect> [player] [persistent]` - Grant effect
+- `/tl effects unequip <effect> [player]` - Remove effect
+- `/tl effects list` - List all available effects
+
+**Addons:**
+- `/tl addons equip <id> [player] [persistent]` - Force equip addon
+- `/tl addons unequip <id> [player]` - Force unequip addon
+- `/tl addons clear [player]` - Clear all addons
+- `/tl addons list` - List all registered addons
+
+**Persistent Flag:**
+- `true` - Cosmetic persists through logout/death (for CreRaces race attributes)
+- `false` (default) - Temporary preview, cleared on logout
+- Self-targeting always uses non-persistent mode
+- Example: `/tl addons equip kitsune_ears_white PlayerName true`
+
+**Reload:**
+- `/tl reload` - Reload supporter data and entity cache
 
 ## Important Notes
 

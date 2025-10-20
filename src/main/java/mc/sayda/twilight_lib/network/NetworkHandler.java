@@ -54,7 +54,7 @@ public class NetworkHandler {
         LOGGER.debug("This is the precipice of a new reality! Network channel initialized.");
     }
 
-    public static void sendToAll(SyncMorphPacket pkt) {
+    public static void sendMorphToAll(SyncMorphPacket pkt) {
         CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
         LOGGER.debug("Here you go! Sending morph packet to all players.");
     }
@@ -103,7 +103,7 @@ public class NetworkHandler {
     }
 
     // Trails packet methods
-    public static void sendToAll(SyncTrailsPacket pkt) {
+    public static void sendTrailsToAll(SyncTrailsPacket pkt) {
         CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
         LOGGER.debug("The wheel turns, day becomes night... time to make colors! Sending trails packet to all players.");
     }

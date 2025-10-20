@@ -7,8 +7,8 @@ import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class TrailsProvider implements ICapabilitySerializable<CompoundTag> {
 
@@ -18,7 +18,7 @@ public class TrailsProvider implements ICapabilitySerializable<CompoundTag> {
     private final LazyOptional<ITrails> optionalTrails = LazyOptional.of(() -> trails);
 
     @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+    public @Nonnull <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
         return cap == TRAILS_CAP ? optionalTrails.cast() : LazyOptional.empty();
     }
 

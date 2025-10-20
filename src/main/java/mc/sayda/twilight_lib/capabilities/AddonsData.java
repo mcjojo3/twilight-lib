@@ -11,6 +11,7 @@ import java.util.Set;
 public class AddonsData implements IAddons {
     private final Set<String> addons = new HashSet<>();  // Owned addons
     private final Set<String> equippedAddons = new HashSet<>();  // Currently equipped addons
+    private final Set<String> persistentAddons = new HashSet<>();  // Addons that bypass ownership (CreRaces)
 
     // Owned addons methods
     @Override
@@ -51,8 +52,31 @@ public class AddonsData implements IAddons {
         if (active) {
             // Allow activating without ownership check (admin commands can force-activate)
             equippedAddons.add(addonId);
+            // Default to non-persistent for backwards compatibility
+            persistentAddons.remove(addonId);
         } else {
             equippedAddons.remove(addonId);
+            persistentAddons.remove(addonId);
+        }
+    }
+
+    /**
+     * Set whether an addon is active with persistence control.
+     * @param addonId The addon ID to activate/deactivate
+     * @param active true to activate, false to deactivate
+     * @param persistent If true, addon persists through logout/death; if false, cleared on logout
+     */
+    public void setActiveAddon(String addonId, boolean active, boolean persistent) {
+        if (active) {
+            equippedAddons.add(addonId);
+            if (persistent) {
+                persistentAddons.add(addonId);
+            } else {
+                persistentAddons.remove(addonId);
+            }
+        } else {
+            equippedAddons.remove(addonId);
+            persistentAddons.remove(addonId);
         }
     }
 
@@ -64,6 +88,7 @@ public class AddonsData implements IAddons {
     @Override
     public void clearActiveAddons() {
         equippedAddons.clear();
+        persistentAddons.clear();
     }
 
     @Override
@@ -84,6 +109,13 @@ public class AddonsData implements IAddons {
         }
         tag.put("EquippedAddons", equippedList);
 
+        // Serialize persistent addons
+        ListTag persistentList = new ListTag();
+        for (String addon : persistentAddons) {
+            persistentList.add(StringTag.valueOf(addon));
+        }
+        tag.put("PersistentAddons", persistentList);
+
         return tag;
     }
 
@@ -91,6 +123,7 @@ public class AddonsData implements IAddons {
     public void deserialize(CompoundTag tag) {
         addons.clear();
         equippedAddons.clear();
+        persistentAddons.clear();
 
         // Deserialize owned addons
         if (tag.contains("Addons", Tag.TAG_LIST)) {
@@ -100,13 +133,24 @@ public class AddonsData implements IAddons {
             }
         }
 
-        // Deserialize equipped addons
+        // Deserialize persistent addons (these bypass ownership validation)
+        if (tag.contains("PersistentAddons", Tag.TAG_LIST)) {
+            ListTag list = tag.getList("PersistentAddons", Tag.TAG_STRING);
+            for (int i = 0; i < list.size(); i++) {
+                persistentAddons.add(list.getString(i));
+            }
+        }
+
+        // Deserialize equipped addons with ownership validation
         if (tag.contains("EquippedAddons", Tag.TAG_LIST)) {
             ListTag list = tag.getList("EquippedAddons", Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
                 String addonId = list.getString(i);
-                // Load all equipped addons (including admin force-equipped ones)
-                equippedAddons.add(addonId);
+                // Load persistent addons or owned addons only
+                if (persistentAddons.contains(addonId) || addons.contains(addonId)) {
+                    equippedAddons.add(addonId);
+                }
+                // Non-persistent addons without ownership are cleared (temporary admin previews)
             }
         }
     }

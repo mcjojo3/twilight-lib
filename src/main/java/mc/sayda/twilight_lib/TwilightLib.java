@@ -47,7 +47,6 @@ public class TwilightLib {
 
         MinecraftForge.EVENT_BUS.addGenericListener(Entity.class, this::attachEntityCaps);
         MinecraftForge.EVENT_BUS.addListener(TwilightLibCommands::registerCommands);
-        MinecraftForge.EVENT_BUS.addListener(mc.sayda.twilight_lib.commands.AddonCommands::registerCommands);
         MinecraftForge.EVENT_BUS.addListener(mc.sayda.twilight_lib.commands.CosmeticsCommand::registerCommands);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLogin);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerClone);
@@ -179,7 +178,7 @@ public class TwilightLib {
         // Send this player's morph to everyone else
         loggedInPlayer.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
             morph.getEntityType().ifPresent(rl -> {
-                NetworkHandler.sendToAll(SyncMorphPacket.of(loggedInPlayer.getUUID(), rl));
+                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(loggedInPlayer.getUUID(), rl));
                 // Force dimension refresh to apply morph hitbox immediately
                 loggedInPlayer.refreshDimensions();
                 LOGGER.info("I wanna have fun and chat with someone besides myself! Player {} logged in with morph: {}", loggedInPlayer.getGameProfile().getName(), rl);
@@ -196,7 +195,7 @@ public class TwilightLib {
 
         // Send this player's trails to everyone else
         loggedInPlayer.getCapability(mc.sayda.twilight_lib.capabilities.TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            NetworkHandler.sendToAll(new mc.sayda.twilight_lib.network.SyncTrailsPacket(loggedInPlayer.getUUID(), trails.serialize()));
+            NetworkHandler.sendTrailsToAll(new mc.sayda.twilight_lib.network.SyncTrailsPacket(loggedInPlayer.getUUID(), trails.serialize()));
         });
 
         // Send this player's effects to everyone else
@@ -262,7 +261,7 @@ public class TwilightLib {
         // Sync morph to client after respawn (when client-side player entity exists)
         player.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
             morph.getEntityType().ifPresent(rl -> {
-                NetworkHandler.sendToAll(SyncMorphPacket.of(player.getUUID(), rl));
+                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), rl));
                 player.refreshDimensions();
                 LOGGER.debug("The wheel turns, day becomes night... Player {} respawned as {}", player.getGameProfile().getName(), rl);
             });
@@ -278,7 +277,7 @@ public class TwilightLib {
 
         // Sync trails to client after respawn
         player.getCapability(mc.sayda.twilight_lib.capabilities.TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            NetworkHandler.sendToAll(new mc.sayda.twilight_lib.network.SyncTrailsPacket(player.getUUID(), trails.serialize()));
+            NetworkHandler.sendTrailsToAll(new mc.sayda.twilight_lib.network.SyncTrailsPacket(player.getUUID(), trails.serialize()));
             LOGGER.debug("Something good is going to happen. With sparkles! Player {} respawned with trails", player.getGameProfile().getName());
         });
 

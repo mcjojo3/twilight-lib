@@ -1,5 +1,6 @@
 package mc.sayda.twilight_lib.commands;
 
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.logging.LogUtils;
@@ -7,8 +8,11 @@ import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.MorphProvider;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
+import mc.sayda.twilight_lib.addon.AddonRegistry;
+import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.commands.CommandUtils;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
+import mc.sayda.twilight_lib.network.SyncAddonsPacket;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncMorphPacket;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
@@ -69,6 +73,10 @@ public class TwilightLibCommands {
         builder.suggest("respawn_twilight");
         return builder.buildFuture();
     };
+
+    // Suggestion provider for addon types
+    private static final SuggestionProvider<CommandSourceStack> ADDON_SUGGESTIONS = (context, builder) ->
+        SharedSuggestionProvider.suggest(AddonRegistry.getAllAddonIds(), builder);
 
     /**
      * Check if entity registry has changed (new mods loaded entities).
@@ -135,7 +143,8 @@ public class TwilightLibCommands {
             evt.getDispatcher().register(
                     Commands.literal(alias)
                             .requires(src -> src.hasPermission(2))
-                            // morph <entity> - targets executor
+
+                            // morph <entity>...
                             .then(Commands.literal("morph")
                                     .then(Commands.argument("entity", ResourceLocationArgument.id())
                                             .suggests(ENTITY_SUGGESTIONS)
@@ -147,13 +156,17 @@ public class TwilightLibCommands {
                                                 }
                                                 return executeMorph(ctx.getSource(), target, ResourceLocationArgument.getId(ctx, "entity"));
                                             })
-                                            // morph <entity> <target> - targets specific player
+                                            // morph <entity> <target>
                                             .then(Commands.argument("target", EntityArgument.player())
                                                     .executes(ctx -> {
                                                         ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
                                                         return executeMorph(ctx.getSource(), target, ResourceLocationArgument.getId(ctx, "entity"));
-                                                    }))))
-                            // unmorph - targets executor
+                                                    })
+                                            )
+                                    )
+                            )
+
+                            // unmorph
                             .then(Commands.literal("unmorph")
                                     .executes(ctx -> {
                                         ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
@@ -164,33 +177,50 @@ public class TwilightLibCommands {
                                         setMorph(ctx.getSource(), target, Optional.empty());
                                         return 1;
                                     })
-                                    // unmorph <target> - targets specific player
+                                    // unmorph <target>
                                     .then(Commands.argument("target", EntityArgument.player())
                                             .executes(ctx -> {
                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
                                                 setMorph(ctx.getSource(), target, Optional.empty());
                                                 return 1;
-                                            })))
-                            // trail set <trail> - targets executor
+                                            })
+                                    )
+                            )
+
+                            // trail ...
                             .then(Commands.literal("trail")
                                     .then(Commands.literal("set")
                                             .then(Commands.argument("trail", StringArgumentType.word())
                                                     .suggests(TRAIL_SUGGESTIONS)
                                                     .executes(ctx -> {
+                                                        // Default: self, non-persistent
                                                         ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
                                                         if (target == null) {
                                                             ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                                             return 0;
                                                         }
-                                                        return executeSetTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"));
+                                                        return executeSetTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"), false);
                                                     })
-                                                    // trail set <trail> <target> - targets specific player
+
+                                                    // trail <trail> <target>
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
-                                                                return executeSetTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"));
-                                                            }))))
-                                    // trail toggle - targets executor
+                                                                return executeSetTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"), false);
+                                                            })
+
+                                                            // trail <trail> <target> <persistent>
+                                                            .then(Commands.argument("persistent", BoolArgumentType.bool())
+                                                                    .executes(ctx -> {
+                                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                        return executeSetTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"), BoolArgumentType.getBool(ctx, "persistent"));
+                                                                    })
+                                                            )
+                                                    )
+                                            )
+                                    )
+
+                                    // trail toggle
                                     .then(Commands.literal("toggle")
                                             .executes(ctx -> {
                                                 ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
@@ -200,37 +230,55 @@ public class TwilightLibCommands {
                                                 }
                                                 return executeToggleTrail(ctx.getSource(), target);
                                             })
-                                            // trail toggle <target> - targets specific player
+                                            // trail toggle <target>
                                             .then(Commands.argument("target", EntityArgument.player())
                                                     .executes(ctx -> {
                                                         ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
                                                         return executeToggleTrail(ctx.getSource(), target);
-                                                    })))
-                                    // trail list - targets executor
+                                                    })
+                                            )
+                                    )
+
+                                    // trail list
                                     .then(Commands.literal("list")
-                                            .executes(ctx -> {
-                                                return executeListTrails(ctx.getSource(), null);
-                                            })))
-                            // effects equip <effect> - targets executor
+                                            .executes(ctx -> executeListTrails(ctx.getSource(), null))
+                                    )
+                            )
+
+                            // effects ...
                             .then(Commands.literal("effects")
                                     .then(Commands.literal("equip")
                                             .then(Commands.argument("effect", StringArgumentType.word())
                                                     .suggests(EFFECT_SUGGESTIONS)
                                                     .executes(ctx -> {
+                                                        // Default: self, non-persistent
                                                         ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
                                                         if (target == null) {
                                                             ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                                             return 0;
                                                         }
-                                                        return executeEquipEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
+                                                        return executeEquipEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"), false);
                                                     })
-                                                    // effects equip <effect> <target> - targets specific player
+
+                                                    // effects equip <effect> <target>
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
-                                                                return executeEquipEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
-                                                            }))))
-                                    // effects unequip <effect> - targets executor
+                                                                return executeEquipEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"), false);
+                                                            })
+
+                                                            // effects equip <effect> <target> <persistent>
+                                                            .then(Commands.argument("persistent", BoolArgumentType.bool())
+                                                                    .executes(ctx -> {
+                                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                        return executeEquipEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"), BoolArgumentType.getBool(ctx, "persistent"));
+                                                                    })
+                                                            )
+                                                    )
+                                            )
+                                    )
+
+                                    // effects unequip <effect>
                                     .then(Commands.literal("unequip")
                                             .then(Commands.argument("effect", StringArgumentType.word())
                                                     .suggests(EFFECT_SUGGESTIONS)
@@ -242,20 +290,107 @@ public class TwilightLibCommands {
                                                         }
                                                         return executeUnequipEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
                                                     })
-                                                    // effects unequip <effect> <target> - targets specific player
+
+                                                    // effects unequip <effect> <target>
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
                                                                 return executeUnequipEffect(ctx.getSource(), target, StringArgumentType.getString(ctx, "effect"));
-                                                            }))))
+                                                            })
+                                                    )
+                                            )
+                                    )
+
                                     // effects list
                                     .then(Commands.literal("list")
+                                            .executes(ctx -> executeListEffects(ctx.getSource()))
+                                    )
+                            )
+
+                            // addons ...
+                            .then(Commands.literal("addons")
+                                    .then(Commands.literal("list")
                                             .executes(ctx -> {
-                                                return executeListEffects(ctx.getSource());
-                                            })))
-                            // reload - refresh supporter data and caches
+                                                var addons = AddonRegistry.getAllAddonIds();
+                                                if (addons.isEmpty()) {
+                                                    ctx.getSource().sendSuccess(() -> Component.literal("No addons registered"), false);
+                                                } else {
+                                                    ctx.getSource().sendSuccess(() -> Component.literal("Available addons: " + String.join(", ", addons)), false);
+                                                }
+                                                return 1;
+                                            }))
+                                    .then(Commands.literal("equip")
+                                            .then(Commands.argument("addonId", StringArgumentType.string())
+                                                    .suggests(ADDON_SUGGESTIONS)
+                                                    .executes(ctx -> {
+                                                        String addonId = ctx.getArgument("addonId", String.class);
+                                                        ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
+                                                        if (target == null) {
+                                                            ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                            return 0;
+                                                        }
+                                                        return executeEquipAddon(ctx.getSource(), target, addonId, false);
+                                                    })
+                                                    .then(Commands.argument("target", EntityArgument.player())
+                                                            .executes(ctx -> {
+                                                                String addonId = ctx.getArgument("addonId", String.class);
+                                                                ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                return executeEquipAddon(ctx.getSource(), target, addonId, false);
+                                                            })
+                                                            .then(Commands.argument("persistent", BoolArgumentType.bool())
+                                                                    .executes(ctx -> {
+                                                                        String addonId = ctx.getArgument("addonId", String.class);
+                                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                        boolean persistent = BoolArgumentType.getBool(ctx, "persistent");
+                                                                        return executeEquipAddon(ctx.getSource(), target, addonId, persistent);
+                                                                    })
+                                                            )
+                                                    )
+                                            )
+                                    )
+                                    .then(Commands.literal("unequip")
+                                            .then(Commands.argument("addonId", StringArgumentType.string())
+                                                    .suggests(ADDON_SUGGESTIONS)
+                                                    .executes(ctx -> {
+                                                        String addonId = ctx.getArgument("addonId", String.class);
+                                                        ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
+                                                        if (target == null) {
+                                                            ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                            return 0;
+                                                        }
+                                                        return executeUnequipAddon(ctx.getSource(), target, addonId);
+                                                    })
+                                                    .then(Commands.argument("target", EntityArgument.player())
+                                                            .executes(ctx -> {
+                                                                String addonId = ctx.getArgument("addonId", String.class);
+                                                                ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                return executeUnequipAddon(ctx.getSource(), target, addonId);
+                                                            })
+                                                    )
+                                            )
+                                    )
+                                    .then(Commands.literal("clear")
+                                            .executes(ctx -> {
+                                                ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
+                                                if (target == null) {
+                                                    ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                    return 0;
+                                                }
+                                                return executeClearAddons(ctx.getSource(), target);
+                                            })
+                                            .then(Commands.argument("target", EntityArgument.player())
+                                                    .executes(ctx -> {
+                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                        return executeClearAddons(ctx.getSource(), target);
+                                                    })
+                                            )
+                                    )
+                            )
+
+                            // reload
                             .then(Commands.literal("reload")
-                                    .executes(ctx -> executeReload(ctx.getSource())))
+                                    .executes(ctx -> executeReload(ctx.getSource()))
+                            )
             );
         }
     }
@@ -308,27 +443,21 @@ public class TwilightLibCommands {
                 LOGGER.debug("Paradigm shift time! {} has been unmorphed", target.getGameProfile().getName());
             }
 
-            NetworkHandler.sendToAll(SyncMorphPacket.of(target.getUUID(), morph.orElse(null)));
+            NetworkHandler.sendMorphToAll(SyncMorphPacket.of(target.getUUID(), morph.orElse(null)));
             target.refreshDimensions();
         });
 
-        // Send feedback to source
+        // Send feedback only to admin/console (not when player targets self via CreRaces)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             if (morph.isPresent()) {
                 source.sendSuccess(() -> Component.literal("Morph '" + morph.get() + "' set for " + target.getGameProfile().getName()), true);
             } else {
                 source.sendSuccess(() -> Component.literal("Morph removed for " + target.getGameProfile().getName()), true);
             }
-        } else {
-            if (morph.isPresent()) {
-                source.sendSuccess(() -> Component.literal("Morph set to '" + morph.get() + "'"), true);
-            } else {
-                source.sendSuccess(() -> Component.literal("Morph removed"), true);
-            }
         }
     }
 
-    private static int executeSetTrail(CommandSourceStack source, ServerPlayer target, String trailId) {
+    private static int executeSetTrail(CommandSourceStack source, ServerPlayer target, String trailId, boolean persistent) {
         // Validate trail type
         TrailType trailType = TrailType.fromId(trailId);
         if (trailType == null) {
@@ -337,23 +466,23 @@ public class TwilightLibCommands {
         }
 
         target.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            // Only temporarily activate - do NOT grant ownership
-            // Use forceSetActiveTrail() to bypass ownership check
-            ((mc.sayda.twilight_lib.capabilities.TrailsData) trails).forceSetActiveTrail(trailId);
+            // Use forceSetActiveTrail() with persistence control
+            // persistent=true: CreRaces race attributes (survive logout/death)
+            // persistent=false: Temporary admin preview (cleared on logout)
+            ((mc.sayda.twilight_lib.capabilities.TrailsData) trails).forceSetActiveTrail(trailId, persistent);
             trails.setTrailEnabled(true);
 
-            // Save to persistent NBT (will be validated on next login)
+            // Save to persistent NBT
             target.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
 
             // Sync to all clients
-            NetworkHandler.sendToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
+            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
         });
 
-        // Send feedback to source
+        // Send feedback only to admin/console (not when player targets self via CreRaces)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
-            source.sendSuccess(() -> Component.literal("Trail '" + trailId + "' temporarily set for " + target.getGameProfile().getName() + " (until logout)"), true);
-        } else {
-            source.sendSuccess(() -> Component.literal("Trail temporarily set to '" + trailId + "' (until logout)"), true);
+            String persistMode = persistent ? " (persistent)" : " (temporary)";
+            source.sendSuccess(() -> Component.literal("Trail '" + trailId + "' set for " + target.getGameProfile().getName() + persistMode), true);
         }
 
         return 1;
@@ -388,42 +517,40 @@ public class TwilightLibCommands {
             target.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
 
             // Sync to all clients
-            NetworkHandler.sendToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
+            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
 
             LOGGER.debug("Paradigm shift time! Trail {} for {}",
-                newState[0] ? "enabled" : "disabled",
-                target.getGameProfile().getName());
+                    newState[0] ? "enabled" : "disabled",
+                    target.getGameProfile().getName());
         });
 
-        // Send feedback to source
+        // Send feedback only to admin/console (not when player targets self via CreRaces)
         String status = newState[0] ? "enabled" : "disabled";
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             source.sendSuccess(() -> Component.literal("Trail " + status + " for " + target.getGameProfile().getName()), true);
-        } else {
-            source.sendSuccess(() -> Component.literal("Trail " + status), true);
         }
 
         return 1;
     }
 
-    private static int executeEquipEffect(CommandSourceStack source, ServerPlayer target, String effectId) {
+    private static int executeEquipEffect(CommandSourceStack source, ServerPlayer target, String effectId, boolean persistent) {
         target.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-            // Only activate temporarily - do NOT grant ownership
-            // Ownership comes from supporter tier or manual overrides in supporters.json
-            effects.setActiveEffect(effectId, true);
+            // Activate effect with persistence control
+            // persistent=true: CreRaces race attributes (survive logout/death)
+            // persistent=false: Temporary admin preview (cleared on logout)
+            ((mc.sayda.twilight_lib.capabilities.EffectsData) effects).setActiveEffect(effectId, true, persistent);
 
-            // Save to persistent NBT (will be validated on next login)
+            // Save to persistent NBT
             target.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
 
             // Sync to all clients (we only sync active effects now)
             NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(target.getUUID(), effects.getActiveEffects()));
         });
 
-        // Send feedback to source
+        // Send feedback only to admin/console (not when player targets self via CreRaces)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
-            source.sendSuccess(() -> Component.literal("Effect '" + effectId + "' temporarily equipped for " + target.getGameProfile().getName() + " (until logout)"), true);
-        } else {
-            source.sendSuccess(() -> Component.literal("Effect '" + effectId + "' temporarily equipped (until logout)"), true);
+            String persistMode = persistent ? " (persistent)" : " (temporary)";
+            source.sendSuccess(() -> Component.literal("Effect '" + effectId + "' equipped for " + target.getGameProfile().getName() + persistMode), true);
         }
 
         return 1;
@@ -440,11 +567,9 @@ public class TwilightLibCommands {
             NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(target.getUUID(), effects.getActiveEffects()));
         });
 
-        // Send feedback to source
+        // Send feedback only to admin/console (not when player targets self via CreRaces)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             source.sendSuccess(() -> Component.literal("Effect '" + effectId + "' unequipped for " + target.getGameProfile().getName()), true);
-        } else {
-            source.sendSuccess(() -> Component.literal("Effect unequipped '" + effectId + "'"), true);
         }
 
         return 1;
@@ -492,5 +617,65 @@ public class TwilightLibCommands {
             LOGGER.error("Oh, farn it! Reload command failed: {}", e.getMessage(), e);
             return 0;
         }
+    }
+
+    private static int executeEquipAddon(CommandSourceStack source, ServerPlayer target, String addonId, boolean persistent) {
+        if (!AddonRegistry.hasAddon(addonId)) {
+            source.sendFailure(Component.literal("Unknown addon: " + addonId));
+            LOGGER.warn("Or, what. Unknown addon requested: {}", addonId);
+            return 0;
+        }
+
+        target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+            // Activate addon with persistence control
+            // persistent=true: CreRaces race attributes (survive logout/death)
+            // persistent=false: Temporary admin preview (cleared on logout)
+            ((mc.sayda.twilight_lib.capabilities.AddonsData) addons).setActiveAddon(addonId, true, persistent);
+            target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
+            // Sync to all clients
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
+            LOGGER.debug("Changed your mind about me yet? {} activated addon: {} (persistent: {})", target.getGameProfile().getName(), addonId, persistent);
+        });
+
+        // Only send feedback if source is NOT the target player (admin, command block, console)
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+            String persistMode = persistent ? " (persistent)" : " (temporary)";
+            source.sendSuccess(() -> Component.literal("Addon '" + addonId + "' equipped for " + target.getGameProfile().getName() + persistMode), true);
+        }
+        return 1;
+    }
+
+    private static int executeUnequipAddon(CommandSourceStack source, ServerPlayer target, String addonId) {
+        target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+            // Admin command: Force deactivate regardless of ownership
+            addons.setActiveAddon(addonId, false);
+            target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
+            // Sync to all clients
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
+            LOGGER.debug("It's so random! {} deactivated addon: {}", target.getGameProfile().getName(), addonId);
+        });
+
+        // Only send feedback if source is NOT the target player (admin, command block, console)
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+            source.sendSuccess(() -> Component.literal("Addon '" + addonId + "' unequipped for " + target.getGameProfile().getName()), true);
+        }
+        return 1;
+    }
+
+    private static int executeClearAddons(CommandSourceStack source, ServerPlayer target) {
+        target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+            // Admin command: Clear all active addons
+            addons.clearActiveAddons();
+            target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
+            // Sync to all clients
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
+            LOGGER.debug("Dusk and dawn are the same. Cleared all active addons for {}", target.getGameProfile().getName());
+        });
+
+        // Only send feedback if source is NOT the target player (admin, command block, console)
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+            source.sendSuccess(() -> Component.literal("All addons cleared for " + target.getGameProfile().getName()), true);
+        }
+        return 1;
     }
 }

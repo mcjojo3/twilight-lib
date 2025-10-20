@@ -145,7 +145,7 @@ public class CosmeticsCommand {
             trails.setTrailEnabled(true);
 
             // Sync to all clients
-            NetworkHandler.sendToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
+            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
 
             player.sendSystemMessage(Component.literal("Trail set to '" + trailId + "'")
                 .withStyle(ChatFormatting.GREEN));
@@ -164,7 +164,7 @@ public class CosmeticsCommand {
             trails.setTrailEnabled(newState);
 
             // Sync to all clients
-            NetworkHandler.sendToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
+            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
 
             if (newState) {
                 player.sendSystemMessage(Component.literal("Trail enabled")
@@ -207,6 +207,16 @@ public class CosmeticsCommand {
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
             } else {
                 String activeTrail = trails.getActiveTrail();
+                boolean isEnabled = trails.isTrailEnabled();
+
+                // Show enabled/disabled status
+                String statusText = isEnabled ? "Enabled" : "Disabled";
+                ChatFormatting statusColor = isEnabled ? ChatFormatting.GREEN : ChatFormatting.RED;
+                player.sendSystemMessage(Component.literal("  Status: ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.literal(statusText).withStyle(statusColor)));
+                player.sendSystemMessage(Component.literal(""));
+
                 for (String trail : supporterTrailsOwned) {
                     boolean isActive = trail.equals(activeTrail);
                     String marker = isActive ? "➤ " : "  • ";
@@ -455,7 +465,7 @@ public class CosmeticsCommand {
             // Sync to all clients
             NetworkHandler.sendEffectsToAll(new mc.sayda.twilight_lib.network.SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
 
-            player.sendSystemMessage(Component.literal("Effect equipped '" + effectId + "'")
+            player.sendSystemMessage(Component.literal("Effect '" + effectId + "' equipped")
                 .withStyle(ChatFormatting.GREEN));
         });
 
@@ -491,7 +501,7 @@ public class CosmeticsCommand {
             // Sync to all clients
             NetworkHandler.sendEffectsToAll(new mc.sayda.twilight_lib.network.SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
 
-            player.sendSystemMessage(Component.literal("Effect unequipped '" + effectId + "'")
+            player.sendSystemMessage(Component.literal("Effect '" + effectId + "' unequipped")
                 .withStyle(ChatFormatting.GREEN));
         });
 
@@ -697,7 +707,7 @@ public class CosmeticsCommand {
             // Sync to all clients
             NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
 
-            player.sendSystemMessage(Component.literal("Addon equipped '" + addonId + "'")
+            player.sendSystemMessage(Component.literal("Addon '" + addonId + "' equipped")
                 .withStyle(ChatFormatting.GREEN));
         });
 
@@ -733,7 +743,7 @@ public class CosmeticsCommand {
             // Sync to all clients
             NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
 
-            player.sendSystemMessage(Component.literal("Addon unequipped '" + addonId + "'")
+            player.sendSystemMessage(Component.literal("Addon '" + addonId + "' unequipped")
                 .withStyle(ChatFormatting.GREEN));
         });
 

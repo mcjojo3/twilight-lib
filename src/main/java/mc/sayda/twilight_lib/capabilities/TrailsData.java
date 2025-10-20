@@ -12,6 +12,7 @@ public class TrailsData implements ITrails {
     private final Set<String> trails = new HashSet<>();
     private String activeTrail = null;
     private boolean trailEnabled = true;
+    private boolean isPersistentTrail = false;  // Track if active trail is persistent (CreRaces)
 
     @Override
     public Set<String> getTrails() {
@@ -58,10 +59,13 @@ public class TrailsData implements ITrails {
 
     /**
      * Force set active trail without ownership check (for admin commands).
-     * Used by /twilightlib trail set to temporarily activate trails.
+     * Used by /twilightlib trail set to activate trails with persistence control.
+     * @param trail The trail ID to activate
+     * @param persistent If true, trail persists through logout/death; if false, cleared on logout
      */
-    public synchronized void forceSetActiveTrail(String trail) {
+    public synchronized void forceSetActiveTrail(String trail, boolean persistent) {
         this.activeTrail = trail;
+        this.isPersistentTrail = persistent;
     }
 
     @Override
@@ -91,6 +95,7 @@ public class TrailsData implements ITrails {
 
         if (activeTrail != null) {
             tag.putString("ActiveTrail", activeTrail);
+            tag.putBoolean("PersistentTrail", isPersistentTrail);
         }
         tag.putBoolean("TrailEnabled", trailEnabled);
 
@@ -101,6 +106,7 @@ public class TrailsData implements ITrails {
     public void deserialize(CompoundTag tag) {
         trails.clear();
         activeTrail = null;  // Reset to null before loading
+        isPersistentTrail = false;
 
         if (tag.contains("Trails", Tag.TAG_LIST)) {
             ListTag trailsList = tag.getList("Trails", Tag.TAG_STRING);
@@ -111,10 +117,13 @@ public class TrailsData implements ITrails {
 
         if (tag.contains("ActiveTrail")) {
             String loadedTrail = tag.getString("ActiveTrail");
-            // Validate that the loaded trail exists in the trails set
-            if (trails.contains(loadedTrail)) {
+            isPersistentTrail = tag.getBoolean("PersistentTrail");  // Default false if not present
+
+            // Validate ownership for non-persistent trails
+            if (isPersistentTrail || trails.contains(loadedTrail)) {
                 activeTrail = loadedTrail;
             }
+            // Non-persistent trails without ownership are cleared (temporary admin previews)
         }
 
         trailEnabled = !tag.contains("TrailEnabled") || tag.getBoolean("TrailEnabled");

@@ -11,6 +11,7 @@ import java.util.Set;
 public class EffectsData implements IEffects {
     private final Set<String> effects = new HashSet<>();  // Owned effects
     private final Set<String> equippedEffects = new HashSet<>();  // Currently equipped effects
+    private final Set<String> persistentEffects = new HashSet<>();  // Effects that bypass ownership (CreRaces)
 
     // Owned effects methods
     @Override
@@ -51,8 +52,31 @@ public class EffectsData implements IEffects {
         if (active) {
             // Allow activating without ownership check (admin commands can force-activate)
             equippedEffects.add(effectId);
+            // Default to non-persistent for backwards compatibility
+            persistentEffects.remove(effectId);
         } else {
             equippedEffects.remove(effectId);
+            persistentEffects.remove(effectId);
+        }
+    }
+
+    /**
+     * Set whether an effect is active with persistence control.
+     * @param effectId The effect ID to activate/deactivate
+     * @param active true to activate, false to deactivate
+     * @param persistent If true, effect persists through logout/death; if false, cleared on logout
+     */
+    public void setActiveEffect(String effectId, boolean active, boolean persistent) {
+        if (active) {
+            equippedEffects.add(effectId);
+            if (persistent) {
+                persistentEffects.add(effectId);
+            } else {
+                persistentEffects.remove(effectId);
+            }
+        } else {
+            equippedEffects.remove(effectId);
+            persistentEffects.remove(effectId);
         }
     }
 
@@ -64,6 +88,7 @@ public class EffectsData implements IEffects {
     @Override
     public void clearActiveEffects() {
         equippedEffects.clear();
+        persistentEffects.clear();
     }
 
     @Override
@@ -84,6 +109,13 @@ public class EffectsData implements IEffects {
         }
         tag.put("EquippedEffects", equippedList);
 
+        // Serialize persistent effects
+        ListTag persistentList = new ListTag();
+        for (String effect : persistentEffects) {
+            persistentList.add(StringTag.valueOf(effect));
+        }
+        tag.put("PersistentEffects", persistentList);
+
         return tag;
     }
 
@@ -91,6 +123,7 @@ public class EffectsData implements IEffects {
     public void deserialize(CompoundTag tag) {
         effects.clear();
         equippedEffects.clear();
+        persistentEffects.clear();
 
         // Deserialize owned effects first
         if (tag.contains("Effects", Tag.TAG_LIST)) {
@@ -100,16 +133,24 @@ public class EffectsData implements IEffects {
             }
         }
 
-        // Deserialize equipped effects, validating ownership
+        // Deserialize persistent effects (these bypass ownership validation)
+        if (tag.contains("PersistentEffects", Tag.TAG_LIST)) {
+            ListTag list = tag.getList("PersistentEffects", Tag.TAG_STRING);
+            for (int i = 0; i < list.size(); i++) {
+                persistentEffects.add(list.getString(i));
+            }
+        }
+
+        // Deserialize equipped effects with ownership validation
         if (tag.contains("EquippedEffects", Tag.TAG_LIST)) {
             ListTag list = tag.getList("EquippedEffects", Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
                 String effectId = list.getString(i);
-                // Only restore equipped effects that are owned
-                // This removes admin force-equipped effects on logout/death
-                if (effects.contains(effectId)) {
+                // Load persistent effects or owned effects only
+                if (persistentEffects.contains(effectId) || effects.contains(effectId)) {
                     equippedEffects.add(effectId);
                 }
+                // Non-persistent effects without ownership are cleared (temporary admin previews)
             }
         }
     }

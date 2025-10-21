@@ -1,7 +1,11 @@
 package mc.sayda.twilight_lib.particle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.*;
+import net.minecraft.client.particle.Particle;
+import net.minecraft.client.particle.ParticleProvider;
+import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.particle.SpriteSet;
+import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -33,7 +37,7 @@ public class RatvenomParticle extends TextureSheetParticle {
         this.setSize(0.2f, 0.2f);
         this.quadSize *= 0.8f;
         this.lifetime = 10;
-        this.gravity = -0.3f;
+        this.gravity = -0.2f;
         this.hasPhysics = true;
         this.xd = vx * 0;
         this.yd = vy * 0;

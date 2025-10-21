@@ -14,26 +14,26 @@ import javax.annotation.Nullable;
 public class AddonsProvider implements ICapabilitySerializable<CompoundTag> {
     public static final Capability<IAddons> ADDONS_CAP = CapabilityManager.get(new CapabilityToken<>(){});
 
-    private final AddonsData backend = new AddonsData();
-    private final LazyOptional<IAddons> optional = LazyOptional.of(() -> backend);
+    private final AddonsData addons = new AddonsData();
+    private final LazyOptional<IAddons> optionalAddons = LazyOptional.of(() -> addons);
 
     @Nonnull
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-        return cap == ADDONS_CAP ? optional.cast() : LazyOptional.empty();
+        return cap == ADDONS_CAP ? optionalAddons.cast() : LazyOptional.empty();
     }
 
     public void invalidate() {
-        optional.invalidate();
+        optionalAddons.invalidate();
     }
 
     @Override
     public CompoundTag serializeNBT() {
-        return backend.serialize();
+        return addons.serialize();
     }
 
     @Override
     public void deserializeNBT(CompoundTag tag) {
-        backend.deserialize(tag);
+        addons.deserialize(tag);
     }
 }

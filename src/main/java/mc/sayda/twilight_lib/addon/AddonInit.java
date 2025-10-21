@@ -2,7 +2,10 @@ package mc.sayda.twilight_lib.addon;
 
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.TwilightLib;
-import mc.sayda.twilight_lib.client.model.addon.*;
+import mc.sayda.twilight_lib.client.model.addon.KitsuneEarsModel;
+import mc.sayda.twilight_lib.client.model.addon.KitsuneSnoutModel;
+import mc.sayda.twilight_lib.client.model.addon.KitsuneTailsVariantModel;
+import mc.sayda.twilight_lib.client.model.addon.TiaraModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;

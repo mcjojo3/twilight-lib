@@ -17,26 +17,26 @@ import java.util.Optional;
 public class MorphProvider implements ICapabilitySerializable<CompoundTag> {
     public static final Capability<IMorph> MORPH_CAP = CapabilityManager.get(new CapabilityToken<>(){});
 
-    private final MorphData backend = new MorphData();
-    private final LazyOptional<IMorph> optional = LazyOptional.of(() -> backend);
+    private final MorphData morph = new MorphData();
+    private final LazyOptional<IMorph> optionalMorph = LazyOptional.of(() -> morph);
 
     @Nonnull
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-        return cap == MORPH_CAP ? optional.cast() : LazyOptional.empty();
+        return cap == MORPH_CAP ? optionalMorph.cast() : LazyOptional.empty();
     }
 
     public void invalidate() {
-        optional.invalidate();
+        optionalMorph.invalidate();
     }
 
     @Override
     public CompoundTag serializeNBT() {
-        return backend.serialize();
+        return morph.serialize();
     }
 
     @Override
     public void deserializeNBT(CompoundTag tag) {
-        backend.deserialize(tag);
+        morph.deserialize(tag);
     }
 }

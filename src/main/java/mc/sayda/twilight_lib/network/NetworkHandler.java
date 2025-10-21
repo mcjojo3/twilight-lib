@@ -8,6 +8,7 @@ import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.LazyOptional;
@@ -60,7 +61,7 @@ public class NetworkHandler {
     }
 
     public static void sendToPlayer(Player player, SyncMorphPacket pkt) {
-        if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
         LOGGER.debug("I'm coming over to say 'Hi!' Sending morph to {}", player.getGameProfile().getName());
     }
@@ -84,7 +85,7 @@ public class NetworkHandler {
     }
 
     public static void sendAddonsToPlayer(Player player, SyncAddonsPacket pkt) {
-        if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
         LOGGER.debug("Starlight is an expression of something inside bursting to get out! Sending addons to {}", player.getGameProfile().getName());
     }
@@ -109,7 +110,7 @@ public class NetworkHandler {
     }
 
     public static void sendTrailsToPlayer(Player player, SyncTrailsPacket pkt) {
-        if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
         LOGGER.debug("Whoo! Sending trails to {}", player.getGameProfile().getName());
     }
@@ -132,7 +133,7 @@ public class NetworkHandler {
     }
 
     public static void sendEffectsToPlayer(Player player, SyncEffectsPacket pkt) {
-        if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
         LOGGER.debug("Ooh! Oooooh! Sending effects to {}", player.getGameProfile().getName());
     }

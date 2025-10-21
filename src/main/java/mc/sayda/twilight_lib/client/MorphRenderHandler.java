@@ -3,11 +3,18 @@ package mc.sayda.twilight_lib.client;
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.MorphProvider;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -155,22 +162,22 @@ public class MorphRenderHandler {
 
         // === EQUIPMENT (so held items render) ===
         // Copy all equipment slots
-        for (var slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+        for (var slot : EquipmentSlot.values()) {
             proxy.setItemSlot(slot, player.getItemBySlot(slot));
         }
 
         // Special handling for foxes - animations and item display
         double foxYOffset = 0.0;
-        if (proxy instanceof net.minecraft.world.entity.animal.Fox fox) {
+        if (proxy instanceof Fox fox) {
             var mainHandItem = player.getMainHandItem();
             if (!mainHandItem.isEmpty()) {
                 // Foxes display items in their mouth via NBT
-                fox.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, mainHandItem);
+                fox.setItemSlot(EquipmentSlot.MAINHAND, mainHandItem);
             }
 
             // Sync fox-specific states based on player pose
-            boolean isSleeping = player.getPose() == net.minecraft.world.entity.Pose.SLEEPING;
-            boolean isCrouching = player.getPose() == net.minecraft.world.entity.Pose.CROUCHING;
+            boolean isSleeping = player.getPose() == Pose.SLEEPING;
+            boolean isCrouching = player.getPose() == Pose.CROUCHING;
             boolean shouldSit = player.isPassenger() && player.getDeltaMovement().lengthSqr() < 0.01;
 
             // For CustomFoxEntity, we can directly control the sleeping state
@@ -199,8 +206,8 @@ public class MorphRenderHandler {
         int packedLight = disp.getPackedLightCoords(proxy, pt);
 
         // Special handling for fox rendering with offsets and rotations
-        if (proxy instanceof net.minecraft.world.entity.animal.Fox fox) {
-            boolean isSleeping = player.getPose() == net.minecraft.world.entity.Pose.SLEEPING;
+        if (proxy instanceof Fox fox) {
+            boolean isSleeping = player.getPose() == Pose.SLEEPING;
 
             poseStack.pushPose();
             // Apply Y offset for fox poses
@@ -219,7 +226,7 @@ public class MorphRenderHandler {
                 // Rotate fox 270 degrees around Z axis to lie on side
                 // Move to rotation center, rotate, then move back
                 poseStack.translate(0.0, 0.3, 0.0); // Adjusted rotation center
-                poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(270.0f));
+                poseStack.mulPose(Axis.ZP.rotationDegrees(270.0f));
                 poseStack.translate(0.0, -0.3, 0.0);
             }
 

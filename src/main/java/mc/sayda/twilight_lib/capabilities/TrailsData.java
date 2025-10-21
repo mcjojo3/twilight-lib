@@ -9,6 +9,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class TrailsData implements ITrails {
+    private static final String NBT_TRAILS = "Trails";
+    private static final String NBT_ACTIVE_TRAIL = "ActiveTrail";
+    private static final String NBT_PERSISTENT_TRAIL = "PersistentTrail";
+    private static final String NBT_TRAIL_ENABLED = "TrailEnabled";
+
     private final Set<String> trails = new HashSet<>();
     private String activeTrail = null;
     private boolean trailEnabled = true;
@@ -91,13 +96,13 @@ public class TrailsData implements ITrails {
         for (String trail : trails) {
             trailsList.add(StringTag.valueOf(trail));
         }
-        tag.put("Trails", trailsList);
+        tag.put(NBT_TRAILS, trailsList);
 
         if (activeTrail != null) {
-            tag.putString("ActiveTrail", activeTrail);
-            tag.putBoolean("PersistentTrail", isPersistentTrail);
+            tag.putString(NBT_ACTIVE_TRAIL, activeTrail);
+            tag.putBoolean(NBT_PERSISTENT_TRAIL, isPersistentTrail);
         }
-        tag.putBoolean("TrailEnabled", trailEnabled);
+        tag.putBoolean(NBT_TRAIL_ENABLED, trailEnabled);
 
         return tag;
     }
@@ -108,16 +113,16 @@ public class TrailsData implements ITrails {
         activeTrail = null;  // Reset to null before loading
         isPersistentTrail = false;
 
-        if (tag.contains("Trails", Tag.TAG_LIST)) {
-            ListTag trailsList = tag.getList("Trails", Tag.TAG_STRING);
+        if (tag.contains(NBT_TRAILS, Tag.TAG_LIST)) {
+            ListTag trailsList = tag.getList(NBT_TRAILS, Tag.TAG_STRING);
             for (int i = 0; i < trailsList.size(); i++) {
                 trails.add(trailsList.getString(i));
             }
         }
 
-        if (tag.contains("ActiveTrail")) {
-            String loadedTrail = tag.getString("ActiveTrail");
-            isPersistentTrail = tag.getBoolean("PersistentTrail");  // Default false if not present
+        if (tag.contains(NBT_ACTIVE_TRAIL)) {
+            String loadedTrail = tag.getString(NBT_ACTIVE_TRAIL);
+            isPersistentTrail = tag.getBoolean(NBT_PERSISTENT_TRAIL);  // Default false if not present
 
             // Validate ownership for non-persistent trails
             if (isPersistentTrail || trails.contains(loadedTrail)) {
@@ -126,6 +131,6 @@ public class TrailsData implements ITrails {
             // Non-persistent trails without ownership are cleared (temporary admin previews)
         }
 
-        trailEnabled = !tag.contains("TrailEnabled") || tag.getBoolean("TrailEnabled");
+        trailEnabled = !tag.contains(NBT_TRAIL_ENABLED) || tag.getBoolean(NBT_TRAIL_ENABLED);
     }
 }

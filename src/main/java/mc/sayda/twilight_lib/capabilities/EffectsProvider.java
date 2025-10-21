@@ -14,26 +14,26 @@ import javax.annotation.Nullable;
 public class EffectsProvider implements ICapabilitySerializable<CompoundTag> {
     public static final Capability<IEffects> EFFECTS_CAP = CapabilityManager.get(new CapabilityToken<>(){});
 
-    private final EffectsData backend = new EffectsData();
-    private final LazyOptional<IEffects> optional = LazyOptional.of(() -> backend);
+    private final EffectsData effects = new EffectsData();
+    private final LazyOptional<IEffects> optionalEffects = LazyOptional.of(() -> effects);
 
     @Nonnull
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-        return cap == EFFECTS_CAP ? optional.cast() : LazyOptional.empty();
+        return cap == EFFECTS_CAP ? optionalEffects.cast() : LazyOptional.empty();
     }
 
     public void invalidate() {
-        optional.invalidate();
+        optionalEffects.invalidate();
     }
 
     @Override
     public CompoundTag serializeNBT() {
-        return backend.serialize();
+        return effects.serialize();
     }
 
     @Override
     public void deserializeNBT(CompoundTag tag) {
-        backend.deserialize(tag);
+        effects.deserialize(tag);
     }
 }

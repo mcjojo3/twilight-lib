@@ -13,6 +13,8 @@ import java.util.Optional;
 
 public class MorphData implements IMorph {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final String NBT_ENTITY = "Entity";
+
     private Optional<ResourceLocation> entityType = Optional.empty();
     private EntityType<?> cachedEntityType = null;
 
@@ -35,15 +37,15 @@ public class MorphData implements IMorph {
     @Override
     public CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
-        entityType.ifPresent(rl -> tag.putString("Entity", rl.toString()));
+        entityType.ifPresent(rl -> tag.putString(NBT_ENTITY, rl.toString()));
         return tag;
     }
 
     @Override
     public void deserialize(CompoundTag tag) {
-        if (tag.contains("Entity", Tag.TAG_STRING)) {
+        if (tag.contains(NBT_ENTITY, Tag.TAG_STRING)) {
             try {
-                ResourceLocation rl = new ResourceLocation(tag.getString("Entity"));
+                ResourceLocation rl = new ResourceLocation(tag.getString(NBT_ENTITY));
                 setEntityType(Optional.of(rl));
                 LOGGER.debug("Ahh... I need a nap. Deserialized morph: {}", rl);
             } catch (Exception e) {

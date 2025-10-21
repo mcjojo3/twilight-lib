@@ -9,6 +9,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class AddonsData implements IAddons {
+    private static final String NBT_ADDONS = "Addons";
+    private static final String NBT_EQUIPPED_ADDONS = "EquippedAddons";
+    private static final String NBT_PERSISTENT_ADDONS = "PersistentAddons";
+
     private final Set<String> addons = new HashSet<>();  // Owned addons
     private final Set<String> equippedAddons = new HashSet<>();  // Currently equipped addons
     private final Set<String> persistentAddons = new HashSet<>();  // Addons that bypass ownership (CreRaces)
@@ -100,21 +104,21 @@ public class AddonsData implements IAddons {
         for (String addon : addons) {
             ownedList.add(StringTag.valueOf(addon));
         }
-        tag.put("Addons", ownedList);
+        tag.put(NBT_ADDONS, ownedList);
 
         // Serialize equipped addons
         ListTag equippedList = new ListTag();
         for (String addon : equippedAddons) {
             equippedList.add(StringTag.valueOf(addon));
         }
-        tag.put("EquippedAddons", equippedList);
+        tag.put(NBT_EQUIPPED_ADDONS, equippedList);
 
         // Serialize persistent addons
         ListTag persistentList = new ListTag();
         for (String addon : persistentAddons) {
             persistentList.add(StringTag.valueOf(addon));
         }
-        tag.put("PersistentAddons", persistentList);
+        tag.put(NBT_PERSISTENT_ADDONS, persistentList);
 
         return tag;
     }
@@ -126,24 +130,24 @@ public class AddonsData implements IAddons {
         persistentAddons.clear();
 
         // Deserialize owned addons
-        if (tag.contains("Addons", Tag.TAG_LIST)) {
-            ListTag list = tag.getList("Addons", Tag.TAG_STRING);
+        if (tag.contains(NBT_ADDONS, Tag.TAG_LIST)) {
+            ListTag list = tag.getList(NBT_ADDONS, Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
                 addons.add(list.getString(i));
             }
         }
 
         // Deserialize persistent addons (these bypass ownership validation)
-        if (tag.contains("PersistentAddons", Tag.TAG_LIST)) {
-            ListTag list = tag.getList("PersistentAddons", Tag.TAG_STRING);
+        if (tag.contains(NBT_PERSISTENT_ADDONS, Tag.TAG_LIST)) {
+            ListTag list = tag.getList(NBT_PERSISTENT_ADDONS, Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
                 persistentAddons.add(list.getString(i));
             }
         }
 
         // Deserialize equipped addons with ownership validation
-        if (tag.contains("EquippedAddons", Tag.TAG_LIST)) {
-            ListTag list = tag.getList("EquippedAddons", Tag.TAG_STRING);
+        if (tag.contains(NBT_EQUIPPED_ADDONS, Tag.TAG_LIST)) {
+            ListTag list = tag.getList(NBT_EQUIPPED_ADDONS, Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
                 String addonId = list.getString(i);
                 // Load persistent addons or owned addons only

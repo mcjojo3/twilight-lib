@@ -11,7 +11,10 @@ import mc.sayda.twilight_lib.cosmetics.TrailType;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
 import mc.sayda.twilight_lib.network.SyncAddonsPacket;
+import mc.sayda.twilight_lib.network.SyncEffectsPacket;
+import mc.sayda.twilight_lib.supporter.SupporterData;
 import mc.sayda.twilight_lib.supporter.SupporterRegistry;
+import mc.sayda.twilight_lib.supporter.SupporterService;
 import mc.sayda.twilight_lib.TwilightConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -21,7 +24,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
 
+import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Commands for managing cosmetic features
@@ -190,7 +196,7 @@ public class CosmeticsCommand {
             // Filter to only show trails that are supporter-exclusive
             Set<String> supporterTrailsOwned = playerTrails.stream()
                 .filter(SupporterRegistry::isTrailSupporterExclusive)
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
 
             player.sendSystemMessage(Component.literal("═══════════════════════════")
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
@@ -283,7 +289,7 @@ public class CosmeticsCommand {
             // Filter to only show addons that are supporter-exclusive
             Set<String> supporterAddonsOwned = playerAddons.stream()
                 .filter(SupporterRegistry::isAddonSupporterExclusive)
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
 
             player.sendSystemMessage(Component.literal("═══════════════════════════")
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
@@ -364,7 +370,7 @@ public class CosmeticsCommand {
             // Filter to only show effects that are supporter-exclusive
             Set<String> supporterEffectsOwned = playerEffects.stream()
                 .filter(SupporterRegistry::isEffectSupporterExclusive)
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
 
             player.sendSystemMessage(Component.literal("═══════════════════════════")
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
@@ -463,7 +469,7 @@ public class CosmeticsCommand {
             player.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
 
             // Sync to all clients
-            NetworkHandler.sendEffectsToAll(new mc.sayda.twilight_lib.network.SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
+            NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
 
             player.sendSystemMessage(Component.literal("Effect '" + effectId + "' equipped")
                 .withStyle(ChatFormatting.GREEN));
@@ -499,7 +505,7 @@ public class CosmeticsCommand {
             player.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
 
             // Sync to all clients
-            NetworkHandler.sendEffectsToAll(new mc.sayda.twilight_lib.network.SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
+            NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
 
             player.sendSystemMessage(Component.literal("Effect '" + effectId + "' unequipped")
                 .withStyle(ChatFormatting.GREEN));
@@ -515,8 +521,8 @@ public class CosmeticsCommand {
 
         // Get supporter data
         String uuid = player.getStringUUID();
-        java.util.Optional<mc.sayda.twilight_lib.supporter.SupporterData> supporterData =
-            mc.sayda.twilight_lib.supporter.SupporterService.getSupporterData(uuid);
+        Optional<SupporterData> supporterData =
+            SupporterService.getSupporterData(uuid);
 
         player.sendSystemMessage(Component.literal("═══════════════════════════")
             .withStyle(ChatFormatting.LIGHT_PURPLE));
@@ -526,7 +532,7 @@ public class CosmeticsCommand {
             .withStyle(ChatFormatting.LIGHT_PURPLE));
 
         if (supporterData.isPresent()) {
-            mc.sayda.twilight_lib.supporter.SupporterData data = supporterData.get();
+            SupporterData data = supporterData.get();
 
             // Show tier status
             if (data.isActiveSupporter()) {
@@ -574,19 +580,19 @@ public class CosmeticsCommand {
             player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
                 addonCount[0] = addons.getAddons().stream()
                     .filter(SupporterRegistry::isAddonSupporterExclusive)
-                    .collect(java.util.stream.Collectors.toSet()).size();
+                    .collect(Collectors.toSet()).size();
                 addonEquippedCount[0] = addons.getActiveAddons().stream()
                     .filter(SupporterRegistry::isAddonSupporterExclusive)
-                    .collect(java.util.stream.Collectors.toSet()).size();
+                    .collect(Collectors.toSet()).size();
             });
 
             player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
                 effectCount[0] = effects.getEffects().stream()
                     .filter(SupporterRegistry::isEffectSupporterExclusive)
-                    .collect(java.util.stream.Collectors.toSet()).size();
+                    .collect(Collectors.toSet()).size();
                 effectEquippedCount[0] = effects.getActiveEffects().stream()
                     .filter(SupporterRegistry::isEffectSupporterExclusive)
-                    .collect(java.util.stream.Collectors.toSet()).size();
+                    .collect(Collectors.toSet()).size();
             });
 
             int totalCosmetics = trailCount[0] + addonCount[0] + effectCount[0];
@@ -605,26 +611,26 @@ public class CosmeticsCommand {
 
             // Show manual grants if any (reading from capabilities)
             if (!data.isActiveSupporter()) {
-                final java.util.Set<String>[] manualTrails = new java.util.Set[]{java.util.Collections.emptySet()};
-                final java.util.Set<String>[] manualAddons = new java.util.Set[]{java.util.Collections.emptySet()};
-                final java.util.Set<String>[] manualEffects = new java.util.Set[]{java.util.Collections.emptySet()};
+                final Set<String>[] manualTrails = new Set[]{Collections.emptySet()};
+                final Set<String>[] manualAddons = new Set[]{Collections.emptySet()};
+                final Set<String>[] manualEffects = new Set[]{Collections.emptySet()};
 
                 player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
                     manualTrails[0] = trails.getTrails().stream()
                         .filter(SupporterRegistry::isTrailSupporterExclusive)
-                        .collect(java.util.stream.Collectors.toSet());
+                        .collect(Collectors.toSet());
                 });
 
                 player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
                     manualAddons[0] = addons.getAddons().stream()
                         .filter(SupporterRegistry::isAddonSupporterExclusive)
-                        .collect(java.util.stream.Collectors.toSet());
+                        .collect(Collectors.toSet());
                 });
 
                 player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
                     manualEffects[0] = effects.getEffects().stream()
                         .filter(SupporterRegistry::isEffectSupporterExclusive)
-                        .collect(java.util.stream.Collectors.toSet());
+                        .collect(Collectors.toSet());
                 });
 
                 if (!manualTrails[0].isEmpty() || !manualAddons[0].isEmpty() || !manualEffects[0].isEmpty()) {

@@ -9,6 +9,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class EffectsData implements IEffects {
+    private static final String NBT_EFFECTS = "Effects";
+    private static final String NBT_EQUIPPED_EFFECTS = "EquippedEffects";
+    private static final String NBT_PERSISTENT_EFFECTS = "PersistentEffects";
+
     private final Set<String> effects = new HashSet<>();  // Owned effects
     private final Set<String> equippedEffects = new HashSet<>();  // Currently equipped effects
     private final Set<String> persistentEffects = new HashSet<>();  // Effects that bypass ownership (CreRaces)
@@ -100,21 +104,21 @@ public class EffectsData implements IEffects {
         for (String effect : effects) {
             ownedList.add(StringTag.valueOf(effect));
         }
-        tag.put("Effects", ownedList);
+        tag.put(NBT_EFFECTS, ownedList);
 
         // Serialize equipped effects
         ListTag equippedList = new ListTag();
         for (String effect : equippedEffects) {
             equippedList.add(StringTag.valueOf(effect));
         }
-        tag.put("EquippedEffects", equippedList);
+        tag.put(NBT_EQUIPPED_EFFECTS, equippedList);
 
         // Serialize persistent effects
         ListTag persistentList = new ListTag();
         for (String effect : persistentEffects) {
             persistentList.add(StringTag.valueOf(effect));
         }
-        tag.put("PersistentEffects", persistentList);
+        tag.put(NBT_PERSISTENT_EFFECTS, persistentList);
 
         return tag;
     }
@@ -126,24 +130,24 @@ public class EffectsData implements IEffects {
         persistentEffects.clear();
 
         // Deserialize owned effects first
-        if (tag.contains("Effects", Tag.TAG_LIST)) {
-            ListTag list = tag.getList("Effects", Tag.TAG_STRING);
+        if (tag.contains(NBT_EFFECTS, Tag.TAG_LIST)) {
+            ListTag list = tag.getList(NBT_EFFECTS, Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
                 effects.add(list.getString(i));
             }
         }
 
         // Deserialize persistent effects (these bypass ownership validation)
-        if (tag.contains("PersistentEffects", Tag.TAG_LIST)) {
-            ListTag list = tag.getList("PersistentEffects", Tag.TAG_STRING);
+        if (tag.contains(NBT_PERSISTENT_EFFECTS, Tag.TAG_LIST)) {
+            ListTag list = tag.getList(NBT_PERSISTENT_EFFECTS, Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
                 persistentEffects.add(list.getString(i));
             }
         }
 
         // Deserialize equipped effects with ownership validation
-        if (tag.contains("EquippedEffects", Tag.TAG_LIST)) {
-            ListTag list = tag.getList("EquippedEffects", Tag.TAG_STRING);
+        if (tag.contains(NBT_EQUIPPED_EFFECTS, Tag.TAG_LIST)) {
+            ListTag list = tag.getList(NBT_EQUIPPED_EFFECTS, Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
                 String effectId = list.getString(i);
                 // Load persistent effects or owned effects only

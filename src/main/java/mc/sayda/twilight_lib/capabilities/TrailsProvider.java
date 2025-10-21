@@ -17,9 +17,14 @@ public class TrailsProvider implements ICapabilitySerializable<CompoundTag> {
     private final ITrails trails = new TrailsData();
     private final LazyOptional<ITrails> optionalTrails = LazyOptional.of(() -> trails);
 
+    @Nonnull
     @Override
-    public @Nonnull <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
         return cap == TRAILS_CAP ? optionalTrails.cast() : LazyOptional.empty();
+    }
+
+    public void invalidate() {
+        optionalTrails.invalidate();
     }
 
     @Override
@@ -30,9 +35,5 @@ public class TrailsProvider implements ICapabilitySerializable<CompoundTag> {
     @Override
     public void deserializeNBT(CompoundTag nbt) {
         trails.deserialize(nbt);
-    }
-
-    public void invalidate() {
-        optionalTrails.invalidate();
     }
 }

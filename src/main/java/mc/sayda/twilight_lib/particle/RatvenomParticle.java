@@ -37,7 +37,7 @@ public class RatvenomParticle extends TextureSheetParticle {
         this.setSize(0.2f, 0.2f);
         this.quadSize *= 0.8f;
         this.lifetime = 10;
-        this.gravity = -0.2f;
+        this.gravity = -0.1f;
         this.hasPhysics = true;
         this.xd = vx * 0;
         this.yd = vy * 0;

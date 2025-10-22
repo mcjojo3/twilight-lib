@@ -28,6 +28,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
+import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -53,7 +54,9 @@ public class TwilightLib {
 
         ModEntities.register(modBus);
         ModParticles.register(modBus);
+        ModAttributes.register(modBus);
         modBus.addListener(this::onRegisterCapabilities);
+        modBus.addListener(this::onEntityAttributeModification);
         NetworkHandler.init();
 
         MinecraftForge.EVENT_BUS.addGenericListener(Entity.class, this::attachEntityCaps);
@@ -74,6 +77,12 @@ public class TwilightLib {
         evt.register(IAddons.class);
         evt.register(ITrails.class);
         evt.register(IEffects.class);
+    }
+
+    private void onEntityAttributeModification(final EntityAttributeModificationEvent evt) {
+        // Add MINING_PENALTY attribute to all living entities (especially players)
+        evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.MINING_PENALTY.get());
+        LOGGER.debug("It's something new! Added MINING_PENALTY attribute to players.");
     }
 
     private void attachEntityCaps(final AttachCapabilitiesEvent<Entity> evt) {

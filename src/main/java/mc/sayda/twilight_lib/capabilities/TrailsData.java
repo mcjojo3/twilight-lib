@@ -5,6 +5,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 
+import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,9 +16,9 @@ public class TrailsData implements ITrails {
     private static final String NBT_TRAIL_ENABLED = "TrailEnabled";
 
     private final Set<String> trails = new HashSet<>();
-    private String activeTrail = null;
-    private boolean trailEnabled = true;
-    private boolean isPersistentTrail = false;  // Track if active trail is persistent (CreRaces)
+    private volatile String activeTrail = null;
+    private volatile boolean trailEnabled = true;
+    private volatile boolean isPersistentTrail = false;  // Track if active trail persists through logout/death (for race mods)
 
     @Override
     public Set<String> getTrails() {
@@ -51,6 +52,7 @@ public class TrailsData implements ITrails {
     }
 
     @Override
+    @Nullable
     public String getActiveTrail() {
         return activeTrail;
     }
@@ -59,6 +61,8 @@ public class TrailsData implements ITrails {
     public synchronized void setActiveTrail(String trail) {
         if (trail == null || trails.contains(trail)) {
             this.activeTrail = trail;
+            // Player-activated owned cosmetics should persist
+            this.isPersistentTrail = (trail != null);
         }
     }
 
@@ -124,11 +128,11 @@ public class TrailsData implements ITrails {
             String loadedTrail = tag.getString(NBT_ACTIVE_TRAIL);
             isPersistentTrail = tag.getBoolean(NBT_PERSISTENT_TRAIL);  // Default false if not present
 
-            // Validate ownership for non-persistent trails
-            if (isPersistentTrail || trails.contains(loadedTrail)) {
+            // Only restore if persistent flag is set (respects admin's persistence control)
+            // Non-persistent trails are cleared on logout/death regardless of ownership
+            if (isPersistentTrail) {
                 activeTrail = loadedTrail;
             }
-            // Non-persistent trails without ownership are cleared (temporary admin previews)
         }
 
         trailEnabled = !tag.contains(NBT_TRAIL_ENABLED) || tag.getBoolean(NBT_TRAIL_ENABLED);

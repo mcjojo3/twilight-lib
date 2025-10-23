@@ -4,6 +4,8 @@ import mc.sayda.twilight_lib.particle.ModParticles;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 
+import javax.annotation.Nullable;
+
 public enum TrailType {
     HEARTS("hearts", null, 2), // Tier-based, particle determined dynamically
     RATVENOM("ratvenom", ModParticles.RATVENOM.get(), 3),
@@ -30,6 +32,11 @@ public enum TrailType {
         return id;
     }
 
+    /**
+     * Get the particle type for this trail. Can be null for tier-based trails (e.g., hearts).
+     * @return The particle type, or null if tier-based
+     */
+    @Nullable
     public ParticleOptions getParticleType() {
         return particleType;
     }
@@ -42,6 +49,12 @@ public enum TrailType {
         return particleType == null;
     }
 
+    /**
+     * Look up a trail type by its string ID.
+     * @param id The trail type ID
+     * @return The matching TrailType, or null if not found
+     */
+    @Nullable
     public static TrailType fromId(String id) {
         for (TrailType type : values()) {
             if (type.id.equals(id)) {

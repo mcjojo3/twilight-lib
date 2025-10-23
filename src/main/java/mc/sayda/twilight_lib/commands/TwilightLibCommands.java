@@ -7,9 +7,12 @@ import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.MorphProvider;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
+import mc.sayda.twilight_lib.capabilities.TrailsData;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
+import mc.sayda.twilight_lib.capabilities.EffectsData;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
 import mc.sayda.twilight_lib.capabilities.AddonsProvider;
+import mc.sayda.twilight_lib.capabilities.AddonsData;
 import mc.sayda.twilight_lib.commands.CommandUtils;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
 import mc.sayda.twilight_lib.network.SyncAddonsPacket;
@@ -103,38 +106,36 @@ public class TwilightLibCommands {
             return;
         }
 
-        synchronized (VALID_LIVING_ENTITIES) {
-            // Clear cache if refreshing
-            if (cacheInitialized) {
-                VALID_LIVING_ENTITIES.clear();
-            }
+        // Clear cache if refreshing (no nested synchronization needed - method is already synchronized)
+        if (cacheInitialized) {
+            VALID_LIVING_ENTITIES.clear();
+        }
 
-            LOGGER.debug("There are holes in reality. And... in donuts. Initializing entity type cache...");
-            for (ResourceLocation rl : BuiltInRegistries.ENTITY_TYPE.keySet()) {
-                EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(rl);
-                if (type == null || type == EntityType.PLAYER) continue;
+        LOGGER.debug("There are holes in reality. And... in donuts. Initializing entity type cache...");
+        for (ResourceLocation rl : BuiltInRegistries.ENTITY_TYPE.keySet()) {
+            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(rl);
+            if (type == null || type == EntityType.PLAYER) continue;
 
-                // Create test entity with proper cleanup
-                net.minecraft.world.entity.Entity testEntity = null;
-                try {
-                    testEntity = type.create(level);
-                    if (testEntity instanceof LivingEntity) {
-                        VALID_LIVING_ENTITIES.add(rl);
-                    }
-                } catch (Exception e) {
-                    // Ignore entities that fail to create
-                    LOGGER.trace("Failed to create test entity for {}: {}", rl, e.getMessage());
-                } finally {
-                    // Always discard test entity to prevent leak
-                    if (testEntity != null) {
-                        testEntity.discard();
-                    }
+            // Create test entity with proper cleanup
+            net.minecraft.world.entity.Entity testEntity = null;
+            try {
+                testEntity = type.create(level);
+                if (testEntity instanceof LivingEntity) {
+                    VALID_LIVING_ENTITIES.add(rl);
+                }
+            } catch (Exception e) {
+                // Ignore entities that fail to create
+                LOGGER.trace("Failed to create test entity for {}: {}", rl, e.getMessage());
+            } finally {
+                // Always discard test entity to prevent leak
+                if (testEntity != null) {
+                    testEntity.discard();
                 }
             }
-            cachedRegistrySize = BuiltInRegistries.ENTITY_TYPE.size();
-            cacheInitialized = true;
-            LOGGER.debug("This should be fun. Fun~! Entity type cache initialized with {} living entities", VALID_LIVING_ENTITIES.size());
         }
+        cachedRegistrySize = BuiltInRegistries.ENTITY_TYPE.size();
+        cacheInitialized = true;
+        LOGGER.debug("This should be fun. Fun~! Entity type cache initialized with {} living entities", VALID_LIVING_ENTITIES.size());
     }
 
     public static void registerCommands(RegisterCommandsEvent evt) {
@@ -447,7 +448,7 @@ public class TwilightLibCommands {
             target.refreshDimensions();
         });
 
-        // Send feedback only to admin/console (not when player targets self via CreRaces)
+        // Send feedback only to admin/console (not when player targets self)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             if (morph.isPresent()) {
                 source.sendSuccess(() -> Component.literal("Morph '" + morph.get() + "' set for " + target.getGameProfile().getName()), true);
@@ -467,9 +468,9 @@ public class TwilightLibCommands {
 
         target.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
             // Use forceSetActiveTrail() with persistence control
-            // persistent=true: CreRaces race attributes (survive logout/death)
+            // persistent=true: persists through logout/death (for race mods and admin grants)
             // persistent=false: Temporary admin preview (cleared on logout)
-            ((mc.sayda.twilight_lib.capabilities.TrailsData) trails).forceSetActiveTrail(trailId, persistent);
+            ((TrailsData) trails).forceSetActiveTrail(trailId, persistent);
             trails.setTrailEnabled(true);
 
             // Save to persistent NBT
@@ -479,7 +480,7 @@ public class TwilightLibCommands {
             NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
         });
 
-        // Send feedback only to admin/console (not when player targets self via CreRaces)
+        // Send feedback only to admin/console (not when player targets self)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             String persistMode = persistent ? " (persistent)" : " (temporary)";
             source.sendSuccess(() -> Component.literal("Trail '" + trailId + "' set for " + target.getGameProfile().getName() + persistMode), true);
@@ -524,7 +525,7 @@ public class TwilightLibCommands {
                     target.getGameProfile().getName());
         });
 
-        // Send feedback only to admin/console (not when player targets self via CreRaces)
+        // Send feedback only to admin/console (not when player targets self)
         String status = newState[0] ? "enabled" : "disabled";
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             source.sendSuccess(() -> Component.literal("Trail " + status + " for " + target.getGameProfile().getName()), true);
@@ -536,9 +537,9 @@ public class TwilightLibCommands {
     private static int executeEquipEffect(CommandSourceStack source, ServerPlayer target, String effectId, boolean persistent) {
         target.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
             // Activate effect with persistence control
-            // persistent=true: CreRaces race attributes (survive logout/death)
+            // persistent=true: persists through logout/death (for race mods and admin grants)
             // persistent=false: Temporary admin preview (cleared on logout)
-            ((mc.sayda.twilight_lib.capabilities.EffectsData) effects).setActiveEffect(effectId, true, persistent);
+            ((EffectsData) effects).setActiveEffect(effectId, true, persistent);
 
             // Save to persistent NBT
             target.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
@@ -547,7 +548,7 @@ public class TwilightLibCommands {
             NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(target.getUUID(), effects.getActiveEffects()));
         });
 
-        // Send feedback only to admin/console (not when player targets self via CreRaces)
+        // Send feedback only to admin/console (not when player targets self)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             String persistMode = persistent ? " (persistent)" : " (temporary)";
             source.sendSuccess(() -> Component.literal("Effect '" + effectId + "' equipped for " + target.getGameProfile().getName() + persistMode), true);
@@ -558,7 +559,8 @@ public class TwilightLibCommands {
 
     private static int executeUnequipEffect(CommandSourceStack source, ServerPlayer target, String effectId) {
         target.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-            effects.setActiveEffect(effectId, false);
+            // Admin command: Force unequip regardless of source (player selection or external grant)
+            ((EffectsData) effects).forceUnequipEffect(effectId);
 
             // Save to persistent NBT
             target.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
@@ -567,7 +569,7 @@ public class TwilightLibCommands {
             NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(target.getUUID(), effects.getActiveEffects()));
         });
 
-        // Send feedback only to admin/console (not when player targets self via CreRaces)
+        // Send feedback only to admin/console (not when player targets self)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             source.sendSuccess(() -> Component.literal("Effect '" + effectId + "' unequipped for " + target.getGameProfile().getName()), true);
         }
@@ -628,9 +630,9 @@ public class TwilightLibCommands {
 
         target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             // Activate addon with persistence control
-            // persistent=true: CreRaces race attributes (survive logout/death)
+            // persistent=true: persists through logout/death (for race mods and admin grants)
             // persistent=false: Temporary admin preview (cleared on logout)
-            ((mc.sayda.twilight_lib.capabilities.AddonsData) addons).setActiveAddon(addonId, true, persistent);
+            ((AddonsData) addons).setActiveAddon(addonId, true, persistent);
             target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
             // Sync to all clients
             NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
@@ -647,8 +649,8 @@ public class TwilightLibCommands {
 
     private static int executeUnequipAddon(CommandSourceStack source, ServerPlayer target, String addonId) {
         target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-            // Admin command: Force deactivate regardless of ownership
-            addons.setActiveAddon(addonId, false);
+            // Admin command: Force unequip regardless of source (player selection or external grant)
+            ((AddonsData) addons).forceUnequipAddon(addonId);
             target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
             // Sync to all clients
             NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));

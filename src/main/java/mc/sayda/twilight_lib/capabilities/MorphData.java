@@ -49,7 +49,7 @@ public class MorphData implements IMorph {
                 setEntityType(Optional.of(rl));
                 LOGGER.debug("Ahh... I need a nap. Deserialized morph: {}", rl);
             } catch (Exception e) {
-                LOGGER.warn("Oh, farn it! Failed to deserialize morph: {}", e.getMessage());
+                LOGGER.warn("Oh, farn it! Failed to deserialize morph from NBT", e);
                 setEntityType(Optional.empty());
             }
         } else {

@@ -162,19 +162,47 @@ public class TwilightLib {
 
             // Auto-grant addons (tier unlocks + manual overrides)
             loggedInPlayer.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-                // Add addons from supporter tier (doesn't remove existing addons or active state)
-                for (String addon : allAddons) {
-                    addons.addAddon(addon);
+                // Sync owned addons with current supporter status (preserves persistent active state)
+                Set<String> currentOwned = new java.util.HashSet<>(addons.getAddons());
+                mc.sayda.twilight_lib.capabilities.AddonsData addonsData = (mc.sayda.twilight_lib.capabilities.AddonsData) addons;
+
+                // Remove addons no longer granted (ownership only - doesn't affect persistent active)
+                for (String addon : currentOwned) {
+                    if (!allAddons.contains(addon)) {
+                        addonsData.removeAddonOwnership(addon);
+                    }
                 }
+
+                // Add newly granted addons
+                for (String addon : allAddons) {
+                    if (!currentOwned.contains(addon)) {
+                        addons.addAddon(addon);
+                    }
+                }
+
                 loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
             });
 
             // Auto-grant effects (tier unlocks + manual overrides)
             loggedInPlayer.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-                // Add effects from supporter tier (doesn't remove existing effects or active state)
-                for (String effect : allEffects) {
-                    effects.addEffect(effect);
+                // Sync owned effects with current supporter status (preserves persistent active state)
+                Set<String> currentOwned = new java.util.HashSet<>(effects.getEffects());
+                mc.sayda.twilight_lib.capabilities.EffectsData effectsData = (mc.sayda.twilight_lib.capabilities.EffectsData) effects;
+
+                // Remove effects no longer granted (ownership only - doesn't affect persistent active)
+                for (String effect : currentOwned) {
+                    if (!allEffects.contains(effect)) {
+                        effectsData.removeEffectOwnership(effect);
+                    }
                 }
+
+                // Add newly granted effects
+                for (String effect : allEffects) {
+                    if (!currentOwned.contains(effect)) {
+                        effects.addEffect(effect);
+                    }
+                }
+
                 loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
             });
 

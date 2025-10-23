@@ -64,7 +64,15 @@ public class MorphRenderHandler {
         if (e.phase != TickEvent.Phase.END) return;
         var level = Minecraft.getInstance().level;
         if (level == null) return;
-        for (LivingEntity le : CACHE.values()) {
+
+        // Synchronize to prevent ConcurrentModificationException if cache is cleared during iteration
+        // Create a copy of values to minimize lock time
+        java.util.List<LivingEntity> entities;
+        synchronized (CACHE) {
+            entities = new java.util.ArrayList<>(CACHE.values());
+        }
+
+        for (LivingEntity le : entities) {
             le.tickCount++;
             if (le instanceof Mob mob) mob.tick();
             else le.baseTick();
@@ -118,9 +126,9 @@ public class MorphRenderHandler {
         proxy.setYRot(player.getYRot());
         proxy.setXRot(player.getXRot());
         proxy.yBodyRot = player.yBodyRot;
-        proxy.yBodyRotO = player.yBodyRotO; // NEW: Body rotation interpolation
+        proxy.yBodyRotO = player.yBodyRotO; // Body rotation interpolation
         proxy.yHeadRot = player.yHeadRot;
-        proxy.yHeadRotO = player.yHeadRotO; // NEW: Head rotation interpolation
+        proxy.yHeadRotO = player.yHeadRotO; // Head rotation interpolation
 
         // === MOVEMENT STATE ===
         proxy.setOnGround(player.onGround());

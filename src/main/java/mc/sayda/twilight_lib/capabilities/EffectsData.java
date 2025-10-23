@@ -11,11 +11,13 @@ import java.util.Set;
 public class EffectsData implements IEffects {
     private static final String NBT_EFFECTS = "Effects";
     private static final String NBT_EQUIPPED_EFFECTS = "EquippedEffects";
-    private static final String NBT_PERSISTENT_EFFECTS = "PersistentEffects";
+    private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
+    private static final String NBT_EXTERNAL_GRANTS = "ExternalGrants";
 
-    private final Set<String> effects = new HashSet<>();  // Owned effects
+    private final Set<String> effects = new HashSet<>();  // Owned effects (from supporter status)
     private final Set<String> equippedEffects = new HashSet<>();  // Currently equipped effects
-    private final Set<String> persistentEffects = new HashSet<>();  // Effects that bypass ownership (CreRaces)
+    private final Set<String> playerSelections = new HashSet<>();  // Player's choices via /tlcosmetics (re-equip if owned)
+    private final Set<String> externalGrants = new HashSet<>();  // Admin/mod grants via /twilightlib (persist regardless of ownership)
 
     // Owned effects methods
     @Override
@@ -32,6 +34,15 @@ public class EffectsData implements IEffects {
     public void removeEffect(String effectId) {
         effects.remove(effectId);
         equippedEffects.remove(effectId);  // Also unequip if removing
+    }
+
+    /**
+     * Remove effect from owned set WITHOUT affecting active state.
+     * Used by supporter sync to revoke ownership while preserving external grants.
+     */
+    public void removeEffectOwnership(String effectId) {
+        effects.remove(effectId);
+        // Don't touch equippedEffects or externalGrants - preserve admin/mod grants
     }
 
     @Override
@@ -54,34 +65,56 @@ public class EffectsData implements IEffects {
     @Override
     public void setActiveEffect(String effectId, boolean active) {
         if (active) {
-            // Allow activating without ownership check (admin commands can force-activate)
-            equippedEffects.add(effectId);
-            // Default to non-persistent for backwards compatibility
-            persistentEffects.remove(effectId);
+            // Player can only activate owned cosmetics via /tlcosmetics
+            if (effects.contains(effectId)) {
+                equippedEffects.add(effectId);
+                playerSelections.add(effectId);  // Remember player's choice
+                externalGrants.remove(effectId);  // Clear any admin override
+            }
+            // Silently ignore if they don't own it (external grants are managed separately)
         } else {
-            equippedEffects.remove(effectId);
-            persistentEffects.remove(effectId);
+            // Player can only deactivate their own selections
+            if (playerSelections.contains(effectId)) {
+                equippedEffects.remove(effectId);
+                playerSelections.remove(effectId);
+            }
+            // Cannot deactivate external grants via player command
         }
     }
 
     /**
-     * Set whether an effect is active with persistence control.
+     * Force-set effect state with persistence control (admin/mod command only).
      * @param effectId The effect ID to activate/deactivate
      * @param active true to activate, false to deactivate
-     * @param persistent If true, effect persists through logout/death; if false, cleared on logout
+     * @param persistent If true, persists through logout/death (external grant); if false, temporary preview
      */
     public void setActiveEffect(String effectId, boolean active, boolean persistent) {
         if (active) {
             equippedEffects.add(effectId);
             if (persistent) {
-                persistentEffects.add(effectId);
+                externalGrants.add(effectId);  // Admin grant - persists regardless of ownership
+                playerSelections.remove(effectId);  // Clear player selection if present
             } else {
-                persistentEffects.remove(effectId);
+                // Temporary admin preview - not persistent
+                externalGrants.remove(effectId);
+                playerSelections.remove(effectId);
             }
         } else {
             equippedEffects.remove(effectId);
-            persistentEffects.remove(effectId);
+            externalGrants.remove(effectId);
+            playerSelections.remove(effectId);
         }
+    }
+
+    /**
+     * Force unequip effect regardless of source (admin command only).
+     * Removes effect from equipped state and clears all tracking (player selections and external grants).
+     * @param effectId The effect ID to unequip
+     */
+    public void forceUnequipEffect(String effectId) {
+        equippedEffects.remove(effectId);
+        playerSelections.remove(effectId);
+        externalGrants.remove(effectId);
     }
 
     @Override
@@ -92,7 +125,17 @@ public class EffectsData implements IEffects {
     @Override
     public void clearActiveEffects() {
         equippedEffects.clear();
-        persistentEffects.clear();
+        playerSelections.clear();
+        externalGrants.clear();
+    }
+
+    /**
+     * Force-sync equipped effects from network packet (bypasses all validation).
+     * Used by SyncEffectsPacket to apply server state directly on client.
+     */
+    public void syncEquippedFromPacket(Set<String> equipped) {
+        this.equippedEffects.clear();
+        this.equippedEffects.addAll(equipped);
     }
 
     @Override
@@ -106,19 +149,19 @@ public class EffectsData implements IEffects {
         }
         tag.put(NBT_EFFECTS, ownedList);
 
-        // Serialize equipped effects
-        ListTag equippedList = new ListTag();
-        for (String effect : equippedEffects) {
-            equippedList.add(StringTag.valueOf(effect));
+        // Serialize player selections (for re-equipping if still owned)
+        ListTag selectionsList = new ListTag();
+        for (String effect : playerSelections) {
+            selectionsList.add(StringTag.valueOf(effect));
         }
-        tag.put(NBT_EQUIPPED_EFFECTS, equippedList);
+        tag.put(NBT_PLAYER_SELECTIONS, selectionsList);
 
-        // Serialize persistent effects
-        ListTag persistentList = new ListTag();
-        for (String effect : persistentEffects) {
-            persistentList.add(StringTag.valueOf(effect));
+        // Serialize external grants (admin/mod forced, always persist)
+        ListTag externalList = new ListTag();
+        for (String effect : externalGrants) {
+            externalList.add(StringTag.valueOf(effect));
         }
-        tag.put(NBT_PERSISTENT_EFFECTS, persistentList);
+        tag.put(NBT_EXTERNAL_GRANTS, externalList);
 
         return tag;
     }
@@ -127,9 +170,10 @@ public class EffectsData implements IEffects {
     public void deserialize(CompoundTag tag) {
         effects.clear();
         equippedEffects.clear();
-        persistentEffects.clear();
+        playerSelections.clear();
+        externalGrants.clear();
 
-        // Deserialize owned effects first
+        // Deserialize owned effects (will be synced from GitHub on login)
         if (tag.contains(NBT_EFFECTS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_EFFECTS, Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
@@ -137,25 +181,33 @@ public class EffectsData implements IEffects {
             }
         }
 
-        // Deserialize persistent effects (these bypass ownership validation)
-        if (tag.contains(NBT_PERSISTENT_EFFECTS, Tag.TAG_LIST)) {
-            ListTag list = tag.getList(NBT_PERSISTENT_EFFECTS, Tag.TAG_STRING);
+        // Deserialize player selections
+        if (tag.contains(NBT_PLAYER_SELECTIONS, Tag.TAG_LIST)) {
+            ListTag list = tag.getList(NBT_PLAYER_SELECTIONS, Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
-                persistentEffects.add(list.getString(i));
+                playerSelections.add(list.getString(i));
             }
         }
 
-        // Deserialize equipped effects with ownership validation
-        if (tag.contains(NBT_EQUIPPED_EFFECTS, Tag.TAG_LIST)) {
-            ListTag list = tag.getList(NBT_EQUIPPED_EFFECTS, Tag.TAG_STRING);
+        // Deserialize external grants (always persist)
+        if (tag.contains(NBT_EXTERNAL_GRANTS, Tag.TAG_LIST)) {
+            ListTag list = tag.getList(NBT_EXTERNAL_GRANTS, Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
-                String effectId = list.getString(i);
-                // Load persistent effects or owned effects only
-                if (persistentEffects.contains(effectId) || effects.contains(effectId)) {
-                    equippedEffects.add(effectId);
-                }
-                // Non-persistent effects without ownership are cleared (temporary admin previews)
+                externalGrants.add(list.getString(i));
             }
+        }
+
+        // Re-equip cosmetics based on type:
+        // 1. Player selections: only if still owned
+        for (String effect : playerSelections) {
+            if (effects.contains(effect)) {
+                equippedEffects.add(effect);
+            }
+        }
+
+        // 2. External grants: always re-equip (regardless of ownership)
+        for (String effect : externalGrants) {
+            equippedEffects.add(effect);
         }
     }
 }

@@ -2,6 +2,7 @@ package mc.sayda.twilight_lib.capabilities;
 
 import net.minecraft.nbt.CompoundTag;
 
+import javax.annotation.Nullable;
 import java.util.Set;
 
 /**
@@ -60,6 +61,7 @@ public interface ITrails {
      * Get the currently active trail.
      * @return The trail ID currently being rendered, or null if none
      */
+    @Nullable
     String getActiveTrail();
 
     /**

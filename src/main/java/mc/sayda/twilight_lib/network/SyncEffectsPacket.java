@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.network;
 
 import com.mojang.logging.LogUtils;
+import mc.sayda.twilight_lib.capabilities.EffectsData;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
 import mc.sayda.twilight_lib.cosmetics.RespawnEffectHandler;
 import net.minecraft.client.Minecraft;
@@ -34,6 +35,13 @@ public class SyncEffectsPacket {
     public static SyncEffectsPacket decode(FriendlyByteBuf buf) {
         UUID id = buf.readUUID();
         int size = buf.readInt();
+
+        // Validate packet size to prevent memory exhaustion attacks
+        // Max 100 effects is reasonable (current implementation has only 1 effect type)
+        if (size < 0 || size > 100) {
+            throw new IllegalArgumentException("Invalid effects packet size: " + size + " (max 100)");
+        }
+
         Set<String> effects = new HashSet<>();
         for (int i = 0; i < size; i++) {
             effects.add(buf.readUtf());
@@ -56,8 +64,8 @@ public class SyncEffectsPacket {
             }
 
             entity.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-                effects.clearActiveEffects();
-                msg.effects.forEach(effectId -> effects.setActiveEffect(effectId, true));
+                // Directly sync equipped effects from server (bypasses ownership validation)
+                ((EffectsData) effects).syncEquippedFromPacket(msg.effects);
                 LOGGER.debug("Time to change! Synced {} active effects for {}", msg.effects.size(), entity.getName().getString());
 
                 // If any player has respawn_twilight active, trigger spawn effect (visible to all clients)

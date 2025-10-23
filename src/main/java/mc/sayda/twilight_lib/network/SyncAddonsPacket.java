@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.network;
 
 import com.mojang.logging.LogUtils;
+import mc.sayda.twilight_lib.capabilities.AddonsData;
 import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
@@ -33,6 +34,13 @@ public class SyncAddonsPacket {
     public static SyncAddonsPacket decode(FriendlyByteBuf buf) {
         UUID id = buf.readUUID();
         int size = buf.readInt();
+
+        // Validate packet size to prevent memory exhaustion attacks
+        // Max 1000 addons is reasonable (current registry has ~106)
+        if (size < 0 || size > 1000) {
+            throw new IllegalArgumentException("Invalid addon packet size: " + size + " (max 1000)");
+        }
+
         Set<String> addons = new HashSet<>();
         for (int i = 0; i < size; i++) {
             addons.add(buf.readUtf());
@@ -54,8 +62,8 @@ public class SyncAddonsPacket {
             }
 
             entity.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-                addons.clearActiveAddons();
-                msg.addons.forEach(addonId -> addons.setActiveAddon(addonId, true));
+                // Directly sync equipped addons from server (bypasses ownership validation)
+                ((AddonsData) addons).syncEquippedFromPacket(msg.addons);
                 LOGGER.debug("Isn't this cool? Synced {} active addons for {}",
                     msg.addons.size(), entity.getName().getString());
             });

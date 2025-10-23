@@ -31,7 +31,7 @@ public class SupporterService {
     private static final long CACHE_DURATION_MS = 3600000; // 1 hour
 
     private static volatile Map<String, SupporterData> supporterCache = new ConcurrentHashMap<>();
-    private static long lastFetchTime = 0;
+    private static volatile long lastFetchTime = 0;
     private static final AtomicBoolean fetchInProgress = new AtomicBoolean(false);
 
     /**
@@ -79,7 +79,7 @@ public class SupporterService {
                     LOGGER.warn("Are we done in this reality yet? Hello? Hellooo? Failed to fetch supporters list. Response code: {}", responseCode);
                 }
             } catch (Exception e) {
-                LOGGER.error("How did I?! Uuuughh! Error fetching supporters list: {}", e.getMessage());
+                LOGGER.error("How did I?! Uuuughh! Error fetching supporters list", e);
             } finally {
                 if (conn != null) {
                     conn.disconnect();
@@ -137,7 +137,7 @@ public class SupporterService {
             // Atomic replacement instead of clear+putAll to avoid empty cache window
             supporterCache = newCache;
         } catch (Exception e) {
-            LOGGER.error("Oh, dung beetles! Error parsing supporters JSON: {}", e.getMessage());
+            LOGGER.error("Oh, dung beetles! Error parsing supporters JSON", e);
         }
     }
 

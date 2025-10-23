@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Client-side spawn effects for Gold supporters
+ * Client-side spawn effects for players with the respawn_twilight effect
  * Creates a beautiful twilight particle burst when spawning (login, respawn, etc)
  */
 public class RespawnEffectHandler {

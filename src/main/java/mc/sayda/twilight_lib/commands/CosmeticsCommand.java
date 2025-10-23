@@ -193,10 +193,8 @@ public class CosmeticsCommand {
             Set<String> playerTrails = trails.getTrails();
             Set<String> allSupporterTrails = SupporterRegistry.getAllSupporterTrails();
 
-            // Filter to only show trails that are supporter-exclusive
-            Set<String> supporterTrailsOwned = playerTrails.stream()
-                .filter(SupporterRegistry::isTrailSupporterExclusive)
-                .collect(Collectors.toSet());
+            // Show ALL owned trails (including manual grants not in registry)
+            Set<String> supporterTrailsOwned = playerTrails;
 
             player.sendSystemMessage(Component.literal("═══════════════════════════")
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
@@ -286,10 +284,8 @@ public class CosmeticsCommand {
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             Set<String> playerAddons = addons.getAddons();
 
-            // Filter to only show addons that are supporter-exclusive
-            Set<String> supporterAddonsOwned = playerAddons.stream()
-                .filter(SupporterRegistry::isAddonSupporterExclusive)
-                .collect(Collectors.toSet());
+            // Show ALL owned addons (including manual grants not in registry)
+            Set<String> supporterAddonsOwned = playerAddons;
 
             player.sendSystemMessage(Component.literal("═══════════════════════════")
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
@@ -367,10 +363,8 @@ public class CosmeticsCommand {
             Set<String> playerEffects = effects.getEffects();
             Set<String> activeEffects = effects.getActiveEffects();
 
-            // Filter to only show effects that are supporter-exclusive
-            Set<String> supporterEffectsOwned = playerEffects.stream()
-                .filter(SupporterRegistry::isEffectSupporterExclusive)
-                .collect(Collectors.toSet());
+            // Show ALL owned effects (including manual grants not in registry)
+            Set<String> supporterEffectsOwned = playerEffects;
 
             player.sendSystemMessage(Component.literal("═══════════════════════════")
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
@@ -578,21 +572,15 @@ public class CosmeticsCommand {
             });
 
             player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-                addonCount[0] = addons.getAddons().stream()
-                    .filter(SupporterRegistry::isAddonSupporterExclusive)
-                    .collect(Collectors.toSet()).size();
-                addonEquippedCount[0] = addons.getActiveAddons().stream()
-                    .filter(SupporterRegistry::isAddonSupporterExclusive)
-                    .collect(Collectors.toSet()).size();
+                // Count ALL owned/equipped addons (including manual grants not in registry)
+                addonCount[0] = addons.getAddons().size();
+                addonEquippedCount[0] = addons.getActiveAddons().size();
             });
 
             player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-                effectCount[0] = effects.getEffects().stream()
-                    .filter(SupporterRegistry::isEffectSupporterExclusive)
-                    .collect(Collectors.toSet()).size();
-                effectEquippedCount[0] = effects.getActiveEffects().stream()
-                    .filter(SupporterRegistry::isEffectSupporterExclusive)
-                    .collect(Collectors.toSet()).size();
+                // Count ALL owned/equipped effects (including manual grants not in registry)
+                effectCount[0] = effects.getEffects().size();
+                effectEquippedCount[0] = effects.getActiveEffects().size();
             });
 
             int totalCosmetics = trailCount[0] + addonCount[0] + effectCount[0];

@@ -4,16 +4,21 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Registry that defines which addons/trails/effects are supporter-exclusive
- * Items listed here require supporter status to be granted via /cosmetics
- * Admins can still grant these via /twilightlib regardless
+ * Registry that defines which addons/trails/effects are supporter-exclusive.
+ * Items listed here require supporter status to be granted via /cosmetics.
+ * Admins can still grant these via /twilightlib regardless.
+ *
+ * Each tier defines only the NEW cosmetics introduced at that tier.
+ * Higher tiers automatically inherit all cosmetics from lower tiers via the getter methods.
  *
  * NOTE: Morphs are NOT part of the supporter system and are admin-only via /twilightlib morph
  */
 public class SupporterRegistry {
 
     // ===== TRAILS =====
+    // Each tier defines only NEW trails introduced at that level
     public static final Set<String> STONE_TRAILS = Set.of(
+            // None yet
     );
 
     public static final Set<String> BRONZE_TRAILS = Set.of(
@@ -21,33 +26,23 @@ public class SupporterRegistry {
     );
 
     public static final Set<String> SILVER_TRAILS = Set.of(
-            "hearts",
             "ash",
             "sparkles",
             "cherry_blossom"
     );
 
     public static final Set<String> GOLD_TRAILS = Set.of(
-            "hearts",
-            "ash",
             "white_ash",
-            "sparkles",
-            "cherry_blossom",
             "twilight",
             "stars"
     );
 
     public static final Set<String> PLATINUM_TRAILS = Set.of(
-            "hearts",
-            "ash",
-            "white_ash",
-            "sparkles",
-            "cherry_blossom",
-            "twilight",
-            "stars"
+            // Platinum gets all previous trails, no new exclusives yet
     );
 
     // ===== ADDONS =====
+    // Each tier defines only NEW addons introduced at that level
     public static final Set<String> STONE_ADDONS = Set.of(
             // None yet
     );
@@ -69,6 +64,7 @@ public class SupporterRegistry {
     );
 
     // ===== EFFECTS =====
+    // Each tier defines only NEW effects introduced at that level
     public static final Set<String> STONE_EFFECTS = Set.of(
             // None yet
     );
@@ -82,62 +78,110 @@ public class SupporterRegistry {
     );
 
     public static final Set<String> GOLD_EFFECTS = Set.of(
-            "respawn_twilight"
+            "spawn_ethereal",
+            "ambient_flame",
+            "ambient_frost"
     );
 
     public static final Set<String> PLATINUM_EFFECTS = Set.of(
-            "respawn_twilight"
+            "spawn_rainbow",
+            "spawn_portal",
+            "spawn_frost",
+            "spawn_flame",
+            "spawn_nature"
     );
 
     /**
-     * Get all supporter trails for a given tier
+     * Get all supporter trails for a given tier.
+     * Automatically includes all trails from lower tiers (inheritance).
      */
     public static Set<String> getTrailsForTier(String tier) {
         if (tier == null) {
             return Set.of();
         }
-        return switch (tier.toLowerCase()) {
-            case "stone" -> STONE_TRAILS;
-            case "bronze" -> BRONZE_TRAILS;
-            case "silver" -> SILVER_TRAILS;
-            case "gold" -> GOLD_TRAILS;
-            case "platinum" -> PLATINUM_TRAILS;
-            default -> Set.of();
-        };
+
+        Set<String> trails = new HashSet<>();
+        String tierLower = tier.toLowerCase();
+
+        // Add trails from all tiers up to and including the requested tier
+        trails.addAll(STONE_TRAILS);
+        if (tierLower.equals("stone")) return Set.copyOf(trails);
+
+        trails.addAll(BRONZE_TRAILS);
+        if (tierLower.equals("bronze")) return Set.copyOf(trails);
+
+        trails.addAll(SILVER_TRAILS);
+        if (tierLower.equals("silver")) return Set.copyOf(trails);
+
+        trails.addAll(GOLD_TRAILS);
+        if (tierLower.equals("gold")) return Set.copyOf(trails);
+
+        trails.addAll(PLATINUM_TRAILS);
+        if (tierLower.equals("platinum")) return Set.copyOf(trails);
+
+        return Set.of(); // Unknown tier
     }
 
     /**
-     * Get all supporter addons for a given tier
+     * Get all supporter addons for a given tier.
+     * Automatically includes all addons from lower tiers (inheritance).
      */
     public static Set<String> getAddonsForTier(String tier) {
         if (tier == null) {
             return Set.of();
         }
-        return switch (tier.toLowerCase()) {
-            case "stone" -> STONE_ADDONS;
-            case "bronze" -> BRONZE_ADDONS;
-            case "silver" -> SILVER_ADDONS;
-            case "gold" -> GOLD_ADDONS;
-            case "platinum" -> PLATINUM_ADDONS;
-            default -> Set.of();
-        };
+
+        Set<String> addons = new HashSet<>();
+        String tierLower = tier.toLowerCase();
+
+        // Add addons from all tiers up to and including the requested tier
+        addons.addAll(STONE_ADDONS);
+        if (tierLower.equals("stone")) return Set.copyOf(addons);
+
+        addons.addAll(BRONZE_ADDONS);
+        if (tierLower.equals("bronze")) return Set.copyOf(addons);
+
+        addons.addAll(SILVER_ADDONS);
+        if (tierLower.equals("silver")) return Set.copyOf(addons);
+
+        addons.addAll(GOLD_ADDONS);
+        if (tierLower.equals("gold")) return Set.copyOf(addons);
+
+        addons.addAll(PLATINUM_ADDONS);
+        if (tierLower.equals("platinum")) return Set.copyOf(addons);
+
+        return Set.of(); // Unknown tier
     }
 
     /**
-     * Get all supporter effects for a given tier
+     * Get all supporter effects for a given tier.
+     * Automatically includes all effects from lower tiers (inheritance).
      */
     public static Set<String> getEffectsForTier(String tier) {
         if (tier == null) {
             return Set.of();
         }
-        return switch (tier.toLowerCase()) {
-            case "stone" -> STONE_EFFECTS;
-            case "bronze" -> BRONZE_EFFECTS;
-            case "silver" -> SILVER_EFFECTS;
-            case "gold" -> GOLD_EFFECTS;
-            case "platinum" -> PLATINUM_EFFECTS;
-            default -> Set.of();
-        };
+
+        Set<String> effects = new HashSet<>();
+        String tierLower = tier.toLowerCase();
+
+        // Add effects from all tiers up to and including the requested tier
+        effects.addAll(STONE_EFFECTS);
+        if (tierLower.equals("stone")) return Set.copyOf(effects);
+
+        effects.addAll(BRONZE_EFFECTS);
+        if (tierLower.equals("bronze")) return Set.copyOf(effects);
+
+        effects.addAll(SILVER_EFFECTS);
+        if (tierLower.equals("silver")) return Set.copyOf(effects);
+
+        effects.addAll(GOLD_EFFECTS);
+        if (tierLower.equals("gold")) return Set.copyOf(effects);
+
+        effects.addAll(PLATINUM_EFFECTS);
+        if (tierLower.equals("platinum")) return Set.copyOf(effects);
+
+        return Set.of(); // Unknown tier
     }
 
     /**

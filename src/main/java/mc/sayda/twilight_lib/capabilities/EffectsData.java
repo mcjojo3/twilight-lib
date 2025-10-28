@@ -1,14 +1,17 @@
 package mc.sayda.twilight_lib.capabilities;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import org.slf4j.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public class EffectsData implements IEffects {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final String NBT_EFFECTS = "Effects";
     private static final String NBT_EQUIPPED_EFFECTS = "EquippedEffects";
     private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
@@ -67,6 +70,22 @@ public class EffectsData implements IEffects {
         if (active) {
             // Player can only activate owned cosmetics via /tlcosmetics
             if (effects.contains(effectId)) {
+                // Enforce one-per-category rule: deactivate other effects in same category
+                mc.sayda.twilight_lib.cosmetics.EffectType newEffectType = mc.sayda.twilight_lib.cosmetics.EffectType.fromId(effectId);
+                if (newEffectType != null) {
+                    mc.sayda.twilight_lib.cosmetics.EffectCategory category = newEffectType.getCategory();
+
+                    // Remove any other player-selected effects in this category
+                    playerSelections.removeIf(existingEffectId -> {
+                        mc.sayda.twilight_lib.cosmetics.EffectType existingType = mc.sayda.twilight_lib.cosmetics.EffectType.fromId(existingEffectId);
+                        if (existingType != null && existingType.getCategory() == category && !existingEffectId.equals(effectId)) {
+                            equippedEffects.remove(existingEffectId);
+                            return true;  // Remove from playerSelections
+                        }
+                        return false;
+                    });
+                }
+
                 equippedEffects.add(effectId);
                 playerSelections.add(effectId);  // Remember player's choice
                 externalGrants.remove(effectId);  // Clear any admin override
@@ -84,12 +103,30 @@ public class EffectsData implements IEffects {
 
     /**
      * Force-set effect state with persistence control (admin/mod command only).
+     * Enforces one-per-category rule: activating an effect will deactivate other effects in the same category.
      * @param effectId The effect ID to activate/deactivate
      * @param active true to activate, false to deactivate
      * @param persistent If true, persists through logout/death (external grant); if false, temporary preview
      */
     public void setActiveEffect(String effectId, boolean active, boolean persistent) {
         if (active) {
+            // Enforce one-per-category rule: deactivate other effects in same category
+            mc.sayda.twilight_lib.cosmetics.EffectType newEffectType = mc.sayda.twilight_lib.cosmetics.EffectType.fromId(effectId);
+            if (newEffectType != null) {
+                mc.sayda.twilight_lib.cosmetics.EffectCategory category = newEffectType.getCategory();
+
+                // Remove any other effects in this category (both player selections and external grants)
+                equippedEffects.removeIf(existingEffectId -> {
+                    mc.sayda.twilight_lib.cosmetics.EffectType existingType = mc.sayda.twilight_lib.cosmetics.EffectType.fromId(existingEffectId);
+                    if (existingType != null && existingType.getCategory() == category && !existingEffectId.equals(effectId)) {
+                        playerSelections.remove(existingEffectId);
+                        externalGrants.remove(existingEffectId);
+                        return true;  // Remove from equipped
+                    }
+                    return false;
+                });
+            }
+
             equippedEffects.add(effectId);
             if (persistent) {
                 externalGrants.add(effectId);  // Admin grant - persists regardless of ownership
@@ -202,6 +239,8 @@ public class EffectsData implements IEffects {
         for (String effect : playerSelections) {
             if (effects.contains(effect)) {
                 equippedEffects.add(effect);
+            } else {
+                LOGGER.warn("Wait... they aren't coming back? Effect selection '{}' could not be re-equipped (lost ownership - supporter status may have expired)", effect);
             }
         }
 

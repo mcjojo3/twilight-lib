@@ -14,6 +14,7 @@ public class TwilightConfig {
     // Performance
     public static final ForgeConfigSpec.IntValue MAX_CACHED_ADDON_MODELS;
     public static final ForgeConfigSpec.IntValue TRAIL_UPDATE_FREQUENCY;
+    public static final ForgeConfigSpec.IntValue MAX_SUPPORTER_JSON_SIZE;
 
     // Morph Physics
     public static final ForgeConfigSpec.DoubleValue BASE_STEP_HEIGHT;
@@ -52,6 +53,9 @@ public class TwilightConfig {
         TRAIL_UPDATE_FREQUENCY = builder
                 .comment("How often trails update in ticks (higher = better performance)")
                 .defineInRange("trail_update_frequency", 3, 1, 20);
+        MAX_SUPPORTER_JSON_SIZE = builder
+                .comment("Maximum supporter JSON size in MB (prevents OOM attacks)")
+                .defineInRange("max_supporter_json_size", 10, 1, 100);
 
         builder.pop();
 

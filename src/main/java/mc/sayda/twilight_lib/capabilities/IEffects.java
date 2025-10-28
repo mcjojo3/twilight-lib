@@ -6,20 +6,35 @@ import java.util.Set;
 
 /**
  * Capability interface for player cosmetic effects.
- * Effects are special event-triggered cosmetics (e.g., respawn particle bursts).
+ * Effects are special event-triggered cosmetics (e.g., spawn particle bursts).
  *
  * <p>Effects have two states:
  * <ul>
  *   <li><b>Owned</b>: Effects the player has unlocked (via supporter tier or admin grant)</li>
- *   <li><b>Active</b>: Effects currently equipped and triggering (multiple can be active simultaneously)</li>
+ *   <li><b>Active</b>: Effects currently equipped and triggering (multiple can be active, but only ONE per category)</li>
  * </ul>
+ *
+ * <p><b>Effect Categories</b>: Players can only have ONE effect active per category at a time.
+ * This prevents visual clutter (e.g., all 6 spawn effects triggering simultaneously).
+ * When activating an effect, any other effects in the same category are automatically deactivated.
  *
  * <p>Effects are granted additively via supporter tier (never removed on login).
  * Admin grants via /twilightlib persist independently of supporter status.
  *
- * <p>Available effects:
+ * <p><b>Available Spawn Effects</b> (category: SPAWN):
  * <ul>
- *   <li><b>respawn_twilight</b>: Beautiful twilight particle burst on respawn (Gold+ tier)</li>
+ *   <li><b>spawn_ethereal</b>: Ethereal particle burst on spawn (soul + portal + enchanting particles, Gold+ tier)</li>
+ *   <li><b>spawn_rainbow</b>: Rainbow cycling particles on spawn (vibrant multi-color, Platinum tier)</li>
+ *   <li><b>spawn_portal</b>: End portal particles with reverse gravity on spawn (mysterious void theme, Platinum tier)</li>
+ *   <li><b>spawn_frost</b>: Snowflake particles on spawn (icy winter theme, Platinum tier)</li>
+ *   <li><b>spawn_flame</b>: Soul fire particles on spawn (blazing fire theme, Platinum tier)</li>
+ *   <li><b>spawn_nature</b>: Spore blossom particles on spawn (natural floral theme, Platinum tier)</li>
+ * </ul>
+ *
+ * <p><b>Available Ambient Effects</b> (category: AMBIENT):
+ * <ul>
+ *   <li><b>ambient_flame</b>: Continuous flame circle around player's feet (Gold+ tier)</li>
+ *   <li><b>ambient_frost</b>: Continuous frost circle around player's feet (Gold+ tier)</li>
  * </ul>
  *
  * <p>Players manage effects via /cosmetics effects commands.
@@ -68,6 +83,10 @@ public interface IEffects {
     /**
      * Set whether an effect is active (equipped).
      * Player must own the effect to activate it.
+     *
+     * <p><b>Category Enforcement</b>: Activating an effect will automatically deactivate
+     * any other effects in the same category (e.g., only one spawn effect can be active at a time).
+     *
      * @param effectId The effect ID to activate/deactivate
      * @param active true to activate, false to deactivate
      */

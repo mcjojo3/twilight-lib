@@ -137,6 +137,13 @@ public class CosmeticsCommand {
 
         String trailId = StringArgumentType.getString(ctx, "type");
 
+        // Check if capability exists
+        if (!player.getCapability(TrailsProvider.TRAILS_CAP).isPresent()) {
+            player.sendSystemMessage(Component.literal("❌ Error: Trail capability not initialized")
+                .withStyle(ChatFormatting.RED));
+            return 1;
+        }
+
         player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
             // Check if player has this trail
             if (!trails.hasTrail(trailId)) {
@@ -149,6 +156,9 @@ public class CosmeticsCommand {
 
             trails.setActiveTrail(trailId);
             trails.setTrailEnabled(true);
+
+            // Save to persistent NBT
+            player.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
 
             // Sync to all clients
             NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
@@ -165,9 +175,19 @@ public class CosmeticsCommand {
             return 0;
         }
 
+        // Check if capability exists
+        if (!player.getCapability(TrailsProvider.TRAILS_CAP).isPresent()) {
+            player.sendSystemMessage(Component.literal("❌ Error: Trail capability not initialized")
+                .withStyle(ChatFormatting.RED));
+            return 1;
+        }
+
         player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
             boolean newState = !trails.isTrailEnabled();
             trails.setTrailEnabled(newState);
+
+            // Save to persistent NBT
+            player.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
 
             // Sync to all clients
             NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
@@ -283,6 +303,7 @@ public class CosmeticsCommand {
 
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             Set<String> playerAddons = addons.getAddons();
+            Set<String> activeAddons = addons.getActiveAddons();
 
             // Show ALL owned addons (including manual grants not in registry)
             Set<String> supporterAddonsOwned = playerAddons;
@@ -302,8 +323,11 @@ public class CosmeticsCommand {
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
             } else {
                 for (String addon : supporterAddonsOwned) {
-                    player.sendSystemMessage(Component.literal("  • " + addon)
-                        .withStyle(ChatFormatting.WHITE));
+                    boolean isEquipped = activeAddons.contains(addon);
+                    String marker = isEquipped ? "✓ " : "  • ";
+                    ChatFormatting color = isEquipped ? ChatFormatting.GOLD : ChatFormatting.WHITE;
+                    player.sendSystemMessage(Component.literal(marker + addon)
+                        .withStyle(color));
                 }
                 player.sendSystemMessage(Component.literal(""));
                 player.sendSystemMessage(Component.literal("Use /cosmetics addons equip <type> to add an addon")
@@ -443,6 +467,13 @@ public class CosmeticsCommand {
 
         String effectId = StringArgumentType.getString(ctx, "type");
 
+        // Check if capability exists
+        if (!player.getCapability(EffectsProvider.EFFECTS_CAP).isPresent()) {
+            player.sendSystemMessage(Component.literal("❌ Error: Effects capability not initialized")
+                .withStyle(ChatFormatting.RED));
+            return 1;
+        }
+
         player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
             // Check ownership - players can only interact with effects they own
             if (!effects.hasEffect(effectId)) {
@@ -478,6 +509,13 @@ public class CosmeticsCommand {
         }
 
         String effectId = StringArgumentType.getString(ctx, "type");
+
+        // Check if capability exists
+        if (!player.getCapability(EffectsProvider.EFFECTS_CAP).isPresent()) {
+            player.sendSystemMessage(Component.literal("❌ Error: Effects capability not initialized")
+                .withStyle(ChatFormatting.RED));
+            return 1;
+        }
 
         player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
             // Check ownership - players can only interact with effects they own
@@ -679,6 +717,13 @@ public class CosmeticsCommand {
 
         String addonId = StringArgumentType.getString(ctx, "addon");
 
+        // Check if capability exists
+        if (!player.getCapability(AddonsProvider.ADDONS_CAP).isPresent()) {
+            player.sendSystemMessage(Component.literal("❌ Error: Addons capability not initialized")
+                .withStyle(ChatFormatting.RED));
+            return 1;
+        }
+
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             // Check ownership - players can only interact with addons they own
             if (!addons.hasAddon(addonId)) {
@@ -714,6 +759,13 @@ public class CosmeticsCommand {
         }
 
         String addonId = StringArgumentType.getString(ctx, "addon");
+
+        // Check if capability exists
+        if (!player.getCapability(AddonsProvider.ADDONS_CAP).isPresent()) {
+            player.sendSystemMessage(Component.literal("❌ Error: Addons capability not initialized")
+                .withStyle(ChatFormatting.RED));
+            return 1;
+        }
 
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             // Check ownership - players can only interact with addons they own

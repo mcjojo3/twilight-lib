@@ -42,8 +42,8 @@ The tier system unlocks cosmetics automatically:
 - **stone** - Entry tier (no cosmetics yet, reserved for future use)
 - **bronze** - Basic heart trail (bronze hearts)
 - **silver** - Bronze perks + silver hearts, sparkles, cherry_blossom trails, galaxy_tail addon
-- **gold** - Silver perks + gold hearts, twilight, stars trails, respawn_twilight effect
-- **platinum** - All benefits (future-proof tier for new cosmetics)
+- **gold** - Silver perks + gold hearts, twilight, stars trails, spawn_ethereal effect
+- **platinum** - All benefits including all spawn effects (future-proof tier for new cosmetics)
 
 **Note:** Higher tiers inherit all cosmetics from lower tiers.
 
@@ -69,7 +69,12 @@ Use one of these methods:
 - Kitsune sets (ears, snout, tails) - 250+ color/variant combinations
 
 **Effects** (Special visual effects):
-- `respawn_twilight` - Special twilight particle burst on respawn (Gold tier+)
+- `spawn_ethereal` - Ethereal particle burst on spawn (soul + portal + enchanting particles, Gold tier+)
+- `spawn_rainbow` - Rainbow cycling particles on spawn (vibrant multi-color, Platinum tier)
+- `spawn_portal` - End portal particles with reverse gravity on spawn (mysterious void theme, Platinum tier)
+- `spawn_frost` - Snowflake particles on spawn (icy winter theme, Platinum tier)
+- `spawn_flame` - Soul fire particles on spawn (blazing fire theme, Platinum tier)
+- `spawn_nature` - Spore blossom particles on spawn (natural floral theme, Platinum tier)
 
 **Manual Grants** (in `cosmetics` section):
 These persist even if tier changes and can be used for:

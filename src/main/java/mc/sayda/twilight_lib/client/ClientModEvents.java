@@ -12,6 +12,7 @@ import mc.sayda.twilight_lib.particle.ModParticles;
 import mc.sayda.twilight_lib.particle.RatvenomParticle;
 import mc.sayda.twilight_lib.particle.SilentHoneyParticle;
 import mc.sayda.twilight_lib.particle.SilverHeartParticle;
+import mc.sayda.twilight_lib.particle.WolfPrintParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
@@ -70,8 +71,11 @@ public class ClientModEvents {
         // Register trail renderer to tick event
         MinecraftForge.EVENT_BUS.register(TrailRenderer.class);
 
-        // Register respawn effect handler
-        MinecraftForge.EVENT_BUS.register(mc.sayda.twilight_lib.cosmetics.RespawnEffectHandler.class);
+        // Register spawn effect handler
+        MinecraftForge.EVENT_BUS.register(mc.sayda.twilight_lib.cosmetics.SpawnEffectHandler.class);
+
+        // Register ambient effect handler
+        MinecraftForge.EVENT_BUS.register(mc.sayda.twilight_lib.cosmetics.AmbientEffectHandler.class);
     }
 
     @SubscribeEvent
@@ -81,5 +85,6 @@ public class ClientModEvents {
         event.registerSpriteSet(ModParticles.GOLD_HEART.get(), GoldHeartParticle::provider);
         event.registerSpriteSet(ModParticles.RATVENOM.get(), RatvenomParticle::provider);
         event.registerSpriteSet(ModParticles.SILENT_HONEY.get(), SilentHoneyParticle::provider);
+        event.registerSpriteSet(ModParticles.WOLF_PRINT.get(), WolfPrintParticle::provider);
     }
 }

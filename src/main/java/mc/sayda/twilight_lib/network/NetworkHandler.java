@@ -56,14 +56,22 @@ public class NetworkHandler {
     }
 
     public static void sendMorphToAll(SyncMorphPacket pkt) {
-        CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
-        LOGGER.debug("Here you go! Sending morph packet to all players.");
+        try {
+            CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
+            LOGGER.debug("Here you go! Sending morph packet to all players.");
+        } catch (Exception e) {
+            LOGGER.error("How did I?! Uuuughh! Failed to send morph packet to all players", e);
+        }
     }
 
     public static void sendToPlayer(Player player, SyncMorphPacket pkt) {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
-        CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
-        LOGGER.debug("I'm coming over to say 'Hi!' Sending morph to {}", player.getGameProfile().getName());
+        try {
+            CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
+            LOGGER.debug("I'm coming over to say 'Hi!' Sending morph to {}", player.getGameProfile().getName());
+        } catch (Exception e) {
+            LOGGER.warn("What? No! Why isn't he moving anymore? Failed to send morph to {}", player.getGameProfile().getName(), e);
+        }
     }
 
     public static void sendAllMorphsToPlayer(Player recipient) {
@@ -80,14 +88,22 @@ public class NetworkHandler {
 
     // Addon packet methods
     public static void sendAddonsToAll(SyncAddonsPacket pkt) {
-        CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
-        LOGGER.debug("Things totally change so they can be the same but also totally different! Sending addons packet to all players.");
+        try {
+            CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
+            LOGGER.debug("Things totally change so they can be the same but also totally different! Sending addons packet to all players.");
+        } catch (Exception e) {
+            LOGGER.error("Oh, dung beetles! Failed to send addons packet to all players", e);
+        }
     }
 
     public static void sendAddonsToPlayer(Player player, SyncAddonsPacket pkt) {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
-        CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
-        LOGGER.debug("Starlight is an expression of something inside bursting to get out! Sending addons to {}", player.getGameProfile().getName());
+        try {
+            CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
+            LOGGER.debug("Starlight is an expression of something inside bursting to get out! Sending addons to {}", player.getGameProfile().getName());
+        } catch (Exception e) {
+            LOGGER.warn("Really?! Failed to send addons to {}", player.getGameProfile().getName(), e);
+        }
     }
 
     public static void sendAllAddonsToPlayer(Player recipient) {
@@ -105,14 +121,22 @@ public class NetworkHandler {
 
     // Trails packet methods
     public static void sendTrailsToAll(SyncTrailsPacket pkt) {
-        CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
-        LOGGER.debug("The wheel turns, day becomes night... time to make colors! Sending trails packet to all players.");
+        try {
+            CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
+            LOGGER.debug("The wheel turns, day becomes night... time to make colors! Sending trails packet to all players.");
+        } catch (Exception e) {
+            LOGGER.error("Oh, farn it! Failed to send trails packet to all players", e);
+        }
     }
 
     public static void sendTrailsToPlayer(Player player, SyncTrailsPacket pkt) {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
-        CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
-        LOGGER.debug("Whoo! Sending trails to {}", player.getGameProfile().getName());
+        try {
+            CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
+            LOGGER.debug("Whoo! Sending trails to {}", player.getGameProfile().getName());
+        } catch (Exception e) {
+            LOGGER.warn("Shoot! Failed to send trails to {}", player.getGameProfile().getName(), e);
+        }
     }
 
     public static void sendAllTrailsToPlayer(Player recipient) {
@@ -128,14 +152,22 @@ public class NetworkHandler {
 
     // Effects packet methods
     public static void sendEffectsToAll(SyncEffectsPacket pkt) {
-        CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
-        LOGGER.debug("Yes, more magic! Sending effects packet to all players.");
+        try {
+            CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
+            LOGGER.debug("Yes, more magic! Sending effects packet to all players.");
+        } catch (Exception e) {
+            LOGGER.error("Dang! Failed to send effects packet to all players", e);
+        }
     }
 
     public static void sendEffectsToPlayer(Player player, SyncEffectsPacket pkt) {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
-        CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
-        LOGGER.debug("Ooh! Oooooh! Sending effects to {}", player.getGameProfile().getName());
+        try {
+            CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
+            LOGGER.debug("Ooh! Oooooh! Sending effects to {}", player.getGameProfile().getName());
+        } catch (Exception e) {
+            LOGGER.warn("Miss! Failed to send effects to {}", player.getGameProfile().getName(), e);
+        }
     }
 
     public static void sendAllEffectsToPlayer(Player recipient) {

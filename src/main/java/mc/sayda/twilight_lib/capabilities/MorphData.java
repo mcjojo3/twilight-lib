@@ -25,8 +25,11 @@ public class MorphData implements IMorph {
 
     @Override
     public void setEntityType(Optional<ResourceLocation> type) {
-        this.entityType = type;
-        this.cachedEntityType = type.map(BuiltInRegistries.ENTITY_TYPE::get).orElse(null);
+        // Only refresh cache if entity type actually changed (avoid unnecessary registry lookups)
+        if (!this.entityType.equals(type)) {
+            this.entityType = type;
+            this.cachedEntityType = type.map(BuiltInRegistries.ENTITY_TYPE::get).orElse(null);
+        }
     }
 
     @Nullable

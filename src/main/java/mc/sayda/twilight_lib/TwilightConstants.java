@@ -23,9 +23,10 @@ public class TwilightConstants {
     // Entity Dimensions
     public static final float PLAYER_DEFAULT_HEIGHT = 1.8f;
 
-    // Respawn Effect Parameters
-    public static final class RespawnEffect {
-        public static final int TWILIGHT_PARTICLE_COUNT = 50;
+    // Spawn Effect Parameters
+    public static final class SpawnEffect {
+        // General spawn effect parameters (used by all spawn effects)
+        public static final int PARTICLE_COUNT = 50;
         public static final int SOUL_PARTICLE_COUNT = 20;
         public static final double MAX_RADIUS = 2.0;
         public static final double MAX_HEIGHT = 3.0;

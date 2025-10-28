@@ -1,14 +1,17 @@
 package mc.sayda.twilight_lib.capabilities;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import org.slf4j.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public class AddonsData implements IAddons {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final String NBT_ADDONS = "Addons";
     private static final String NBT_EQUIPPED_ADDONS = "EquippedAddons";
     private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
@@ -202,6 +205,8 @@ public class AddonsData implements IAddons {
         for (String addon : playerSelections) {
             if (addons.contains(addon)) {
                 equippedAddons.add(addon);
+            } else {
+                LOGGER.warn("Oh no! Player selection '{}' could not be re-equipped (lost ownership - supporter status may have expired)", addon);
             }
         }
 

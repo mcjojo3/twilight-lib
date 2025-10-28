@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
+import mc.sayda.twilight_lib.config.TwilightConfig;
 import org.slf4j.Logger;
 
 import java.io.BufferedReader;
@@ -41,13 +42,13 @@ public class SupporterService {
         // Check cache validity
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastFetchTime < CACHE_DURATION_MS && !supporterCache.isEmpty()) {
-            LOGGER.debug("Using cached supporter data");
+            LOGGER.debug("Want to see something neat? Using cached supporter data");
             return CompletableFuture.completedFuture(null);
         }
 
         // Prevent duplicate fetches with atomic compare-and-set
         if (!fetchInProgress.compareAndSet(false, true)) {
-            LOGGER.debug("Fetch already in progress, skipping");
+            LOGGER.debug("Aaand a skip-skip and a jump-jump! Fetch already in progress, skipping");
             return CompletableFuture.completedFuture(null);
         }
 
@@ -67,8 +68,16 @@ public class SupporterService {
                     try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                         StringBuilder content = new StringBuilder();
                         String line;
+                        int maxSizeBytes = TwilightConfig.MAX_SUPPORTER_JSON_SIZE.get() * 1024 * 1024;  // Convert MB to bytes
+
                         while ((line = in.readLine()) != null) {
                             content.append(line);
+
+                            // Check size limit to prevent OOM attacks
+                            if (content.length() > maxSizeBytes) {
+                                LOGGER.error("Oh no! Supporter JSON exceeds size limit of {}MB", TwilightConfig.MAX_SUPPORTER_JSON_SIZE.get());
+                                return;  // Don't update cache
+                            }
                         }
 
                         parseSupportersJson(content.toString());
@@ -96,48 +105,59 @@ public class SupporterService {
      * Cosmetics field contains manual overrides that persist even if tier changes/expires.
      */
     private static void parseSupportersJson(String jsonContent) {
+        Map<String, SupporterData> newCache = new ConcurrentHashMap<>();
+
         try {
             Gson gson = new Gson();
             JsonObject root = gson.fromJson(jsonContent, JsonObject.class);
             JsonArray supporters = root.getAsJsonArray("supporters");
 
-            Map<String, SupporterData> newCache = new ConcurrentHashMap<>();
-
             for (JsonElement element : supporters) {
-                JsonObject supporter = element.getAsJsonObject();
+                try {
+                    JsonObject supporter = element.getAsJsonObject();
 
-                String uuid = supporter.get("uuid").getAsString();
-                String name = supporter.has("name") ? supporter.get("name").getAsString() : "Unknown";
+                    String uuid = supporter.get("uuid").getAsString();
+                    String name = supporter.has("name") ? supporter.get("name").getAsString() : "Unknown";
 
-                // Tier: null or "none" = not a supporter, but can still have manual cosmetics
-                String tier = supporter.has("tier") ? supporter.get("tier").getAsString() : null;
+                    // Tier: null or "none" = not a supporter, but can still have manual cosmetics
+                    String tier = supporter.has("tier") ? supporter.get("tier").getAsString() : null;
 
-                // Parse manual cosmetic overrides (optional field)
-                Set<String> manualTrails = new HashSet<>();
-                Set<String> manualAddons = new HashSet<>();
-                Set<String> manualEffects = new HashSet<>();
+                    // Parse manual cosmetic overrides (optional field)
+                    Set<String> manualTrails = new HashSet<>();
+                    Set<String> manualAddons = new HashSet<>();
+                    Set<String> manualEffects = new HashSet<>();
 
-                if (supporter.has("cosmetics")) {
-                    JsonObject cosmetics = supporter.getAsJsonObject("cosmetics");
-                    if (cosmetics.has("trails")) {
-                        manualTrails = jsonArrayToSet(cosmetics.getAsJsonArray("trails"));
+                    if (supporter.has("cosmetics")) {
+                        JsonObject cosmetics = supporter.getAsJsonObject("cosmetics");
+                        if (cosmetics.has("trails")) {
+                            manualTrails = jsonArrayToSet(cosmetics.getAsJsonArray("trails"));
+                        }
+                        if (cosmetics.has("addons")) {
+                            manualAddons = jsonArrayToSet(cosmetics.getAsJsonArray("addons"));
+                        }
+                        if (cosmetics.has("effects")) {
+                            manualEffects = jsonArrayToSet(cosmetics.getAsJsonArray("effects"));
+                        }
                     }
-                    if (cosmetics.has("addons")) {
-                        manualAddons = jsonArrayToSet(cosmetics.getAsJsonArray("addons"));
-                    }
-                    if (cosmetics.has("effects")) {
-                        manualEffects = jsonArrayToSet(cosmetics.getAsJsonArray("effects"));
-                    }
+
+                    SupporterData data = new SupporterData(uuid, name, tier, manualTrails, manualAddons, manualEffects);
+                    newCache.put(uuid, data);
+                } catch (Exception entryError) {
+                    // Skip malformed entries but continue parsing others
+                    LOGGER.warn("Shoot! Skipping malformed supporter entry: {}", entryError.getMessage());
                 }
-
-                SupporterData data = new SupporterData(uuid, name, tier, manualTrails, manualAddons, manualEffects);
-                newCache.put(uuid, data);
             }
 
+            // Only update cache if we successfully parsed at least some data
             // Atomic replacement instead of clear+putAll to avoid empty cache window
-            supporterCache = newCache;
+            if (!newCache.isEmpty()) {
+                supporterCache = newCache;
+            } else {
+                LOGGER.warn("Really?! Parsed JSON contained no valid supporter entries - keeping old cache");
+            }
         } catch (Exception e) {
-            LOGGER.error("Oh, dung beetles! Error parsing supporters JSON", e);
+            // Fatal JSON parsing error - keep old cache intact
+            LOGGER.error("Oh, dung beetles! Fatal error parsing supporters JSON - keeping old cache", e);
         }
     }
 

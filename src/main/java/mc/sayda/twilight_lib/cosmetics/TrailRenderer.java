@@ -28,6 +28,9 @@ public class TrailRenderer {
     // Track last positions for accurate velocity calculation (for remote players)
     private static final java.util.Map<java.util.UUID, Vec3> lastPositions = new java.util.concurrent.ConcurrentHashMap<>();
 
+    // Track which foot is next for each player (true = left, false = right)
+    private static final java.util.Map<java.util.UUID, Boolean> footStepTracker = new java.util.concurrent.ConcurrentHashMap<>();
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
@@ -56,8 +59,12 @@ public class TrailRenderer {
                 return;
             }
 
+            TrailType trailType = TrailType.fromId(trails.getActiveTrail());
+            if (trailType == null) return;
+
             // Don't render trails too frequently (configurable)
-            int updateFrequency = Math.max(1, TwilightConfig.TRAIL_UPDATE_FREQUENCY.get());
+            // Exception: Footprint trails spawn more frequently for consistent footstep spacing
+            int updateFrequency = trailType.isFootprint() ? 4 : Math.max(1, TwilightConfig.TRAIL_UPDATE_FREQUENCY.get());
             if (tickCounter % updateFrequency != 0) return;
 
             // Calculate velocity based on position change for more accurate movement detection
@@ -81,9 +88,6 @@ public class TrailRenderer {
 
             // Don't render trails when player is standing still
             if (horizontalSpeed < TwilightConstants.Trail.MIN_HORIZONTAL_SPEED) return; // Standing still or barely moving
-
-            TrailType trailType = TrailType.fromId(trails.getActiveTrail());
-            if (trailType == null) return;
 
             // Get particle type (tier-based for hearts, fixed for others)
             ParticleOptions particleType;
@@ -112,18 +116,62 @@ public class TrailRenderer {
             Vec3 pos = player.position();
             double offsetY = TwilightConstants.Trail.FEET_OFFSET_Y; // Start at feet level (works for all entity heights)
 
-            for (int i = 0; i < trailType.getParticleCount(); i++) {
-                double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.Trail.PARTICLE_SPREAD_HORIZONTAL;
-                double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.Trail.PARTICLE_SPREAD_HORIZONTAL;
-                double randomY = RANDOM.nextDouble() * TwilightConstants.Trail.PARTICLE_SPREAD_VERTICAL;
+            // Special handling for wolf prints - pass movement direction in velocity parameters
+            if (trails.getActiveTrail().equals("wolf_prints")) {
+                // Calculate movement direction vector
+                Vec3 movement = player.getDeltaMovement();
+                double dirX = movement.x;
+                double dirZ = movement.z;
 
-                player.level().addParticle(
-                    particleType,
-                    pos.x + offsetX,
-                    pos.y + offsetY + randomY,
-                    pos.z + offsetZ,
-                    0, 0, 0
-                );
+                // Normalize if moving (avoid division by zero)
+                double length = Math.sqrt(dirX * dirX + dirZ * dirZ);
+                if (length > 0.001) {
+                    dirX /= length;
+                    dirZ /= length;
+                }
+
+                // Alternate between left and right foot
+                boolean isLeftFoot = footStepTracker.getOrDefault(player.getUUID(), true);
+                footStepTracker.put(player.getUUID(), !isLeftFoot);
+
+                // Calculate perpendicular offset for left/right foot placement
+                // Perpendicular vector to movement direction (rotate 90 degrees)
+                double perpX = -dirZ;  // Perpendicular X
+                double perpZ = dirX;   // Perpendicular Z
+
+                // Offset distance from center (paw width)
+                double footOffset = 0.15; // Distance from center line
+                double lateralOffset = isLeftFoot ? -footOffset : footOffset;
+
+                // Calculate footprint position with left/right offset
+                double footX = pos.x + (perpX * lateralOffset);
+                double footZ = pos.z + (perpZ * lateralOffset);
+
+                // Spawn footprint particles with movement direction
+                for (int i = 0; i < trailType.getParticleCount(); i++) {
+                    player.level().addParticle(
+                        particleType,
+                        footX,
+                        pos.y + offsetY - 0.05, // Slightly below feet level for ground contact
+                        footZ,
+                        dirX, 0, dirZ // Pass movement direction
+                    );
+                }
+            } else {
+                // Normal trail particles with random spread
+                for (int i = 0; i < trailType.getParticleCount(); i++) {
+                    double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.Trail.PARTICLE_SPREAD_HORIZONTAL;
+                    double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.Trail.PARTICLE_SPREAD_HORIZONTAL;
+                    double randomY = RANDOM.nextDouble() * TwilightConstants.Trail.PARTICLE_SPREAD_VERTICAL;
+
+                    player.level().addParticle(
+                        particleType,
+                        pos.x + offsetX,
+                        pos.y + offsetY + randomY,
+                        pos.z + offsetZ,
+                        0, 0, 0
+                    );
+                }
             }
         });
     }

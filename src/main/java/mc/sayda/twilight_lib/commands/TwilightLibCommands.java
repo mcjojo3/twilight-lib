@@ -15,12 +15,15 @@ import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.capabilities.AddonsData;
 import mc.sayda.twilight_lib.commands.CommandUtils;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
+import mc.sayda.twilight_lib.cosmetics.EffectType;
 import mc.sayda.twilight_lib.network.SyncAddonsPacket;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncMorphPacket;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
 import mc.sayda.twilight_lib.network.SyncEffectsPacket;
 import mc.sayda.twilight_lib.TwilightConstants;
+import mc.sayda.twilight_lib.supporter.SupporterData;
+import mc.sayda.twilight_lib.supporter.SupporterService;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -72,8 +75,9 @@ public class TwilightLibCommands {
 
     // Suggestion provider for effect types
     private static final SuggestionProvider<CommandSourceStack> EFFECT_SUGGESTIONS = (context, builder) -> {
-        // For now, only respawn_twilight
-        builder.suggest("respawn_twilight");
+        for (EffectType type : EffectType.values()) {
+            builder.suggest(type.getId());
+        }
         return builder.buildFuture();
     };
 
@@ -579,7 +583,18 @@ public class TwilightLibCommands {
 
     private static int executeListEffects(CommandSourceStack source) {
         // Admin command - list ALL available effect types
-        source.sendSuccess(() -> Component.literal("Available effects: respawn_twilight"), false);
+        String[] effectIds = new String[EffectType.values().length];
+        int i = 0;
+        for (EffectType type : EffectType.values()) {
+            effectIds[i++] = type.getId();
+        }
+
+        if (effectIds.length == 0) {
+            source.sendSuccess(() -> Component.literal("No effects registered"), false);
+        } else {
+            source.sendSuccess(() -> Component.literal("Available effects: " + String.join(", ", effectIds)), false);
+        }
+
         return 1;
     }
 
@@ -588,11 +603,27 @@ public class TwilightLibCommands {
         LOGGER.info("Hey, whatcha doing? Admin {} initiated reload command", source.getTextName());
 
         try {
-            // Reload supporter data from GitHub
+            // Reload supporter data from GitHub (force refresh to bypass cache)
             source.sendSuccess(() -> Component.literal("Fetching supporter data from GitHub..."), false);
-            mc.sayda.twilight_lib.supporter.SupporterService.fetchSupporters().thenRun(() -> {
+            SupporterService.forceRefresh().thenRun(() -> {
                 source.sendSuccess(() -> Component.literal("✓ Supporter data reloaded successfully!"), false);
                 LOGGER.info("Gotcha! Now that was more sparkles. Supporter data reloaded via command");
+
+                // Re-sync cosmetics for all online players
+                var server = source.getServer();
+                if (server != null) {
+                    var playerList = server.getPlayerList();
+                    int syncedPlayers = 0;
+
+                    for (ServerPlayer player : playerList.getPlayers()) {
+                        syncedPlayers++;
+                        resyncPlayerCosmetics(player);
+                    }
+
+                    int finalCount = syncedPlayers;
+                    source.sendSuccess(() -> Component.literal("✓ Re-synced cosmetics for " + finalCount + " online players"), false);
+                    LOGGER.info("More magic! Re-synced cosmetics for {} online players", finalCount);
+                }
             }).exceptionally(ex -> {
                 source.sendFailure(Component.literal("✗ Failed to reload supporter data: " + ex.getMessage()));
                 LOGGER.error("Dang! Failed to reload supporter data via command: {}", ex.getMessage());
@@ -618,6 +649,93 @@ public class TwilightLibCommands {
             source.sendFailure(Component.literal("Reload failed: " + e.getMessage()));
             LOGGER.error("Oh, farn it! Reload command failed: {}", e.getMessage(), e);
             return 0;
+        }
+    }
+
+    /**
+     * Re-sync a player's cosmetics based on current supporter data.
+     * This mirrors the logic from TwilightLib.onPlayerLogin but for existing players.
+     */
+    private static void resyncPlayerCosmetics(ServerPlayer player) {
+        String uuid = player.getStringUUID();
+        Optional<SupporterData> supporterData = SupporterService.getSupporterData(uuid);
+
+        if (supporterData.isPresent()) {
+            SupporterData data = supporterData.get();
+            Set<String> allTrails = data.getAllTrails();
+            Set<String> allAddons = data.getAllAddons();
+            Set<String> allEffects = data.getAllEffects();
+
+            // Sync trails
+            player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+                String activeTrail = trails.getActiveTrail();
+                boolean trailEnabled = trails.isTrailEnabled();
+
+                trails.clearTrails();
+                for (String trail : allTrails) {
+                    trails.addTrail(trail);
+                }
+
+                // Restore active trail if still owned
+                if (activeTrail != null && trails.hasTrail(activeTrail)) {
+                    trails.setActiveTrail(activeTrail);
+                } else {
+                    trails.setActiveTrail(null);
+                }
+                trails.setTrailEnabled(trailEnabled);
+
+                player.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
+                NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
+            });
+
+            // Sync addons
+            player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+                Set<String> currentOwned = new HashSet<>(addons.getAddons());
+                AddonsData addonsData = (AddonsData) addons;
+
+                // Remove addons no longer granted
+                for (String addon : currentOwned) {
+                    if (!allAddons.contains(addon)) {
+                        addonsData.removeAddonOwnership(addon);
+                    }
+                }
+
+                // Add newly granted addons
+                for (String addon : allAddons) {
+                    if (!currentOwned.contains(addon)) {
+                        addons.addAddon(addon);
+                    }
+                }
+
+                player.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
+                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
+            });
+
+            // Sync effects
+            player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+                Set<String> currentOwned = new HashSet<>(effects.getEffects());
+                EffectsData effectsData = (EffectsData) effects;
+
+                // Remove effects no longer granted
+                for (String effect : currentOwned) {
+                    if (!allEffects.contains(effect)) {
+                        effectsData.removeEffectOwnership(effect);
+                    }
+                }
+
+                // Add newly granted effects
+                for (String effect : allEffects) {
+                    if (!currentOwned.contains(effect)) {
+                        effects.addEffect(effect);
+                    }
+                }
+
+                player.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
+                NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
+            });
+
+            LOGGER.debug("Let's go! Re-synced {} trails, {} addons, {} effects for {}",
+                allTrails.size(), allAddons.size(), allEffects.size(), player.getGameProfile().getName());
         }
     }
 

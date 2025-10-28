@@ -1,7 +1,9 @@
 package mc.sayda.twilight_lib;
 
 import com.mojang.logging.LogUtils;
+import mc.sayda.twilight_lib.capabilities.AddonsData;
 import mc.sayda.twilight_lib.capabilities.AddonsProvider;
+import mc.sayda.twilight_lib.capabilities.EffectsData;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
 import mc.sayda.twilight_lib.capabilities.IAddons;
 import mc.sayda.twilight_lib.capabilities.IEffects;
@@ -115,6 +117,9 @@ public class TwilightLib {
 
         LOGGER.info("I wanna have fun and chat with someone besides myself! Syncing morphs and addons for {}", loggedInPlayer.getGameProfile().getName());
 
+        // Ensure supporter data is loaded before checking (waits if fetch is in progress)
+        SupporterService.fetchSupporters().join();  // Block until fetch completes
+
         // Check supporter status and auto-grant cosmetics (tier unlocks + manual overrides)
         String uuid = loggedInPlayer.getStringUUID();
         Optional<SupporterData> supporterData = SupporterService.getSupporterData(uuid);
@@ -143,17 +148,28 @@ public class TwilightLib {
                 String activeTrail = trails.getActiveTrail();
                 boolean trailEnabled = trails.isTrailEnabled();
 
-                // Clear and re-grant trails to match current tier
-                trails.clearTrails();
+                // Sync owned trails with current supporter status (preserves admin grants)
+                Set<String> currentOwned = new java.util.HashSet<>(trails.getTrails());
+
+                // Remove trails no longer granted (selective removal preserves admin grants)
+                for (String trail : currentOwned) {
+                    if (!allTrails.contains(trail)) {
+                        trails.removeTrail(trail);  // Will also clear active trail if this was it
+                    }
+                }
+
+                // Add newly granted trails
                 for (String trail : allTrails) {
-                    trails.addTrail(trail);
+                    if (!currentOwned.contains(trail)) {
+                        trails.addTrail(trail);
+                    }
                 }
 
                 // Restore active trail if still owned, otherwise explicitly clear it
                 if (activeTrail != null && trails.hasTrail(activeTrail)) {
                     trails.setActiveTrail(activeTrail);
                 } else {
-                    trails.setActiveTrail(null); // Clear invalid trail (stone tier or no longer owned)
+                    trails.setActiveTrail(null); // Clear invalid trail (no longer owned)
                 }
                 trails.setTrailEnabled(trailEnabled);
 
@@ -164,7 +180,13 @@ public class TwilightLib {
             loggedInPlayer.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
                 // Sync owned addons with current supporter status (preserves persistent active state)
                 Set<String> currentOwned = new java.util.HashSet<>(addons.getAddons());
-                mc.sayda.twilight_lib.capabilities.AddonsData addonsData = (mc.sayda.twilight_lib.capabilities.AddonsData) addons;
+
+                // Type-safe cast to access implementation-specific methods
+                if (!(addons instanceof AddonsData)) {
+                    LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected addons capability implementation: {}", addons.getClass());
+                    return;
+                }
+                AddonsData addonsData = (AddonsData) addons;
 
                 // Remove addons no longer granted (ownership only - doesn't affect persistent active)
                 for (String addon : currentOwned) {
@@ -187,7 +209,13 @@ public class TwilightLib {
             loggedInPlayer.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
                 // Sync owned effects with current supporter status (preserves persistent active state)
                 Set<String> currentOwned = new java.util.HashSet<>(effects.getEffects());
-                mc.sayda.twilight_lib.capabilities.EffectsData effectsData = (mc.sayda.twilight_lib.capabilities.EffectsData) effects;
+
+                // Type-safe cast to access implementation-specific methods
+                if (!(effects instanceof EffectsData)) {
+                    LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected effects capability implementation: {}", effects.getClass());
+                    return;
+                }
+                EffectsData effectsData = (EffectsData) effects;
 
                 // Remove effects no longer granted (ownership only - doesn't affect persistent active)
                 for (String effect : currentOwned) {
@@ -229,6 +257,8 @@ public class TwilightLib {
                 NetworkHandler.sendMorphToAll(SyncMorphPacket.of(loggedInPlayer.getUUID(), rl));
                 // Force dimension refresh to apply morph hitbox immediately
                 loggedInPlayer.refreshDimensions();
+                // Persist morph state to NBT to prevent data loss on logout
+                loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
                 LOGGER.info("I wanna have fun and chat with someone besides myself! Player {} logged in with morph: {}", loggedInPlayer.getGameProfile().getName(), rl);
             });
         });
@@ -246,10 +276,10 @@ public class TwilightLib {
             NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(loggedInPlayer.getUUID(), trails.serialize()));
         });
 
-        // Send this player's effects to everyone else
+        // Send this player's effects to everyone else (trigger spawn effect on login)
         loggedInPlayer.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
             if (!effects.getActiveEffects().isEmpty()) {
-                NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(loggedInPlayer.getUUID(), effects.getActiveEffects()));
+                NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(loggedInPlayer.getUUID(), effects.getActiveEffects(), true));
             }
         });
     }
@@ -276,7 +306,7 @@ public class TwilightLib {
             CompoundTag addonsData = oldData.getCompound(TwilightConstants.NBT_ADDONS);
             evt.getEntity().getCapability(AddonsProvider.ADDONS_CAP).ifPresent(newAddons -> {
                 newAddons.deserialize(addonsData);
-                LOGGER.debug("Naptime's over! Restoring addons from death.");
+                LOGGER.debug("Here you go! Restoring addons from death.");
                 evt.getEntity().getPersistentData().put(TwilightConstants.NBT_ADDONS, addonsData);
             });
         }
@@ -311,6 +341,8 @@ public class TwilightLib {
             morph.getEntityType().ifPresent(rl -> {
                 NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), rl));
                 player.refreshDimensions();
+                // Persist morph state to NBT to prevent data loss
+                player.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
                 LOGGER.debug("The wheel turns, day becomes night... Player {} respawned as {}", player.getGameProfile().getName(), rl);
             });
         });
@@ -329,10 +361,10 @@ public class TwilightLib {
             LOGGER.debug("Something good is going to happen. With sparkles! Player {} respawned with trails", player.getGameProfile().getName());
         });
 
-        // Sync effects to client after respawn
+        // Sync effects to client after respawn (trigger spawn effect on respawn)
         player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
             if (!effects.getActiveEffects().isEmpty()) {
-                NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
+                NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects(), true));
                 LOGGER.debug("Aw, this spell is neat! Player {} respawned with {} active effects", player.getGameProfile().getName(), effects.getActiveEffects().size());
             }
         });

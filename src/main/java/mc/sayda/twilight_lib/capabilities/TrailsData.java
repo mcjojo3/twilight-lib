@@ -93,7 +93,7 @@ public class TrailsData implements ITrails {
     }
 
     @Override
-    public CompoundTag serialize() {
+    public synchronized CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
 
         ListTag trailsList = new ListTag();
@@ -112,7 +112,7 @@ public class TrailsData implements ITrails {
     }
 
     @Override
-    public void deserialize(CompoundTag tag) {
+    public synchronized void deserialize(CompoundTag tag) {
         trails.clear();
         activeTrail = null;  // Reset to null before loading
         isPersistentTrail = false;

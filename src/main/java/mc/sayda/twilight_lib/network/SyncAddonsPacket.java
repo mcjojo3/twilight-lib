@@ -32,24 +32,39 @@ public class SyncAddonsPacket {
     }
 
     public static SyncAddonsPacket decode(FriendlyByteBuf buf) {
-        UUID id = buf.readUUID();
-        int size = buf.readInt();
+        try {
+            UUID id = buf.readUUID();
+            int size = buf.readInt();
 
-        // Validate packet size to prevent memory exhaustion attacks
-        // Max 1000 addons is reasonable (current registry has ~106)
-        if (size < 0 || size > 1000) {
-            throw new IllegalArgumentException("Invalid addon packet size: " + size + " (max 1000)");
-        }
+            // Validate packet size to prevent memory exhaustion attacks
+            // Max 1000 addons is reasonable (current registry has ~106)
+            if (size < 0 || size > 1000) {
+                throw new IllegalArgumentException("Invalid addon packet size: " + size + " (max 1000)");
+            }
 
-        Set<String> addons = new HashSet<>();
-        for (int i = 0; i < size; i++) {
-            addons.add(buf.readUtf());
+            Set<String> addons = new HashSet<>();
+            for (int i = 0; i < size; i++) {
+                String addonId = buf.readUtf();
+                if (addonId != null && !addonId.isEmpty()) {
+                    addons.add(addonId);
+                }
+            }
+            return new SyncAddonsPacket(id, addons);
+        } catch (Exception e) {
+            LOGGER.error("Or, what. Failed to decode SyncAddonsPacket: {}", e.getMessage());
+            // Return empty packet to prevent crash
+            return new SyncAddonsPacket(new UUID(0, 0), new HashSet<>());
         }
-        return new SyncAddonsPacket(id, addons);
     }
 
     public static void handle(SyncAddonsPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
+            // Detect malformed packets from decode errors
+            if (msg.playerId.equals(new UUID(0, 0))) {
+                LOGGER.error("Or, what. Received malformed SyncAddonsPacket with invalid UUID - packet decode failed");
+                return;
+            }
+
             var level = Minecraft.getInstance().level;
             if (level == null) {
                 LOGGER.warn("Are we done in this reality yet? Cannot sync addons - level is null");

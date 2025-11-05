@@ -1,108 +1,24 @@
+// DEPRECATED: This root build file is no longer used.
+// Each module (forge-1.20.1, neoforge-1.21.1) is now a standalone Gradle project.
+//
+// To build the mods:
+//   cd forge-1.20.1 && ./gradlew build
+//   cd neoforge-1.21.1 && ./gradlew build
+//
+// See README-STRUCTURE.md for details.
+
 plugins {
-    id 'eclipse'
-    id 'idea'
-    id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'java-library'
 }
 
-version = mod_version
 group = mod_group_id
-
-base {
-    archivesName = mod_id
-}
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+version = mod_version
 
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
-
-minecraft {
-    mappings channel: mapping_channel, version: mapping_version
-
-    runs {
-        configureEach {
-            workingDirectory project.file('run')
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-
-            mods {
-                twilight_lib {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        client {
-            property 'forge.enabledGameTestNamespaces', mod_id
-            arg "-mixin.config=twilight_lib.mixins.json"
-        }
-
-        server {
-            property 'forge.enabledGameTestNamespaces', mod_id
-            args '--nogui'
-            arg "-mixin.config=twilight_lib.mixins.json"
-        }
-
-        gameTestServer {
-            property 'forge.enabledGameTestNamespaces', mod_id
-        }
-
-        data {
-            workingDirectory project.file('run-data')
-            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-        }
-    }
-}
-
-sourceSets.main.resources { srcDir 'src/generated/resources' }
-
-repositories {
-    maven { url = 'https://maven.minecraftforge.net' }
-    mavenCentral()
-}
-
-dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-}
-
-tasks.named('processResources', ProcessResources).configure {
-    var replaceProperties = [
-            minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
-            forge_version: forge_version, forge_version_range: forge_version_range,
-            loader_version_range: loader_version_range,
-            mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
-            mod_authors: mod_authors, mod_description: mod_description,
-    ]
-    inputs.properties replaceProperties
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
-        expand replaceProperties + [project: project]
-    }
-}
-
-tasks.named('jar', Jar).configure {
-    manifest {
-        attributes([
-                'Specification-Title'     : mod_id,
-                'Specification-Vendor'    : mod_authors,
-                'Specification-Version'   : '1',
-                'Implementation-Title'    : project.name,
-                'Implementation-Version'  : project.jar.archiveVersion,
-                'Implementation-Vendor'   : mod_authors,
-                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                'MixinConfigs'            : 'twilight_lib.mixins.json'  // ADD THIS LINE
-        ])
-    }
-    finalizedBy 'reobfJar'
-}
-
-publishing {
-    publications {
-        register('mavenJava', MavenPublication) { artifact jar }
-    }
-    repositories { maven { url "file://${project.projectDir}/mcmodsrepo" } }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-}
+println ""
+println "   WARNING: Root build.gradle is deprecated!"
+println "   Each module is now a standalone project."
+println "   Build them individually:"
+println "     cd forge-1.20.1 && ./gradlew build"
+println "     cd neoforge-1.21.1 && ./gradlew build"
+println ""

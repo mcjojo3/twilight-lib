@@ -5,6 +5,41 @@ Twilight Lib is a library mod used by mc_jojo3's mods. It is designed to more ea
 - [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/twilight-lib)
 - [Modrinth](https://modrinth.com/mod/twilight-lib)
 
+## 📁 Repository Structure
+
+This repository uses a **mono-repo structure** with independent mod projects:
+
+- **`forge-1.20.1/`** - Forge 1.20.1 mod (standalone Gradle project)
+- **`neoforge-1.21.1/`** - NeoForge 1.21.1 mod (standalone Gradle project)
+
+Each module is a complete, independent Gradle project with its own isolated dependency cache. This prevents classpath conflicts and allows both modules to be developed simultaneously.
+
+### Quick Start
+
+**Building:**
+```bash
+# Forge 1.20.1
+cd forge-1.20.1
+./gradlew build
+
+# NeoForge 1.21.1
+cd neoforge-1.21.1
+./gradlew build
+```
+
+**Running:**
+```bash
+# Forge 1.20.1
+cd forge-1.20.1
+./gradlew runClient --offline
+
+# NeoForge 1.21.1
+cd neoforge-1.21.1
+./gradlew runClient --offline
+```
+
+> **Note**: Both modules work fully in offline mode after initial dependency download. The isolated Gradle caches (`.gradle-forge/` and `.gradle-neoforge/`) ensure no conflicts between versions.
+
 <details>
 <summary><strong><u>Functionalities</u></strong></summary>
 
@@ -34,10 +69,10 @@ Twilight Lib is a library mod used by mc_jojo3's mods. It is designed to more ea
 - **1.18.2:** N/A: None
 - **1.19.2:** N/A: None
 - **1.19.4:** N/A: None
-- **1.20.1:** ADS: "Active Development Support"
+- **1.20.1:** ADS: "Active Development Support" (Forge)
 - **1.20.4:** N/A: None
 - **1.20.6:** N/A: None
-- **1.21.1:** ADS: "Active Development Support"
+- **1.21.1:** ADS: "Active Development Support" (NeoForge)
 
 *Do note that this is the plan, but things may change over time!*
 

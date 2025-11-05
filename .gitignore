@@ -19,9 +19,27 @@ Thumbs.db
 /run/
 /run-data/
 
+# Module-specific build outputs (standalone projects)
+/forge-1.20.1/build/
+/forge-1.20.1/out/
+/forge-1.20.1/run/
+/forge-1.20.1/run-data/
+/forge-1.20.1/.gradle/
+/forge-1.20.1/.gradle-forge/
+
+/neoforge-1.21.1/build/
+/neoforge-1.21.1/out/
+/neoforge-1.21.1/runs/
+/neoforge-1.21.1/run-data/
+/neoforge-1.21.1/.gradle/
+/neoforge-1.21.1/.gradle-neoforge/
+
+# Common assets folder (shared resources)
+# DO NOT ignore - this contains shared assets between modules
+# /common/
+
 # Gradle caches and local config
 /.gradle/
-.gradle/
 gradle-local.properties
 
 # Project metadata (Eclipse)
@@ -46,18 +64,22 @@ out/
 # Miscellaneous
 .idea_modules/
 coverage/
+README-STRUCTURE.md
+zoe_quotes_reference.txt
+TRAIL_TUTORIAL.txt
+ADDON_CONVERSION_TUTORIAL.txt
+DEVELOPER_GUIDE.txt
+MULTI_VERSION_MIGRATION_CHECKLIST.md
+MIGRATION_SUMMARY.md
+PATREON_SETUP.md
 tmp/
 .cache/
 *.bak
 *.orig
 .env
 
-# Exclude misc folders/files
+# IDE workspace folders
 .claude/
-DEVELOPER_GUIDE.txt
-ADDON_CONVERSION_TUTORIAL.txt
-TRAIL_TUTORIAL.txt
-MULTI_VERSION_MIGRATION_CHECKLIST.md
-PATREON_SETUP.md
-zoe_quotes_reference.txt
-assets.Ink
+
+# Windows shortcuts (leftover from old structure)
+*.lnk

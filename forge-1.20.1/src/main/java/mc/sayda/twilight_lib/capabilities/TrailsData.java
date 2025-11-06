@@ -16,22 +16,22 @@ public class TrailsData implements ITrails {
     private static final String NBT_TRAIL_ENABLED = "TrailEnabled";
 
     private final Set<String> trails = new HashSet<>();
-    private volatile String activeTrail = null;
-    private volatile boolean trailEnabled = true;
-    private volatile boolean isPersistentTrail = false;  // Track if active trail persists through logout/death (for race mods)
+    private String activeTrail = null;
+    private boolean trailEnabled = true;
+    private boolean isPersistentTrail = false;  // Track if active trail persists through logout/death (for race mods)
 
     @Override
-    public Set<String> getTrails() {
+    public synchronized Set<String> getTrails() {
         return new HashSet<>(trails);
     }
 
     @Override
-    public void addTrail(String trailId) {
+    public synchronized void addTrail(String trailId) {
         trails.add(trailId);
     }
 
     @Override
-    public void removeTrail(String trailId) {
+    public synchronized void removeTrail(String trailId) {
         trails.remove(trailId);
         // Clear active trail if the removed trail was active
         if (trailId != null && trailId.equals(activeTrail)) {
@@ -40,12 +40,12 @@ public class TrailsData implements ITrails {
     }
 
     @Override
-    public boolean hasTrail(String trailId) {
+    public synchronized boolean hasTrail(String trailId) {
         return trails.contains(trailId);
     }
 
     @Override
-    public void clearTrails() {
+    public synchronized void clearTrails() {
         trails.clear();
         // Clear active trail when clearing all trails
         activeTrail = null;
@@ -53,7 +53,7 @@ public class TrailsData implements ITrails {
 
     @Override
     @Nullable
-    public String getActiveTrail() {
+    public synchronized String getActiveTrail() {
         return activeTrail;
     }
 
@@ -78,17 +78,17 @@ public class TrailsData implements ITrails {
     }
 
     @Override
-    public boolean isTrailActive(String trailId) {
+    public synchronized boolean isTrailActive(String trailId) {
         return trailId != null && trailId.equals(activeTrail) && trailEnabled;
     }
 
     @Override
-    public boolean isTrailEnabled() {
+    public synchronized boolean isTrailEnabled() {
         return trailEnabled;
     }
 
     @Override
-    public void setTrailEnabled(boolean enabled) {
+    public synchronized void setTrailEnabled(boolean enabled) {
         this.trailEnabled = enabled;
     }
 

@@ -252,6 +252,11 @@ public class MorphRenderHandler {
             }
 
             EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(rl);
+            if (type == null) {
+                LOGGER.warn("Unknown entity type: {}", rl);
+                return cached; // Keep old entity if type doesn't exist
+            }
+
             Entity e = type.create(level);
 
             if (e == null) {

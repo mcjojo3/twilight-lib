@@ -2,9 +2,14 @@ package mc.sayda.twilight_lib.addon;
 
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.TwilightLib;
+import mc.sayda.twilight_lib.client.model.addon.BeanieModel;
+import mc.sayda.twilight_lib.client.model.addon.DryadVinesModel;
+import mc.sayda.twilight_lib.client.model.addon.GoldenLaurelModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneEarsModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneSnoutModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneTailsVariantModel;
+import mc.sayda.twilight_lib.client.model.addon.SuccubusWingsModel;
+import mc.sayda.twilight_lib.client.model.addon.TeemoHatModel;
 import mc.sayda.twilight_lib.client.model.addon.TiaraModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.resources.ResourceLocation;
@@ -29,6 +34,46 @@ public class AddonInit {
                 TiaraModel::createBodyLayer,    // Your model's createBodyLayer method
                 TiaraModel::new,
                 new ResourceLocation(TwilightLib.MODID, "textures/addon/tiara.png")
+        );
+
+        AddonRegistry.registerAddon(
+                "succubus_wings",
+                SuccubusWingsModel.LAYER_LOCATION,
+                SuccubusWingsModel::createBodyLayer,
+                SuccubusWingsModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/succubus_wings.png")
+        );
+
+        AddonRegistry.registerAddon(
+                "beanie",
+                BeanieModel.LAYER_LOCATION,
+                BeanieModel::createBodyLayer,
+                BeanieModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/beanie.png")
+        );
+
+        AddonRegistry.registerAddon(
+                "dryad_vines",
+                DryadVinesModel.LAYER_LOCATION,
+                DryadVinesModel::createBodyLayer,
+                DryadVinesModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/dryad_vines.png")
+        );
+
+        AddonRegistry.registerAddon(
+                "golden_laurel",
+                GoldenLaurelModel.LAYER_LOCATION,
+                GoldenLaurelModel::createBodyLayer,
+                GoldenLaurelModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/golden_laurel.png")
+        );
+
+        AddonRegistry.registerAddon(
+                "teemo_hat",
+                TeemoHatModel.LAYER_LOCATION,
+                TeemoHatModel::createBodyLayer,
+                TeemoHatModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/teemo_hat.png")
         );
 
         // Register kitsune addons - multiple color variants

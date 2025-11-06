@@ -54,14 +54,12 @@ public class TwilightEventHandler {
         // In 1.21.1, height is now a method instead of a field
         float scale = dims.height() / PLAYER_HEIGHT;
 
-        float baseStepHeight = TwilightConfig.BASE_STEP_HEIGHT.get().floatValue();
-        float minScale = TwilightConfig.MIN_STEP_SCALE.get().floatValue();
-        float maxScale = TwilightConfig.MAX_STEP_SCALE.get().floatValue();
-
-        // TODO: In 1.21.1, step height system was changed - needs to be reimplemented
-        // The maxUpStep field no longer exists and needs to be set via a different mechanism
-        // (possibly using entity attributes or a Mixin to access the private field)
+        // TODO: Step height adjustment will be handled manually via attributes (e.g., Pehkui integration)
+        // Disabled for consistency across both Forge 1.20.1 and NeoForge 1.21.1 versions
+        // float baseStepHeight = TwilightConfig.BASE_STEP_HEIGHT.get().floatValue();
+        // float minScale = TwilightConfig.MIN_STEP_SCALE.get().floatValue();
+        // float maxScale = TwilightConfig.MAX_STEP_SCALE.get().floatValue();
         // float newStepHeight = baseStepHeight * Math.max(minScale, Math.min(scale, maxScale));
-        // player.maxUpStep = newStepHeight;
+        // player.setMaxUpStep(newStepHeight);
     }
 }

@@ -29,7 +29,7 @@ public class ChestModel<T extends Entity> extends BaseAddonModel<T> {
 
         // Chest layer (uses player skin - 64x64 texture)
         PartDefinition Chest_r1 = Body.addOrReplaceChild("Chest_r1",
-                CubeListBuilder.create().texOffs(16, 21).addBox(-3.9F, -2.0F, -2.0F, 7.8F, 4.0F, 4.0F,
+                CubeListBuilder.create().texOffs(16, 21).addBox(-3.9F, -2.0F, -2.0F, 7.8F, 2.0F, 4.0F,
                         new CubeDeformation(0.0F)),
                 PartPose.offsetAndRotation(0.0F, 3.5F, -0.9F, 1.1781F, 0.0F, 0.0F));
 

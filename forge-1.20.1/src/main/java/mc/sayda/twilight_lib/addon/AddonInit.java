@@ -107,6 +107,17 @@ public class AddonInit {
                 true // Use player skin texture
         );
 
+        // Register chest addon - uses player skin texture
+        AddonRegistry.registerAddon(
+                "opaque_chest",
+                ChestModel.LAYER_LOCATION,
+                ChestModel::createBodyLayer,
+                ChestModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/chest.png"), // Placeholder texture (not used)
+                true, // Use player skin texture
+                true // Translucent (50% transparency)
+        );
+
         // Register opaque body addon - uses player skin and hides the base player model
         AddonRegistry.registerAddon(
                 "opaque_body",

@@ -32,7 +32,7 @@ public class ChestArmorModel<T extends Entity> extends BaseAddonModel<T> {
 
         // Armor chest layer - uses 64x32 armor texture dimensions
         PartDefinition Chest_armor = Body.addOrReplaceChild("Chest_armor",
-                CubeListBuilder.create().texOffs(16, 21).addBox(-3.9F, -2.0F, -2.0F, 7.8F, 4.0F, 4.0F,
+                CubeListBuilder.create().texOffs(16, 21).addBox(-3.9F, -2.0F, -2.0F, 7.8F, 2.0F, 4.0F,
                         new CubeDeformation(0.75F)), // 0.75F to stick out properly over armor, texOffs matches armor atlas (20,21) front face
                 PartPose.offsetAndRotation(0.0F, 3.5F, -0.9F, 1.1781F, 0.0F, 0.0F));
 

@@ -117,6 +117,16 @@ public class AddonInit {
                 true // Use player skin texture
         );
 
+        AddonRegistry.registerAddon(
+                "opaque_chest",
+                ChestModel.LAYER_LOCATION,
+                ChestModel::createBodyLayer,
+                ChestModel::new,
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/chest.png"), // Placeholder texture (not used)
+                true, // Use player skin texture
+                true // Translucent (50% transparency)
+        );
+
         // Register opaque body addon - uses player skin and hides the base player model
         AddonRegistry.registerAddon(
                 "opaque_body",
@@ -145,9 +155,9 @@ public class AddonInit {
         // Standard variants (swapped with alt for 3-5):
         // 1: 1
         // 2: 2, 3
-        // 3: 1, 2, 3 (was alt, now standard)
-        // 4: 2, 3, 4, 7 (was alt, now standard)
-        // 5: 1, 2, 3, 4, 7 (was alt, now standard)
+        // 3: 1, 2, 3 (standard)
+        // 4: 2, 3, 4, 7 (standard)
+        // 5: 1, 2, 3, 4, 7 (standard)
         // 6: 2, 3, 7, 4, 8, 5
         // 7: 1, 2, 3, 4, 5, 7, 8
         // 8: 2, 3, 4, 5, 6, 7, 8, 9
@@ -167,9 +177,9 @@ public class AddonInit {
         // Alt variants (swapped with standard for 3-5):
         // 1: 1
         // 2: 2, 3
-        // 3: 1, 4, 7 (was standard, now alt)
-        // 4: 2, 3, 5, 8 (was standard, now alt)
-        // 5: 1, 7, 4, 9, 6 (was standard, now alt)
+        // 3: 1, 4, 7 (alt)
+        // 4: 2, 3, 5, 8 (alt)
+        // 5: 1, 7, 4, 9, 6 (alt)
         // 6: 2, 3, 4, 7, 5, 8
         // 7: 1, 2, 3, 4, 7, 5, 8
         // 8: 2, 3, 4, 7, 5, 8, 6, 9

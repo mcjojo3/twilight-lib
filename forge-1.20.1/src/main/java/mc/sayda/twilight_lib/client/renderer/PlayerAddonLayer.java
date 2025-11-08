@@ -6,6 +6,8 @@ import mc.sayda.twilight_lib.addon.AddonModelInfo;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
 import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.client.model.IAddonModel;
+import mc.sayda.twilight_lib.client.model.addon.ChestModel;
+import mc.sayda.twilight_lib.client.model.addon.ChestArmorModel;
 import mc.sayda.twilight_lib.config.TwilightConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
@@ -17,7 +19,11 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -77,9 +83,93 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     EntityModel<Entity> entityModel = (EntityModel<Entity>) addonModel;
                     entityModel.setupAnim((Entity) player, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
 
-                    // Render the addon
-                    VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.entityCutoutNoCull(addonInfo.texture()));
+                    // Render the addon - use player skin texture if specified, otherwise use addon's custom texture
+                    var textureToUse = addonInfo.usePlayerSkin() ? player.getSkinTextureLocation() : addonInfo.texture();
+
+                    // Use translucent render type for transparent addons
+                    RenderType renderType = addonInfo.translucent() ?
+                        RenderType.entityTranslucent(textureToUse) :
+                        RenderType.entityCutoutNoCull(textureToUse);
+                    VertexConsumer vertexConsumer = buffer.getBuffer(renderType);
+
+                    // Apply transparency if translucent - wrap vertex consumer to modify alpha
+                    if (addonInfo.translucent()) {
+                        final float targetAlpha = 0.5F;
+                        VertexConsumer originalConsumer = vertexConsumer;
+                        vertexConsumer = new VertexConsumer() {
+                            @Override
+                            public VertexConsumer vertex(double x, double y, double z) {
+                                return originalConsumer.vertex(x, y, z);
+                            }
+
+                            @Override
+                            public VertexConsumer color(int red, int green, int blue, int alpha) {
+                                // Force alpha to 50% (127 out of 255)
+                                return originalConsumer.color(red, green, blue, (int)(targetAlpha * 255));
+                            }
+
+                            @Override
+                            public VertexConsumer uv(float u, float v) {
+                                return originalConsumer.uv(u, v);
+                            }
+
+                            @Override
+                            public VertexConsumer overlayCoords(int u, int v) {
+                                return originalConsumer.overlayCoords(u, v);
+                            }
+
+                            @Override
+                            public VertexConsumer uv2(int u, int v) {
+                                return originalConsumer.uv2(u, v);
+                            }
+
+                            @Override
+                            public VertexConsumer normal(float x, float y, float z) {
+                                return originalConsumer.normal(x, y, z);
+                            }
+
+                            @Override
+                            public void endVertex() {
+                                originalConsumer.endVertex();
+                            }
+
+                            @Override
+                            public void defaultColor(int r, int g, int b, int a) {
+                                originalConsumer.defaultColor(r, g, b, a);
+                            }
+
+                            @Override
+                            public void unsetDefaultColor() {
+                                originalConsumer.unsetDefaultColor();
+                            }
+                        };
+                    }
+
+                    // Render with default white color
                     entityModel.renderToBuffer(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+
+                    // If this is a chest addon and player is wearing chest armor, render the armor overlay
+                    if (addonModel instanceof ChestModel<?>) {
+                        ItemStack chestArmor = player.getItemBySlot(EquipmentSlot.CHEST);
+                        if (!chestArmor.isEmpty() && chestArmor.getItem() instanceof ArmorItem armorItem) {
+                            // Bake the chest armor model
+                            ChestArmorModel<?> chestArmorModel = getOrBakeChestArmorModel();
+
+                            // Sync it to the player model
+                            chestArmorModel.getBody().ifPresent(part -> copyModelPart(playerModel.body, part));
+
+                            // Setup animations
+                            @SuppressWarnings("unchecked")
+                            EntityModel<Entity> armorEntityModel = (EntityModel<Entity>) chestArmorModel;
+                            armorEntityModel.setupAnim((Entity) player, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+
+                            // Render with armor texture
+                            ResourceLocation armorTexture = getArmorTexture(armorItem, false);
+                            RenderType armorRenderType = RenderType.entityCutoutNoCull(armorTexture);
+                            VertexConsumer armorVertexConsumer = buffer.getBuffer(armorRenderType);
+                            armorEntityModel.renderToBuffer(poseStack, armorVertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+                        }
+                    }
                 });
             }
         });
@@ -94,6 +184,15 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
         });
     }
 
+    @SuppressWarnings("unchecked")
+    private ChestArmorModel<?> getOrBakeChestArmorModel() {
+        return (ChestArmorModel<?>) bakedModels.computeIfAbsent("__chest_armor_internal__", id -> {
+            var context = Minecraft.getInstance().getEntityModels();
+            var modelPart = context.bakeLayer(ChestArmorModel.LAYER_LOCATION);
+            return new ChestArmorModel<>(modelPart);
+        });
+    }
+
     private void copyModelPart(ModelPart from, ModelPart to) {
         to.xRot = from.xRot;
         to.yRot = from.yRot;
@@ -101,5 +200,11 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
         to.x = from.x;
         to.y = from.y;
         to.z = from.z;
+    }
+
+    private ResourceLocation getArmorTexture(ArmorItem armorItem, boolean isLeggings) {
+        String armorMaterial = armorItem.getMaterial().getName();
+        String layer = isLeggings ? "layer_2" : "layer_1";
+        return new ResourceLocation("minecraft", "textures/models/armor/" + armorMaterial + "_" + layer + ".png");
     }
 }

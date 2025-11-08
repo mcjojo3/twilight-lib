@@ -17,5 +17,8 @@ public record AddonModelInfo(
     ModelLayerLocation layerLocation,
     Supplier<LayerDefinition> layerDefinitionSupplier,
     Function<ModelPart, ?> modelFactory,
-    ResourceLocation texture
+    ResourceLocation texture,
+    boolean usePlayerSkin,
+    boolean translucent,
+    boolean hidePlayerModel
 ) {}

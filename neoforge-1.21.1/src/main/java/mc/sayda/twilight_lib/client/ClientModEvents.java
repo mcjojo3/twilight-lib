@@ -2,6 +2,7 @@ package mc.sayda.twilight_lib.client;
 
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.client.model.PlayerRigModel;
+import mc.sayda.twilight_lib.client.model.addon.ChestArmorModel;
 import mc.sayda.twilight_lib.client.renderer.CustomFoxRenderer;
 import mc.sayda.twilight_lib.client.renderer.PlayerAddonLayer;
 import mc.sayda.twilight_lib.cosmetics.TrailRenderer;
@@ -46,6 +47,7 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(PlayerRigModel.LAYER_LOCATION, PlayerRigModel::createBodyLayer);
+        event.registerLayerDefinition(ChestArmorModel.LAYER_LOCATION, ChestArmorModel::createBodyLayer);
 
         // Register built-in addons before registering their layers
         mc.sayda.twilight_lib.addon.AddonInit.registerAddons();

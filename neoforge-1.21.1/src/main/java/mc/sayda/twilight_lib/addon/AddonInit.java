@@ -3,7 +3,9 @@ package mc.sayda.twilight_lib.addon;
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.client.model.addon.BeanieModel;
-import mc.sayda.twilight_lib.client.model.addon.DryadVinesModel;
+import mc.sayda.twilight_lib.client.model.addon.ChestModel;
+import mc.sayda.twilight_lib.client.model.addon.OpaqueModel;
+import mc.sayda.twilight_lib.client.model.addon.NymphModel;
 import mc.sayda.twilight_lib.client.model.addon.GoldenLaurelModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneEarsModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneSnoutModel;
@@ -52,12 +54,41 @@ public class AddonInit {
                 ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/beanie.png")
         );
 
+        // Nymph model - shared by multiple addons with different textures
         AddonRegistry.registerAddon(
                 "dryad_vines",
-                DryadVinesModel.LAYER_LOCATION,
-                DryadVinesModel::createBodyLayer,
-                DryadVinesModel::new,
+                NymphModel.LAYER_LOCATION,
+                NymphModel::createBodyLayer,
+                NymphModel::new,
                 ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/dryad_vines.png")
+        );
+
+        AddonRegistry.registerAddon(
+                "oread_magma",
+                NymphModel.LAYER_LOCATION,
+                NymphModel::createBodyLayer,
+                NymphModel::new,
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/oread_magma.png")
+        );
+
+        AddonRegistry.registerAddon(
+                "naiad_water",
+                NymphModel.LAYER_LOCATION,
+                NymphModel::createBodyLayer,
+                NymphModel::new,
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/naiad_water.png"),
+                false, // Don't use player skin
+                true   // Translucent
+        );
+
+        AddonRegistry.registerAddon(
+                "aurai_drapes",
+                NymphModel.LAYER_LOCATION,
+                NymphModel::createBodyLayer,
+                NymphModel::new,
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/aurai_drapes.png"),
+                false, // Don't use player skin
+                true   // Translucent
         );
 
         AddonRegistry.registerAddon(
@@ -74,6 +105,28 @@ public class AddonInit {
                 TeemoHatModel::createBodyLayer,
                 TeemoHatModel::new,
                 ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/teemo_hat.png")
+        );
+
+        // Register chest addon - uses player skin texture
+        AddonRegistry.registerAddon(
+                "chest",
+                ChestModel.LAYER_LOCATION,
+                ChestModel::createBodyLayer,
+                ChestModel::new,
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/chest.png"), // Placeholder texture (not used)
+                true // Use player skin texture
+        );
+
+        // Register opaque body addon - uses player skin and hides the base player model
+        AddonRegistry.registerAddon(
+                "opaque_body",
+                OpaqueModel.LAYER_LOCATION,
+                OpaqueModel::createBodyLayer,
+                OpaqueModel::new,
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/opaque.png"), // Placeholder texture (not used)
+                true, // Use player skin texture
+                true, // Translucent (50% transparency)
+                true  // Hide player model
         );
 
         // Register kitsune addons - multiple color variants

@@ -76,7 +76,7 @@ public class AddonInit {
                 NymphModel.LAYER_LOCATION,
                 NymphModel::createBodyLayer,
                 NymphModel::new,
-                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/naiad_body.png"),
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/naiad_body.png"),
                 false, // Don't use player skin
                 true   // Translucent
         );

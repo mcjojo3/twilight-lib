@@ -40,7 +40,7 @@ public class NymphModel<T extends Entity> extends BaseAddonModel<T> {
                 PartPose.offset(0.0F, 0.0F, 0.0F));
 
         PartDefinition ChestLayer_r1 = Body.addOrReplaceChild("ChestLayer_r1",
-                CubeListBuilder.create().texOffs(16, 37).addBox(-4.0F, -2.0F, -2.0F, 8.0F, 2.0F, 4.0F,
+                CubeListBuilder.create().texOffs(16, 37).addBox(-3.9F, -2.0F, -2.0F, 7.8F, 2.0F, 4.0F,
                         new CubeDeformation(0.5F)),
                 PartPose.offsetAndRotation(0.0F, 3.5F, -0.9F, 1.1781F, 0.0F, 0.0F));
 

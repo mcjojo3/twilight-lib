@@ -60,7 +60,7 @@ public class AddonInit {
                 NymphModel.LAYER_LOCATION,
                 NymphModel::createBodyLayer,
                 NymphModel::new,
-                new ResourceLocation(TwilightLib.MODID, "textures/addon/dryad_body.png")
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/dryad_body.png")
         );
 
         AddonRegistry.registerAddon(
@@ -68,7 +68,7 @@ public class AddonInit {
                 NymphModel.LAYER_LOCATION,
                 NymphModel::createBodyLayer,
                 NymphModel::new,
-                new ResourceLocation(TwilightLib.MODID, "textures/addon/oread_body.png")
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/oread_body.png")
         );
 
         AddonRegistry.registerAddon(
@@ -86,7 +86,7 @@ public class AddonInit {
                 NymphModel.LAYER_LOCATION,
                 NymphModel::createBodyLayer,
                 NymphModel::new,
-                new ResourceLocation(TwilightLib.MODID, "textures/addon/aurai_body.png"),
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/aurai_body.png"),
                 false, // Don't use player skin
                 true   // Translucent
         );

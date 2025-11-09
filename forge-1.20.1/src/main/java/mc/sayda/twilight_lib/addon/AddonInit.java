@@ -56,27 +56,37 @@ public class AddonInit {
 
         // Nymph model - shared by multiple addons with different textures
         AddonRegistry.registerAddon(
-                "dryad_vines",
+                "dryad_body",
                 NymphModel.LAYER_LOCATION,
                 NymphModel::createBodyLayer,
                 NymphModel::new,
-                new ResourceLocation(TwilightLib.MODID, "textures/addon/dryad_vines.png")
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/dryad_body.png")
         );
 
         AddonRegistry.registerAddon(
-                "oread_magma",
+                "oread_body",
                 NymphModel.LAYER_LOCATION,
                 NymphModel::createBodyLayer,
                 NymphModel::new,
-                new ResourceLocation(TwilightLib.MODID, "textures/addon/oread_magma.png")
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/oread_body.png")
         );
 
         AddonRegistry.registerAddon(
-                "aurai_drapes",
+                "naiad_body",
                 NymphModel.LAYER_LOCATION,
                 NymphModel::createBodyLayer,
                 NymphModel::new,
-                new ResourceLocation(TwilightLib.MODID, "textures/addon/aurai_drapes.png"),
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/naiad_body.png"),
+                false, // Don't use player skin
+                true   // Translucent
+        );
+
+        AddonRegistry.registerAddon(
+                "aurai_body",
+                NymphModel.LAYER_LOCATION,
+                NymphModel::createBodyLayer,
+                NymphModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/aurai_body.png"),
                 false, // Don't use player skin
                 true   // Translucent
         );
@@ -129,6 +139,19 @@ public class AddonInit {
                 true, // Translucent (50% transparency)
                 true  // Hide player model
         );
+
+        // Register slime body addon - uses player skin and hides the base player model
+        AddonRegistry.registerAddon(
+                "slime_body",
+                NymphModel.LAYER_LOCATION,
+                NymphModel::createBodyLayer,
+                NymphModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/slime_body.png"), // Placeholder texture (not used)
+                false, // Use player skin texture
+                true, // Translucent (50% transparency)
+                true  // Hide player model
+        );
+
 
         // Register kitsune addons - multiple color variants
         registerKitsuneVariants();

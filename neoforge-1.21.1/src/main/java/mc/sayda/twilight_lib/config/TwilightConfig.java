@@ -15,6 +15,25 @@ public class TwilightConfig {
     public static final ModConfigSpec.IntValue MAX_CACHED_ADDON_MODELS;
     public static final ModConfigSpec.IntValue TRAIL_UPDATE_FREQUENCY;
     public static final ModConfigSpec.IntValue MAX_SUPPORTER_JSON_SIZE;
+    public static final ModConfigSpec.IntValue MAX_ENTITY_CACHE_SIZE;
+    public static final ModConfigSpec.IntValue MAX_SUPPORTERS;
+
+    // Network & Caching
+    public static final ModConfigSpec.IntValue SUPPORTER_CONNECT_TIMEOUT_MS;
+    public static final ModConfigSpec.IntValue SUPPORTER_READ_TIMEOUT_MS;
+    public static final ModConfigSpec.IntValue SUPPORTER_CACHE_DURATION_MINUTES;
+    public static final ModConfigSpec.IntValue MORPH_CACHE_CLEANUP_INTERVAL_TICKS;
+    public static final ModConfigSpec.IntValue LOGIN_SYNC_DELAY_TICKS;
+
+    // Client Performance
+    public static final ModConfigSpec.IntValue AMBIENT_PARTICLES_PER_TICK;
+    public static final ModConfigSpec.IntValue FOOTPRINT_UPDATE_FREQUENCY;
+    public static final ModConfigSpec.IntValue FOOTPRINT_LIFETIME_TICKS;
+    public static final ModConfigSpec.IntValue SPAWN_EFFECT_DELAY_TICKS;
+
+    // Gameplay & Balance
+    public static final ModConfigSpec.DoubleValue MINING_WATER_SLOWDOWN_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue MINING_FLIGHT_SLOWDOWN_MULTIPLIER;
 
     // Morph Physics
     public static final ModConfigSpec.DoubleValue BASE_STEP_HEIGHT;
@@ -56,6 +75,60 @@ public class TwilightConfig {
         MAX_SUPPORTER_JSON_SIZE = builder
                 .comment("Maximum supporter JSON size in MB (prevents OOM attacks)")
                 .defineInRange("max_supporter_json_size", 10, 1, 100);
+        MAX_ENTITY_CACHE_SIZE = builder
+                .comment("Maximum entity types cached for morph suggestions (prevents memory issues in heavily modded servers)")
+                .defineInRange("max_entity_cache_size", 10000, 100, 50000);
+        MAX_SUPPORTERS = builder
+                .comment("Maximum supporters in cache (prevents unbounded growth from malicious JSON)")
+                .defineInRange("max_supporters", 100000, 1000, 1000000);
+
+        builder.pop();
+
+        builder.push("network_and_caching");
+        builder.comment("Network timeouts and cache duration settings");
+        SUPPORTER_CONNECT_TIMEOUT_MS = builder
+                .comment("HTTP connection timeout for supporter fetch in milliseconds")
+                .defineInRange("supporter_connect_timeout_ms", 5000, 1000, 30000);
+        SUPPORTER_READ_TIMEOUT_MS = builder
+                .comment("HTTP read timeout for supporter fetch in milliseconds")
+                .defineInRange("supporter_read_timeout_ms", 5000, 1000, 30000);
+        SUPPORTER_CACHE_DURATION_MINUTES = builder
+                .comment("How long to cache supporter data before refetching from GitHub")
+                .defineInRange("supporter_cache_duration_minutes", 60, 5, 1440);
+        MORPH_CACHE_CLEANUP_INTERVAL_TICKS = builder
+                .comment("How often to clean up stale morph entities from cache (prevents memory leaks)")
+                .defineInRange("morph_cache_cleanup_interval_ticks", 6000, 1200, 72000);
+        LOGIN_SYNC_DELAY_TICKS = builder
+                .comment("Delay before syncing cosmetics after player login (allows entities to load)")
+                .defineInRange("login_sync_delay_ticks", 40, 10, 100);
+
+        builder.pop();
+
+        builder.push("client_performance");
+        builder.comment("Client-side rendering and particle settings");
+        AMBIENT_PARTICLES_PER_TICK = builder
+                .comment("Particles spawned per tick for ambient effects (0 = disable ambient effects)")
+                .defineInRange("ambient_particles_per_tick", 3, 0, 10);
+        FOOTPRINT_UPDATE_FREQUENCY = builder
+                .comment("How often footprint trails update in ticks (higher = better performance)")
+                .defineInRange("footprint_update_frequency", 4, 1, 20);
+        FOOTPRINT_LIFETIME_TICKS = builder
+                .comment("How long footprint particles last in ticks")
+                .defineInRange("footprint_lifetime_ticks", 60, 20, 200);
+        SPAWN_EFFECT_DELAY_TICKS = builder
+                .comment("Delay before playing spawn effects after respawn")
+                .defineInRange("spawn_effect_delay_ticks", 5, 0, 40);
+
+        builder.pop();
+
+        builder.push("gameplay_and_balance");
+        builder.comment("Gameplay mechanics and balance settings");
+        MINING_WATER_SLOWDOWN_MULTIPLIER = builder
+                .comment("Mining speed penalty multiplier when in water without aqua affinity")
+                .defineInRange("mining_water_slowdown_multiplier", 5.0, 1.0, 10.0);
+        MINING_FLIGHT_SLOWDOWN_MULTIPLIER = builder
+                .comment("Mining speed penalty multiplier when not on ground")
+                .defineInRange("mining_flight_slowdown_multiplier", 5.0, 1.0, 10.0);
 
         builder.pop();
 

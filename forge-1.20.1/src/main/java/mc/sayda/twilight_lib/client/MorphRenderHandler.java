@@ -34,28 +34,26 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MorphRenderHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Map<UUID, LivingEntity> CACHE = new ConcurrentHashMap<>();
-
+    private static int tickCounter = 0;
 
     public static void register() { /* no-op - static subscriber */ }
 
     @SubscribeEvent
     public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut evt) {
-        synchronized (CACHE) {
-            // Discard all cached entities before clearing to release resources
-            CACHE.values().forEach(LivingEntity::discard);
-            CACHE.clear();
-            LOGGER.debug("Goodbye, my new friend! Clearing morph cache on disconnect.");
-        }
+        // ConcurrentHashMap handles thread safety - no synchronization needed
+        CACHE.values().forEach(LivingEntity::discard);
+        CACHE.clear();
+        tickCounter = 0; // Reset cleanup timer
+        LOGGER.debug("Goodbye, my new friend! Clearing morph cache on disconnect.");
     }
 
     @SubscribeEvent
     public static void onEntityLeavelevel(net.minecraftforge.event.level.LevelEvent.Unload evt) {
-        synchronized (CACHE) {
-            // Discard all cached entities before clearing to release resources
-            CACHE.values().forEach(LivingEntity::discard);
-            CACHE.clear();
-            LOGGER.debug("I hope this world survives... Clearing morph cache on level unload.");
-        }
+        // ConcurrentHashMap handles thread safety - no synchronization needed
+        CACHE.values().forEach(LivingEntity::discard);
+        CACHE.clear();
+        tickCounter = 0; // Reset cleanup timer
+        LOGGER.debug("I hope this world survives... Clearing morph cache on level unload.");
     }
 
     /** Tick proxies so animations and timers advance client-side. */
@@ -65,23 +63,35 @@ public class MorphRenderHandler {
         var level = Minecraft.getInstance().level;
         if (level == null) return;
 
-        // Synchronize to prevent ConcurrentModificationException if cache is cleared during iteration
-        // Create a copy of values to minimize lock time
-        java.util.List<LivingEntity> entities;
-        synchronized (CACHE) {
-            entities = new java.util.ArrayList<>(CACHE.values());
+        // Periodic cleanup: remove stale cache entries based on config interval
+        tickCounter++;
+        if (tickCounter >= mc.sayda.twilight_lib.config.TwilightConfig.MORPH_CACHE_CLEANUP_INTERVAL_TICKS.get()) {
+            tickCounter = 0;
+            cleanupStaleEntries(level);
         }
 
+        // Create a snapshot of values to prevent ConcurrentModificationException
+        // ConcurrentHashMap.values() returns a thread-safe view
+        java.util.List<LivingEntity> entities = new java.util.ArrayList<>(CACHE.values());
+
         for (LivingEntity le : entities) {
-            le.tickCount++;
-            if (le instanceof Mob mob) mob.tick();
-            else le.baseTick();
+            // Check if entity is still valid before ticking (prevent issues if another thread discards it)
+            if (!le.isRemoved()) {
+                le.tickCount++;
+                if (le instanceof Mob mob) mob.tick();
+                else le.baseTick();
+            }
         }
     }
 
     @SubscribeEvent
     public static void onRenderPlayerPre(RenderPlayerEvent.Pre evt) {
         Player player = evt.getEntity();
+
+        // Check if morphs are enabled in config
+        if (!mc.sayda.twilight_lib.config.TwilightConfig.ENABLE_MORPHS.get()) {
+            return;
+        }
 
         // Don't render morphs for invisible players
         if (player.isInvisible()) {
@@ -246,6 +256,34 @@ public class MorphRenderHandler {
         disp.render(proxy, 0.0, 0.0, 0.0, player.getYRot(), pt, poseStack, buffer, packedLight);
     }
 
+    /**
+     * Periodic cleanup to prevent unbounded cache growth.
+     * Removes entries for players that are no longer in the level.
+     */
+    private static void cleanupStaleEntries(net.minecraft.client.multiplayer.ClientLevel level) {
+        int removed = 0;
+        java.util.Iterator<Map.Entry<UUID, LivingEntity>> iterator = CACHE.entrySet().iterator();
+
+        while (iterator.hasNext()) {
+            Map.Entry<UUID, LivingEntity> entry = iterator.next();
+            UUID playerUuid = entry.getKey();
+            LivingEntity proxy = entry.getValue();
+
+            // Check if player is still in the level
+            Player player = level.getPlayerByUUID(playerUuid);
+            if (player == null) {
+                // Player no longer in level - clean up
+                proxy.discard();
+                iterator.remove();
+                removed++;
+            }
+        }
+
+        if (removed > 0) {
+            LOGGER.debug("Sparkles! Periodic cleanup removed {} stale morph cache entries", removed);
+        }
+    }
+
     private static LivingEntity getOrCreateProxy(Player player, ResourceLocation rl) {
         return CACHE.compute(player.getUUID(), (uuid, cached) -> {
             // If cached entity exists and matches the requested type, return it
@@ -269,12 +307,16 @@ public class MorphRenderHandler {
             Entity e = type.create(level);
 
             if (e == null) {
-                LOGGER.error("Oh, dung beetles! Failed to create entity for morph: {}", rl);
+                LOGGER.error("Failed to create entity for morph: {}. Player: {}. " +
+                             "This may indicate a mod incompatibility or corrupted entity registry.",
+                             rl, uuid);
                 return cached; // Keep old entity on failure
             }
 
             if (!(e instanceof LivingEntity le)) {
-                LOGGER.warn("Is this the best physical representation you can manifest? Entity {} is not a LivingEntity", rl);
+                LOGGER.warn("Entity {} is not a LivingEntity (actual type: {}). Player: {}. " +
+                            "Morphing requires LivingEntity subclasses.",
+                            rl, e.getClass().getName(), uuid);
                 e.discard(); // Discard failed entity
                 return cached; // Keep old entity on failure
             }
@@ -292,6 +334,9 @@ public class MorphRenderHandler {
             le.setSilent(true);
             le.noPhysics = true;
             le.setCustomNameVisible(false);
+
+            // Log successful morph creation (debug level for production)
+            LOGGER.debug("Created new morph proxy: {} for player {}", rl, uuid);
 
             return le;
         });

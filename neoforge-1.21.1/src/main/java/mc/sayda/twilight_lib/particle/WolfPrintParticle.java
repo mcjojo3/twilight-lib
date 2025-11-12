@@ -43,7 +43,7 @@ public class WolfPrintParticle extends TextureSheetParticle {
         this.spriteSet = spriteSet;
         this.setSize(0.25f, 0.25f);
         this.quadSize *= 1f; // Small footprint size
-        this.lifetime = 60; // Lasts 3 seconds (60 ticks)
+        this.lifetime = mc.sayda.twilight_lib.config.TwilightConfig.FOOTPRINT_LIFETIME_TICKS.get();
         this.gravity = 0.0f; // No gravity - stays on ground
         this.hasPhysics = false; // No collision
 

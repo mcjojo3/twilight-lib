@@ -64,6 +64,15 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons) implements Cus
             }
 
             var addons = entity.getData(ModAttachments.ADDONS);
+
+            // Type-safe cast with validation to prevent crashes in heavily modded environments
+            if (!(addons instanceof AddonsData)) {
+                LOGGER.error("Incompatible addons attachment implementation for player {}. Expected AddonsData but got {}. " +
+                             "This may be caused by another mod replacing the attachment.",
+                             entity.getName().getString(), addons.getClass().getName());
+                return; // Gracefully skip instead of crashing
+            }
+
             // Directly sync equipped addons from server (bypasses ownership validation)
             ((AddonsData) addons).syncEquippedFromPacket(msg.addons());
             LOGGER.debug("Isn't this cool? Synced {} active addons for {}",

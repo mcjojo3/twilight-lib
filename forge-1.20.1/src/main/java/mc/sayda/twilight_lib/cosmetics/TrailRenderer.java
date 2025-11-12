@@ -1,5 +1,6 @@
 package mc.sayda.twilight_lib.cosmetics;
 
+import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.TwilightConstants;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
 import mc.sayda.twilight_lib.config.TwilightConfig;
@@ -11,8 +12,10 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.slf4j.Logger;
 
 import java.util.Optional;
 import java.util.Random;
@@ -21,7 +24,7 @@ import java.util.Random;
  * Client-side trail rendering for supporters
  */
 public class TrailRenderer {
-
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final Random RANDOM = new Random();
     private static int tickCounter = 0;
 
@@ -32,8 +35,27 @@ public class TrailRenderer {
     private static final java.util.Map<java.util.UUID, Boolean> footStepTracker = new java.util.concurrent.ConcurrentHashMap<>();
 
     @SubscribeEvent
+    public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut evt) {
+        // Clean up tracking maps to prevent memory leak
+        lastPositions.clear();
+        footStepTracker.clear();
+        LOGGER.debug("See ya real soon! Clearing trail tracking data on disconnect.");
+    }
+
+    @SubscribeEvent
+    public static void onLevelUnload(net.minecraftforge.event.level.LevelEvent.Unload evt) {
+        // Clean up tracking maps when level unloads
+        lastPositions.clear();
+        footStepTracker.clear();
+        LOGGER.debug("Take care of the place for me, okay? Clearing trail tracking data on level unload.");
+    }
+
+    @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
+
+        // Check if trails are enabled in config
+        if (!TwilightConfig.ENABLE_TRAILS.get()) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.isPaused()) return;
@@ -66,7 +88,8 @@ public class TrailRenderer {
 
             // Don't render trails too frequently (configurable)
             // Exception: Footprint trails spawn more frequently for consistent footstep spacing
-            int updateFrequency = (spawnMode == TrailSpawnMode.FOOTPRINT) ? 4 : Math.max(1, TwilightConfig.TRAIL_UPDATE_FREQUENCY.get());
+            int updateFrequency = (spawnMode == TrailSpawnMode.FOOTPRINT) ?
+                TwilightConfig.FOOTPRINT_UPDATE_FREQUENCY.get() : Math.max(1, TwilightConfig.TRAIL_UPDATE_FREQUENCY.get());
             if (tickCounter % updateFrequency != 0) return;
 
             // Calculate velocity based on position change for more accurate movement detection

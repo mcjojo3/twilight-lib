@@ -91,6 +91,84 @@ public class SupporterRegistry {
             "spawn_nature"
     );
 
+    // ===== CACHED TIER RESULTS =====
+    // Pre-computed to avoid repeated HashSet creation and addAll operations
+    private static final java.util.Map<String, Set<String>> TRAILS_CACHE = computeTrailsCache();
+    private static final java.util.Map<String, Set<String>> ADDONS_CACHE = computeAddonsCache();
+    private static final java.util.Map<String, Set<String>> EFFECTS_CACHE = computeEffectsCache();
+
+    private static java.util.Map<String, Set<String>> computeTrailsCache() {
+        Set<String> stone = Set.copyOf(STONE_TRAILS);
+
+        Set<String> bronze = new HashSet<>(STONE_TRAILS);
+        bronze.addAll(BRONZE_TRAILS);
+
+        Set<String> silver = new HashSet<>(bronze);
+        silver.addAll(SILVER_TRAILS);
+
+        Set<String> gold = new HashSet<>(silver);
+        gold.addAll(GOLD_TRAILS);
+
+        Set<String> platinum = new HashSet<>(gold);
+        platinum.addAll(PLATINUM_TRAILS);
+
+        return java.util.Map.of(
+            "stone", Set.copyOf(stone),
+            "bronze", Set.copyOf(bronze),
+            "silver", Set.copyOf(silver),
+            "gold", Set.copyOf(gold),
+            "platinum", Set.copyOf(platinum)
+        );
+    }
+
+    private static java.util.Map<String, Set<String>> computeAddonsCache() {
+        Set<String> stone = Set.copyOf(STONE_ADDONS);
+
+        Set<String> bronze = new HashSet<>(STONE_ADDONS);
+        bronze.addAll(BRONZE_ADDONS);
+
+        Set<String> silver = new HashSet<>(bronze);
+        silver.addAll(SILVER_ADDONS);
+
+        Set<String> gold = new HashSet<>(silver);
+        gold.addAll(GOLD_ADDONS);
+
+        Set<String> platinum = new HashSet<>(gold);
+        platinum.addAll(PLATINUM_ADDONS);
+
+        return java.util.Map.of(
+            "stone", Set.copyOf(stone),
+            "bronze", Set.copyOf(bronze),
+            "silver", Set.copyOf(silver),
+            "gold", Set.copyOf(gold),
+            "platinum", Set.copyOf(platinum)
+        );
+    }
+
+    private static java.util.Map<String, Set<String>> computeEffectsCache() {
+        Set<String> stone = Set.copyOf(STONE_EFFECTS);
+
+        Set<String> bronze = new HashSet<>(STONE_EFFECTS);
+        bronze.addAll(BRONZE_EFFECTS);
+
+        Set<String> silver = new HashSet<>(bronze);
+        silver.addAll(SILVER_EFFECTS);
+
+        Set<String> gold = new HashSet<>(silver);
+        gold.addAll(GOLD_EFFECTS);
+
+        Set<String> platinum = new HashSet<>(gold);
+        platinum.addAll(PLATINUM_EFFECTS);
+
+        return java.util.Map.of(
+            "stone", Set.copyOf(stone),
+            "bronze", Set.copyOf(bronze),
+            "silver", Set.copyOf(silver),
+            "gold", Set.copyOf(gold),
+            "platinum", Set.copyOf(platinum)
+        );
+    }
+
     /**
      * Get all supporter trails for a given tier.
      * Automatically includes all trails from lower tiers (inheritance).
@@ -99,27 +177,7 @@ public class SupporterRegistry {
         if (tier == null) {
             return Set.of();
         }
-
-        Set<String> trails = new HashSet<>();
-        String tierLower = tier.toLowerCase();
-
-        // Add trails from all tiers up to and including the requested tier
-        trails.addAll(STONE_TRAILS);
-        if (tierLower.equals("stone")) return Set.copyOf(trails);
-
-        trails.addAll(BRONZE_TRAILS);
-        if (tierLower.equals("bronze")) return Set.copyOf(trails);
-
-        trails.addAll(SILVER_TRAILS);
-        if (tierLower.equals("silver")) return Set.copyOf(trails);
-
-        trails.addAll(GOLD_TRAILS);
-        if (tierLower.equals("gold")) return Set.copyOf(trails);
-
-        trails.addAll(PLATINUM_TRAILS);
-        if (tierLower.equals("platinum")) return Set.copyOf(trails);
-
-        return Set.of(); // Unknown tier
+        return TRAILS_CACHE.getOrDefault(tier.toLowerCase(), Set.of());
     }
 
     /**
@@ -130,27 +188,7 @@ public class SupporterRegistry {
         if (tier == null) {
             return Set.of();
         }
-
-        Set<String> addons = new HashSet<>();
-        String tierLower = tier.toLowerCase();
-
-        // Add addons from all tiers up to and including the requested tier
-        addons.addAll(STONE_ADDONS);
-        if (tierLower.equals("stone")) return Set.copyOf(addons);
-
-        addons.addAll(BRONZE_ADDONS);
-        if (tierLower.equals("bronze")) return Set.copyOf(addons);
-
-        addons.addAll(SILVER_ADDONS);
-        if (tierLower.equals("silver")) return Set.copyOf(addons);
-
-        addons.addAll(GOLD_ADDONS);
-        if (tierLower.equals("gold")) return Set.copyOf(addons);
-
-        addons.addAll(PLATINUM_ADDONS);
-        if (tierLower.equals("platinum")) return Set.copyOf(addons);
-
-        return Set.of(); // Unknown tier
+        return ADDONS_CACHE.getOrDefault(tier.toLowerCase(), Set.of());
     }
 
     /**
@@ -161,66 +199,33 @@ public class SupporterRegistry {
         if (tier == null) {
             return Set.of();
         }
-
-        Set<String> effects = new HashSet<>();
-        String tierLower = tier.toLowerCase();
-
-        // Add effects from all tiers up to and including the requested tier
-        effects.addAll(STONE_EFFECTS);
-        if (tierLower.equals("stone")) return Set.copyOf(effects);
-
-        effects.addAll(BRONZE_EFFECTS);
-        if (tierLower.equals("bronze")) return Set.copyOf(effects);
-
-        effects.addAll(SILVER_EFFECTS);
-        if (tierLower.equals("silver")) return Set.copyOf(effects);
-
-        effects.addAll(GOLD_EFFECTS);
-        if (tierLower.equals("gold")) return Set.copyOf(effects);
-
-        effects.addAll(PLATINUM_EFFECTS);
-        if (tierLower.equals("platinum")) return Set.copyOf(effects);
-
-        return Set.of(); // Unknown tier
+        return EFFECTS_CACHE.getOrDefault(tier.toLowerCase(), Set.of());
     }
+
+    // Cached "ALL" results for performance
+    private static final Set<String> ALL_TRAILS = TRAILS_CACHE.get("platinum");
+    private static final Set<String> ALL_ADDONS = ADDONS_CACHE.get("platinum");
+    private static final Set<String> ALL_EFFECTS = EFFECTS_CACHE.get("platinum");
 
     /**
      * Get ALL supporter-exclusive trails (across all tiers)
      */
     public static Set<String> getAllSupporterTrails() {
-        Set<String> all = new HashSet<>();
-        all.addAll(STONE_TRAILS);
-        all.addAll(BRONZE_TRAILS);
-        all.addAll(SILVER_TRAILS);
-        all.addAll(GOLD_TRAILS);
-        all.addAll(PLATINUM_TRAILS);
-        return all;
+        return ALL_TRAILS;
     }
 
     /**
      * Get ALL supporter-exclusive addons (across all tiers)
      */
     public static Set<String> getAllSupporterAddons() {
-        Set<String> all = new HashSet<>();
-        all.addAll(STONE_ADDONS);
-        all.addAll(BRONZE_ADDONS);
-        all.addAll(SILVER_ADDONS);
-        all.addAll(GOLD_ADDONS);
-        all.addAll(PLATINUM_ADDONS);
-        return all;
+        return ALL_ADDONS;
     }
 
     /**
      * Get ALL supporter-exclusive effects (across all tiers)
      */
     public static Set<String> getAllSupporterEffects() {
-        Set<String> all = new HashSet<>();
-        all.addAll(STONE_EFFECTS);
-        all.addAll(BRONZE_EFFECTS);
-        all.addAll(SILVER_EFFECTS);
-        all.addAll(GOLD_EFFECTS);
-        all.addAll(PLATINUM_EFFECTS);
-        return all;
+        return ALL_EFFECTS;
     }
 
     /**

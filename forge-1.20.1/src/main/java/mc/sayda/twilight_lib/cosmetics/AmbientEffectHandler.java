@@ -24,7 +24,6 @@ import java.util.List;
 public class AmbientEffectHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final double CIRCLE_RADIUS = 0.4; // Radius of the circle around player's feet
-    private static final int PARTICLES_PER_TICK = 3; // How many particles to spawn each tick
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -66,7 +65,8 @@ public class AmbientEffectHandler {
         Vec3 playerPos = player.position();
 
         // Spawn particles in a circle around the player's feet
-        for (int i = 0; i < PARTICLES_PER_TICK; i++) {
+        int particlesPerTick = mc.sayda.twilight_lib.config.TwilightConfig.AMBIENT_PARTICLES_PER_TICK.get();
+        for (int i = 0; i < particlesPerTick; i++) {
             // Random angle for this particle
             double angle = Math.random() * 2 * Math.PI;
 
@@ -99,7 +99,8 @@ public class AmbientEffectHandler {
         Vec3 playerPos = player.position();
 
         // Spawn particles in a circle around the player's feet
-        for (int i = 0; i < PARTICLES_PER_TICK; i++) {
+        int particlesPerTick = mc.sayda.twilight_lib.config.TwilightConfig.AMBIENT_PARTICLES_PER_TICK.get();
+        for (int i = 0; i < particlesPerTick; i++) {
             // Random angle for this particle
             double angle = Math.random() * 2 * Math.PI;
 

@@ -46,5 +46,9 @@ public class TwilightConstants {
     // Supporter Service Configuration
     public static final class Supporter {
         public static final int DEFAULT_MAX_JSON_SIZE_MB = 10;  // Default max supporter JSON size in MB
+        public static final int DEFAULT_CACHE_DURATION_MINUTES = 60;  // Default cache duration in minutes
+        public static final int DEFAULT_CONNECT_TIMEOUT_MS = 5000;  // Default HTTP connection timeout in ms
+        public static final int DEFAULT_READ_TIMEOUT_MS = 5000;  // Default HTTP read timeout in ms
+        public static final int DEFAULT_MAX_SUPPORTERS = 100000;  // Default max supporters in cache
     }
 }

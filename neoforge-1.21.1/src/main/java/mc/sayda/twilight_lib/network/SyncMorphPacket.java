@@ -50,6 +50,10 @@ public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity) 
         return new SyncMorphPacket(id, Optional.ofNullable(rlOrNull));
     }
 
+    public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity) {
+        return new SyncMorphPacket(id, entity);
+    }
+
     @Override
     public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return TYPE;

@@ -6,7 +6,7 @@ import mc.sayda.twilight_lib.client.model.addon.BeanieModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestModel;
 import mc.sayda.twilight_lib.client.model.addon.OpaqueModel;
 import mc.sayda.twilight_lib.client.model.addon.NymphModel;
-import mc.sayda.twilight_lib.client.model.addon.GoldenLaurelModel;
+import mc.sayda.twilight_lib.client.model.addon.HatModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneEarsModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneSnoutModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneTailsVariantModel;
@@ -93,10 +93,18 @@ public class AddonInit {
 
         AddonRegistry.registerAddon(
                 "golden_laurel",
-                GoldenLaurelModel.LAYER_LOCATION,
-                GoldenLaurelModel::createBodyLayer,
-                GoldenLaurelModel::new,
+                HatModel.LAYER_LOCATION,
+                HatModel::createBodyLayer,
+                HatModel::new,
                 ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/golden_laurel.png")
+        );
+
+        AddonRegistry.registerAddon(
+                "moonlit_tiara",
+                HatModel.LAYER_LOCATION,
+                HatModel::createBodyLayer,
+                HatModel::new,
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/moonlit_tiara.png")
         );
 
         AddonRegistry.registerAddon(

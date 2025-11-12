@@ -24,17 +24,17 @@ public class EffectsData implements IEffects {
 
     // Owned effects methods
     @Override
-    public Set<String> getEffects() {
+    public synchronized Set<String> getEffects() {
         return new HashSet<>(effects);
     }
 
     @Override
-    public void addEffect(String effectId) {
+    public synchronized void addEffect(String effectId) {
         effects.add(effectId);
     }
 
     @Override
-    public void removeEffect(String effectId) {
+    public synchronized void removeEffect(String effectId) {
         effects.remove(effectId);
         equippedEffects.remove(effectId);  // Also unequip if removing
     }
@@ -43,30 +43,30 @@ public class EffectsData implements IEffects {
      * Remove effect from owned set WITHOUT affecting active state.
      * Used by supporter sync to revoke ownership while preserving external grants.
      */
-    public void removeEffectOwnership(String effectId) {
+    public synchronized void removeEffectOwnership(String effectId) {
         effects.remove(effectId);
         // Don't touch equippedEffects or externalGrants - preserve admin/mod grants
     }
 
     @Override
-    public boolean hasEffect(String effectId) {
+    public synchronized boolean hasEffect(String effectId) {
         return effects.contains(effectId);
     }
 
     @Override
-    public void clearEffects() {
+    public synchronized void clearEffects() {
         effects.clear();
         equippedEffects.clear();  // Also clear equipped
     }
 
     // Active effects methods
     @Override
-    public Set<String> getActiveEffects() {
+    public synchronized Set<String> getActiveEffects() {
         return new HashSet<>(equippedEffects);
     }
 
     @Override
-    public void setActiveEffect(String effectId, boolean active) {
+    public synchronized void setActiveEffect(String effectId, boolean active) {
         if (active) {
             // Player can only activate owned cosmetics via /tlcosmetics
             if (effects.contains(effectId)) {
@@ -108,7 +108,7 @@ public class EffectsData implements IEffects {
      * @param active true to activate, false to deactivate
      * @param persistent If true, persists through logout/death (external grant); if false, temporary preview
      */
-    public void setActiveEffect(String effectId, boolean active, boolean persistent) {
+    public synchronized void setActiveEffect(String effectId, boolean active, boolean persistent) {
         if (active) {
             // Enforce one-per-category rule: deactivate other effects in same category
             mc.sayda.twilight_lib.cosmetics.EffectType newEffectType = mc.sayda.twilight_lib.cosmetics.EffectType.fromId(effectId);
@@ -148,19 +148,19 @@ public class EffectsData implements IEffects {
      * Removes effect from equipped state and clears all tracking (player selections and external grants).
      * @param effectId The effect ID to unequip
      */
-    public void forceUnequipEffect(String effectId) {
+    public synchronized void forceUnequipEffect(String effectId) {
         equippedEffects.remove(effectId);
         playerSelections.remove(effectId);
         externalGrants.remove(effectId);
     }
 
     @Override
-    public boolean isEffectActive(String effectId) {
+    public synchronized boolean isEffectActive(String effectId) {
         return equippedEffects.contains(effectId);
     }
 
     @Override
-    public void clearActiveEffects() {
+    public synchronized void clearActiveEffects() {
         equippedEffects.clear();
         playerSelections.clear();
         externalGrants.clear();
@@ -170,13 +170,13 @@ public class EffectsData implements IEffects {
      * Force-sync equipped effects from network packet (bypasses all validation).
      * Used by SyncEffectsPacket to apply server state directly on client.
      */
-    public void syncEquippedFromPacket(Set<String> equipped) {
+    public synchronized void syncEquippedFromPacket(Set<String> equipped) {
         this.equippedEffects.clear();
         this.equippedEffects.addAll(equipped);
     }
 
     @Override
-    public CompoundTag serialize() {
+    public synchronized CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
 
         // Serialize owned effects
@@ -204,7 +204,7 @@ public class EffectsData implements IEffects {
     }
 
     @Override
-    public void deserialize(CompoundTag tag) {
+    public synchronized void deserialize(CompoundTag tag) {
         effects.clear();
         equippedEffects.clear();
         playerSelections.clear();

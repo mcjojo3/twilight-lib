@@ -4,10 +4,13 @@ import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.TwilightConstants;
 import mc.sayda.twilight_lib.capabilities.ModAttachments;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import org.joml.Vector3f;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import org.slf4j.Logger;
 
@@ -36,19 +39,21 @@ public class SpawnEffectHandler {
     private static final Random RANDOM = new Random();
     // Thread-safe map to prevent ConcurrentModificationException from network thread
     private static final Map<UUID, Integer> PENDING_EFFECTS = new ConcurrentHashMap<>();
-    private static final int EFFECT_DELAY_TICKS = 5; // Wait 5 ticks after spawn
 
     /**
      * Called by the network handler when effects are synced on spawn.
      * Triggers on any spawn event: login, respawn after death, dimension change, etc.
      */
     public static void scheduleSpawnEffect(UUID playerId) {
-        PENDING_EFFECTS.put(playerId, EFFECT_DELAY_TICKS);
+        PENDING_EFFECTS.put(playerId, mc.sayda.twilight_lib.config.TwilightConfig.SPAWN_EFFECT_DELAY_TICKS.get());
         LOGGER.debug("Something good is going to happen. With sparkles! Scheduled spawn effect for player UUID: {}", playerId);
     }
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
+        // Check if effects are enabled in config
+        if (!mc.sayda.twilight_lib.config.TwilightConfig.ENABLE_EFFECTS.get()) return;
+
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
 
@@ -94,6 +99,18 @@ public class SpawnEffectHandler {
                     return ticksLeft - 1; // Decrement counter atomically
                 }
             });
+        }
+    }
+
+    /**
+     * Cleanup pending effects when a player disconnects to prevent memory leaks.
+     * Called on client side when any player (including the local player) disconnects.
+     */
+    @SubscribeEvent
+    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        UUID playerId = event.getEntity().getUUID();
+        if (PENDING_EFFECTS.remove(playerId) != null) {
+            LOGGER.debug("Well, this is a pretty chill reality. Cleaned up pending spawn effect for disconnected player UUID: {}", playerId);
         }
     }
 
@@ -160,12 +177,22 @@ public class SpawnEffectHandler {
 
     /**
      * spawn_rainbow: Rainbow cycling particles
-     * Multiple particle types creating a vibrant rainbow burst
+     * Actual rainbow-colored dust particles in RGB spectrum
      */
     private static void spawnRainbowEffect(Player player) {
         Vec3 pos = player.position();
 
-        // Create rainbow burst with multiple particle types
+        // Rainbow colors: Red -> Orange -> Yellow -> Green -> Blue -> Purple
+        Vector3f[] rainbowColors = {
+            new Vector3f(1.0f, 0.0f, 0.0f),      // Red
+            new Vector3f(1.0f, 0.5f, 0.0f),      // Orange
+            new Vector3f(1.0f, 1.0f, 0.0f),      // Yellow
+            new Vector3f(0.0f, 1.0f, 0.0f),      // Green
+            new Vector3f(0.0f, 0.5f, 1.0f),      // Blue
+            new Vector3f(0.5f, 0.0f, 1.0f)       // Purple
+        };
+
+        // Create rainbow burst with colored dust particles
         for (int i = 0; i < TwilightConstants.SpawnEffect.PARTICLE_COUNT; i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
@@ -175,16 +202,19 @@ public class SpawnEffectHandler {
             double offsetZ = Math.sin(angle) * radius;
             double offsetY = height;
 
-            // Cycle through different colored particles
-            int colorIndex = i % 6;
-            switch (colorIndex) {
-                case 0 -> player.level().addParticle(ParticleTypes.ENCHANT, pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ, 0, 0.1, 0);
-                case 1 -> player.level().addParticle(ParticleTypes.WAX_ON, pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ, 0, 0.1, 0);
-                case 2 -> player.level().addParticle(ParticleTypes.SCRAPE, pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ, 0, 0.1, 0);
-                case 3 -> player.level().addParticle(ParticleTypes.GLOW, pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ, 0, 0.1, 0);
-                case 4 -> player.level().addParticle(ParticleTypes.END_ROD, pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ, 0, 0.1, 0);
-                case 5 -> player.level().addParticle(ParticleTypes.SOUL_FIRE_FLAME, pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ, 0, 0.1, 0);
-            }
+            // Cycle through rainbow colors
+            Vector3f color = rainbowColors[i % rainbowColors.length];
+            DustParticleOptions dustOptions = new DustParticleOptions(color, 1.0f);
+
+            player.level().addParticle(
+                dustOptions,
+                pos.x + offsetX,
+                pos.y + offsetY,
+                pos.z + offsetZ,
+                (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.PARTICLE_VELOCITY_HORIZONTAL,
+                TwilightConstants.SpawnEffect.PARTICLE_VELOCITY_VERTICAL,
+                (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.PARTICLE_VELOCITY_HORIZONTAL
+            );
         }
     }
 

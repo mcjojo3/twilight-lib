@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Mod(TwilightLib.MODID)
 public class TwilightLib {
@@ -46,7 +47,7 @@ public class TwilightLib {
 
     // Delayed task scheduler for proper tick-based delays
     private static final Map<UUID, DelayedSyncTask> pendingTasks = new ConcurrentHashMap<>();
-    private static long serverTicks = 0;
+    private static final AtomicLong serverTicks = new AtomicLong(0);
 
     private static class DelayedSyncTask {
         final UUID playerUUID;
@@ -189,8 +190,8 @@ public class TwilightLib {
             Set<String> currentOwnedAddons = new java.util.HashSet<>(addons.getAddons());
 
             // Type-safe cast to access implementation-specific methods
-            if (!(addons instanceof AddonsData)) {
-                LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected addons capability implementation: {}", addons.getClass());
+            if (addons == null || !(addons instanceof AddonsData)) {
+                LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected addons capability implementation: {}", addons == null ? "null" : addons.getClass());
             } else {
                 AddonsData addonsData = (AddonsData) addons;
 
@@ -217,8 +218,8 @@ public class TwilightLib {
             Set<String> currentOwnedEffects = new java.util.HashSet<>(effects.getEffects());
 
             // Type-safe cast to access implementation-specific methods
-            if (!(effects instanceof EffectsData)) {
-                LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected effects capability implementation: {}", effects.getClass());
+            if (effects == null || !(effects instanceof EffectsData)) {
+                LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected effects capability implementation: {}", effects == null ? "null" : effects.getClass());
             } else {
                 EffectsData effectsData = (EffectsData) effects;
 
@@ -244,8 +245,9 @@ public class TwilightLib {
                     loggedInPlayer.getGameProfile().getName());
         }
 
-        // Schedule delayed cosmetics sync (40 ticks = 2 seconds) to allow client entity loading
-        pendingTasks.put(loggedInPlayer.getUUID(), new DelayedSyncTask(loggedInPlayer.getUUID(), serverTicks + 40));
+        // Schedule delayed cosmetics sync to allow client entity loading
+        long delayTicks = TwilightConfig.LOGIN_SYNC_DELAY_TICKS.get();
+        pendingTasks.put(loggedInPlayer.getUUID(), new DelayedSyncTask(loggedInPlayer.getUUID(), serverTicks.get() + delayTicks));
 
         // Send this player's morph to everyone else
         IMorph morph = loggedInPlayer.getData(ModAttachments.MORPH);
@@ -388,7 +390,7 @@ public class TwilightLib {
     }
 
     private static void onServerTick(final ServerTickEvent.Post evt) {
-        serverTicks++;
+        long currentTick = serverTicks.incrementAndGet();
 
         // Process pending delayed sync tasks
         if (pendingTasks.isEmpty()) return;
@@ -400,7 +402,7 @@ public class TwilightLib {
             Map.Entry<UUID, DelayedSyncTask> entry = iterator.next();
             DelayedSyncTask task = entry.getValue();
 
-            if (serverTicks >= task.executeAtTick) {
+            if (currentTick >= task.executeAtTick) {
                 // Time to execute this task
                 ServerPlayer player = server.getPlayerList().getPlayer(task.playerUUID);
                 if (player != null && !player.isRemoved()) {

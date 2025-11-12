@@ -29,7 +29,7 @@ public class SuccubusWingsModel<T extends Entity> extends BaseAddonModel<T> {
 
         PartDefinition left_wing = head.addOrReplaceChild("left_wing",
                 CubeListBuilder.create().texOffs(0, 10).addBox(-1.7039F, -9.0433F, 0.0F, 8.0F, 7.0F, 0.0F,
-                        new CubeDeformation(0.0F)),
+                        new CubeDeformation(0.01F)),
                 PartPose.offsetAndRotation(8.0F, -2.5F, 0.0F, 3.1416F, 0.0F, -2.7489F));
 
         PartDefinition right_wing = head.addOrReplaceChild("right_wing", CubeListBuilder.create(),
@@ -37,7 +37,7 @@ public class SuccubusWingsModel<T extends Entity> extends BaseAddonModel<T> {
 
         PartDefinition wing_r1 = right_wing.addOrReplaceChild("wing_r1",
                 CubeListBuilder.create().texOffs(0, 10).mirror().addBox(-4.0F, -3.5F, 0.0F, 8.0F, 7.0F, 0.0F,
-                        new CubeDeformation(0.0F)).mirror(false),
+                        new CubeDeformation(0.01F)).mirror(false),
                 PartPose.offsetAndRotation(2.2961F, -5.5433F, 0.0F, 0.0F, 3.1416F, 0.0F));
 
         return LayerDefinition.create(meshdefinition, 19, 19);

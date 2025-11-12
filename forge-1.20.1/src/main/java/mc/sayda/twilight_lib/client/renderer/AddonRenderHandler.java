@@ -8,8 +8,6 @@ import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 /**
  * Handles player model visibility for addons that want to hide the base player model
  */
@@ -28,16 +26,14 @@ public class AddonRenderHandler {
         }
 
         // Check if any active addon wants to hide the player model
-        AtomicBoolean shouldHidePlayerModel = new AtomicBoolean(false);
-        player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-            boolean hide = addons.getActiveAddons().stream()
-                    .anyMatch(addonId -> AddonRegistry.getAddon(addonId)
-                            .map(info -> info.hidePlayerModel())
-                            .orElse(false));
-            shouldHidePlayerModel.set(hide);
-        });
+        boolean shouldHidePlayerModel = player.getCapability(AddonsProvider.ADDONS_CAP)
+                .map(addons -> addons.getActiveAddons().stream()
+                        .anyMatch(addonId -> AddonRegistry.getAddon(addonId)
+                                .map(info -> info.hidePlayerModel())
+                                .orElse(false)))
+                .orElse(false);
 
-        if (shouldHidePlayerModel.get()) {
+        if (shouldHidePlayerModel) {
             // Hide all player model parts by making them invisible
             var playerModel = evt.getRenderer().getModel();
             playerModel.head.visible = false;

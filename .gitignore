@@ -64,14 +64,6 @@ out/
 # Miscellaneous
 .idea_modules/
 coverage/
-README-STRUCTURE.md
-zoe_quotes_reference.txt
-TRAIL_TUTORIAL.txt
-ADDON_CONVERSION_TUTORIAL.txt
-DEVELOPER_GUIDE.txt
-MULTI_VERSION_MIGRATION_CHECKLIST.md
-MIGRATION_SUMMARY.md
-PATREON_SETUP.md
 tmp/
 .cache/
 *.bak
@@ -83,3 +75,8 @@ tmp/
 
 # Windows shortcuts (leftover from old structure)
 *.lnk
+NUL
+TRAIL_TUTORIAL.txt
+zoe_quotes_reference.txt
+ADDON_CONVERSION_TUTORIAL.txt
+DEVELOPER_GUIDE.txt

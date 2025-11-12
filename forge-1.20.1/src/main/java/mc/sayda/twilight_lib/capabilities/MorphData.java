@@ -19,12 +19,12 @@ public class MorphData implements IMorph {
     private EntityType<?> cachedEntityType = null;
 
     @Override
-    public Optional<ResourceLocation> getEntityType() {
+    public synchronized Optional<ResourceLocation> getEntityType() {
         return entityType;
     }
 
     @Override
-    public void setEntityType(Optional<ResourceLocation> type) {
+    public synchronized void setEntityType(Optional<ResourceLocation> type) {
         // Only refresh cache if entity type actually changed (avoid unnecessary registry lookups)
         if (!this.entityType.equals(type)) {
             this.entityType = type;
@@ -33,24 +33,30 @@ public class MorphData implements IMorph {
     }
 
     @Nullable
-    public EntityType<?> getCachedEntityType() {
+    public synchronized EntityType<?> getCachedEntityType() {
         return cachedEntityType;
     }
 
     @Override
-    public CompoundTag serialize() {
+    public synchronized CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
         entityType.ifPresent(rl -> tag.putString(NBT_ENTITY, rl.toString()));
         return tag;
     }
 
     @Override
-    public void deserialize(CompoundTag tag) {
+    public synchronized void deserialize(CompoundTag tag) {
         if (tag.contains(NBT_ENTITY, Tag.TAG_STRING)) {
             try {
-                ResourceLocation rl = new ResourceLocation(tag.getString(NBT_ENTITY));
-                setEntityType(Optional.of(rl));
-                LOGGER.debug("Ahh... I need a nap. Deserialized morph: {}", rl);
+                // Use tryParse() to avoid deprecated constructor
+                ResourceLocation rl = ResourceLocation.tryParse(tag.getString(NBT_ENTITY));
+                if (rl != null) {
+                    setEntityType(Optional.of(rl));
+                    LOGGER.debug("Ahh... I need a nap. Deserialized morph: {}", rl);
+                } else {
+                    LOGGER.warn("Oh, farn it! Invalid resource location format: {}", tag.getString(NBT_ENTITY));
+                    setEntityType(Optional.empty());
+                }
             } catch (Exception e) {
                 LOGGER.warn("Oh, farn it! Failed to deserialize morph from NBT", e);
                 setEntityType(Optional.empty());

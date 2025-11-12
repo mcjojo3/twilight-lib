@@ -87,6 +87,14 @@ public class SyncEffectsPacket {
             }
 
             entity.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+                // Type-safe cast with validation to prevent crashes in heavily modded environments
+                if (!(effects instanceof EffectsData)) {
+                    LOGGER.error("Incompatible effects capability implementation for player {}. Expected EffectsData but got {}. " +
+                                 "This may be caused by another mod replacing the capability.",
+                                 entity.getName().getString(), effects.getClass().getName());
+                    return; // Gracefully skip instead of crashing
+                }
+
                 // Directly sync equipped effects from server (bypasses ownership validation)
                 ((EffectsData) effects).syncEquippedFromPacket(msg.effects);
                 LOGGER.debug("Time to change! Synced {} active effects for {}", msg.effects.size(), entity.getName().getString());

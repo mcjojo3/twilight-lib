@@ -22,6 +22,7 @@ import mc.sayda.twilight_lib.network.SyncMorphPacket;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
 import mc.sayda.twilight_lib.network.SyncEffectsPacket;
 import mc.sayda.twilight_lib.TwilightConstants;
+import mc.sayda.twilight_lib.config.TwilightConfig;
 import mc.sayda.twilight_lib.supporter.SupporterData;
 import mc.sayda.twilight_lib.supporter.SupporterService;
 import net.minecraft.ChatFormatting;
@@ -57,10 +58,12 @@ public class TwilightLibCommands {
 
     // Suggestion provider for all entity types
     private static final SuggestionProvider<CommandSourceStack> ENTITY_SUGGESTIONS = (context, builder) -> {
-        // Initialize or refresh cache if registry changed
+        // Initialize or refresh cache if registry changed (synchronized to prevent race condition)
         var level = context.getSource().getLevel();
-        if (!cacheInitialized || shouldRefreshCache(level)) {
-            initializeEntityCache(level);
+        synchronized (TwilightLibCommands.class) {
+            if (!cacheInitialized || shouldRefreshCache(level)) {
+                initializeEntityCache(level);
+            }
         }
         return SharedSuggestionProvider.suggestResource(VALID_LIVING_ENTITIES.stream(), builder);
     };
@@ -117,6 +120,12 @@ public class TwilightLibCommands {
 
         LOGGER.debug("There are holes in reality. And... in donuts. Initializing entity type cache...");
         for (ResourceLocation rl : BuiltInRegistries.ENTITY_TYPE.keySet()) {
+            // Safety check: prevent unbounded cache growth
+            if (VALID_LIVING_ENTITIES.size() >= TwilightConfig.MAX_ENTITY_CACHE_SIZE.get()) {
+                LOGGER.warn("Oh no! Entity cache size limit reached ({}). Stopping cache initialization to prevent memory issues.", TwilightConfig.MAX_ENTITY_CACHE_SIZE.get());
+                break;
+            }
+
             EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(rl);
             if (type == null || type == EntityType.PLAYER) continue;
 
@@ -133,7 +142,11 @@ public class TwilightLibCommands {
             } finally {
                 // Always discard test entity to prevent leak
                 if (testEntity != null) {
-                    testEntity.discard();
+                    try {
+                        testEntity.discard();
+                    } catch (Exception e) {
+                        LOGGER.warn("This will be fine! Things break all the time. Failed to discard test entity for {}: {}", rl, e.getMessage());
+                    }
                 }
             }
         }
@@ -427,7 +440,11 @@ public class TwilightLibCommands {
             }
         } finally {
             // Always discard test entity to prevent leaks
-            testEntity.discard();
+            try {
+                testEntity.discard();
+            } catch (Exception e) {
+                LOGGER.error("Oh, dung beetles! Failed to discard test entity for {}: {}", rl, e.getMessage());
+            }
         }
 
         setMorph(source, target, Optional.of(rl));
@@ -448,7 +465,7 @@ public class TwilightLibCommands {
                 LOGGER.debug("Paradigm shift time! {} has been unmorphed", target.getGameProfile().getName());
             }
 
-            NetworkHandler.sendMorphToAll(SyncMorphPacket.of(target.getUUID(), morph.orElse(null)));
+            NetworkHandler.sendMorphToAll(SyncMorphPacket.of(target.getUUID(), morph));
             target.refreshDimensions();
         });
 

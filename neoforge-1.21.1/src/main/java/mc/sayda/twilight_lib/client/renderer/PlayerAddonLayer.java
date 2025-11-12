@@ -56,6 +56,11 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                        float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks,
                        float netHeadYaw, float headPitch) {
 
+        // Check if addons are enabled in config
+        if (!TwilightConfig.ENABLE_ADDONS.get()) {
+            return;
+        }
+
         // Don't render addons for invisible players
         if (player.isInvisible()) {
             return;

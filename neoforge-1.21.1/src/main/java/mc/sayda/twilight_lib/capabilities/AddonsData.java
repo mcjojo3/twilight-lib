@@ -24,17 +24,17 @@ public class AddonsData implements IAddons {
 
     // Owned addons methods
     @Override
-    public Set<String> getAddons() {
+    public synchronized Set<String> getAddons() {
         return new HashSet<>(addons);
     }
 
     @Override
-    public void addAddon(String addonId) {
+    public synchronized void addAddon(String addonId) {
         addons.add(addonId);
     }
 
     @Override
-    public void removeAddon(String addonId) {
+    public synchronized void removeAddon(String addonId) {
         addons.remove(addonId);
         equippedAddons.remove(addonId);  // Also unequip if removing
     }
@@ -43,30 +43,30 @@ public class AddonsData implements IAddons {
      * Remove addon from owned set WITHOUT affecting active state.
      * Used by supporter sync to revoke ownership while preserving external grants.
      */
-    public void removeAddonOwnership(String addonId) {
+    public synchronized void removeAddonOwnership(String addonId) {
         addons.remove(addonId);
         // Don't touch equippedAddons or externalGrants - preserve admin/mod grants
     }
 
     @Override
-    public boolean hasAddon(String addonId) {
+    public synchronized boolean hasAddon(String addonId) {
         return addons.contains(addonId);
     }
 
     @Override
-    public void clearAddons() {
+    public synchronized void clearAddons() {
         addons.clear();
         equippedAddons.clear();  // Also clear equipped
     }
 
     // Active addons methods
     @Override
-    public Set<String> getActiveAddons() {
+    public synchronized Set<String> getActiveAddons() {
         return new HashSet<>(equippedAddons);
     }
 
     @Override
-    public void setActiveAddon(String addonId, boolean active) {
+    public synchronized void setActiveAddon(String addonId, boolean active) {
         if (active) {
             // Player can only activate owned cosmetics via /tlcosmetics
             if (addons.contains(addonId)) {
@@ -91,7 +91,7 @@ public class AddonsData implements IAddons {
      * @param active true to activate, false to deactivate
      * @param persistent If true, persists through logout/death (external grant); if false, temporary preview
      */
-    public void setActiveAddon(String addonId, boolean active, boolean persistent) {
+    public synchronized void setActiveAddon(String addonId, boolean active, boolean persistent) {
         if (active) {
             equippedAddons.add(addonId);
             if (persistent) {
@@ -114,19 +114,19 @@ public class AddonsData implements IAddons {
      * Removes addon from equipped state and clears all tracking (player selections and external grants).
      * @param addonId The addon ID to unequip
      */
-    public void forceUnequipAddon(String addonId) {
+    public synchronized void forceUnequipAddon(String addonId) {
         equippedAddons.remove(addonId);
         playerSelections.remove(addonId);
         externalGrants.remove(addonId);
     }
 
     @Override
-    public boolean isAddonActive(String addonId) {
+    public synchronized boolean isAddonActive(String addonId) {
         return equippedAddons.contains(addonId);
     }
 
     @Override
-    public void clearActiveAddons() {
+    public synchronized void clearActiveAddons() {
         equippedAddons.clear();
         playerSelections.clear();
         externalGrants.clear();
@@ -136,13 +136,13 @@ public class AddonsData implements IAddons {
      * Force-sync equipped addons from network packet (bypasses all validation).
      * Used by SyncAddonsPacket to apply server state directly on client.
      */
-    public void syncEquippedFromPacket(Set<String> equipped) {
+    public synchronized void syncEquippedFromPacket(Set<String> equipped) {
         this.equippedAddons.clear();
         this.equippedAddons.addAll(equipped);
     }
 
     @Override
-    public CompoundTag serialize() {
+    public synchronized CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
 
         // Serialize owned addons
@@ -170,7 +170,7 @@ public class AddonsData implements IAddons {
     }
 
     @Override
-    public void deserialize(CompoundTag tag) {
+    public synchronized void deserialize(CompoundTag tag) {
         addons.clear();
         equippedAddons.clear();
         playerSelections.clear();

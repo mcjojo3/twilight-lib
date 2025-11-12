@@ -28,6 +28,10 @@ public class SyncMorphPacket {
         return new SyncMorphPacket(id, Optional.ofNullable(rlOrNull));
     }
 
+    public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity) {
+        return new SyncMorphPacket(id, entity);
+    }
+
     public static void encode(SyncMorphPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.playerId);
         buf.writeBoolean(msg.entity.isPresent());

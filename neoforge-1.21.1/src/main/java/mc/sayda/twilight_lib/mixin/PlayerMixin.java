@@ -14,12 +14,12 @@ public class PlayerMixin {
 
     /**
      * Inject into getDigSpeed to override mining slowdowns based on custom attribute.
-     * Vanilla applies:
-     * - 5x slowdown when underwater without aqua affinity
-     * - 5x slowdown when not on ground (flight break)
-     * - Both together = 25x slowdown!
+     * Vanilla applies slowdowns for:
+     * - Underwater without aqua affinity (configurable multiplier, default 5x)
+     * - Not on ground / flight break (configurable multiplier, default 5x)
+     * - Both together = default 25x slowdown!
      *
-     * If mining_penalty attribute is 0, we remove both slowdowns.
+     * If mining_penalty attribute is 0, we remove both slowdowns entirely.
      */
     @Inject(
         method = "getDigSpeed",
@@ -34,35 +34,36 @@ public class PlayerMixin {
 
         if (miningPenalty == 0.0) {
             float currentSpeed = cir.getReturnValue();
-            int multiplier = 1;
+            double multiplier = 1.0;
 
             boolean inWater = player.isEyeInFluid(net.minecraft.tags.FluidTags.WATER);
             boolean onGround = player.onGround();
 
-            // Check for aqua affinity by examining helmet enchantments
-            // In 1.21.1, hasAquaAffinity is replaced with checking the helmet item
+            // Check for aqua affinity using proper 1.21.1 API
+            // Get the enchantment holder from the registry
             boolean hasAquaAffinity = false;
-            net.minecraft.world.item.ItemStack helmet = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD);
-            if (!helmet.isEmpty()) {
-                // Check if helmet has aqua affinity enchantment
-                // Using the vanilla enchantment check pattern for 1.21.1
-                hasAquaAffinity = helmet.getEnchantments().keySet().stream()
-                    .anyMatch(holder -> holder.is(net.minecraft.resources.ResourceLocation.withDefaultNamespace("aqua_affinity")));
-            }
+            net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> enchantmentRegistry =
+                player.level().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+
+            net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> aquaAffinityHolder =
+                enchantmentRegistry.getHolderOrThrow(net.minecraft.world.item.enchantment.Enchantments.AQUA_AFFINITY);
+
+            // Check if player has aqua affinity on any equipment (typically helmet)
+            hasAquaAffinity = net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantmentLevel(aquaAffinityHolder, player) > 0;
 
             // Check if underwater slowdown is active (in water, no aqua affinity)
             if (inWater && !hasAquaAffinity) {
-                multiplier *= 5;
+                multiplier *= mc.sayda.twilight_lib.config.TwilightConfig.MINING_WATER_SLOWDOWN_MULTIPLIER.get();
             }
 
             // Check if flight break slowdown is active (not on ground)
             if (!onGround) {
-                multiplier *= 5;
+                multiplier *= mc.sayda.twilight_lib.config.TwilightConfig.MINING_FLIGHT_SLOWDOWN_MULTIPLIER.get();
             }
 
             // Restore speed by multiplying back
-            if (multiplier > 1) {
-                cir.setReturnValue(currentSpeed * multiplier);
+            if (multiplier > 1.0) {
+                cir.setReturnValue((float) (currentSpeed * multiplier));
             }
         }
     }

@@ -12,11 +12,11 @@ import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 
-public class GoldenLaurelModel<T extends Entity> extends BaseAddonModel<T> {
+public class HatModel<T extends Entity> extends BaseAddonModel<T> {
     public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(
-            ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "golden_laurel"), "main");
+            ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "hat"), "main");
 
-    public GoldenLaurelModel(ModelPart root) {
+    public HatModel(ModelPart root) {
         this.head = getChildSafe(root, "Head");
     }
 

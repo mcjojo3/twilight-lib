@@ -14,12 +14,12 @@ public class PlayerMixin {
 
     /**
      * Inject into getDigSpeed to override mining slowdowns based on custom attribute.
-     * Vanilla applies:
-     * - 5x slowdown when underwater without aqua affinity
-     * - 5x slowdown when not on ground (flight break)
-     * - Both together = 25x slowdown!
+     * Vanilla applies slowdowns for:
+     * - Underwater without aqua affinity (configurable multiplier, default 5x)
+     * - Not on ground / flight break (configurable multiplier, default 5x)
+     * - Both together = default 25x slowdown!
      *
-     * If mining_penalty attribute is 0, we remove both slowdowns.
+     * If mining_penalty attribute is 0, we remove both slowdowns entirely.
      */
     @Inject(
         method = "getDigSpeed",
@@ -34,7 +34,7 @@ public class PlayerMixin {
 
         if (miningPenalty == 0.0) {
             float currentSpeed = cir.getReturnValue();
-            int multiplier = 1;
+            double multiplier = 1.0;
 
             boolean inWater = player.isEyeInFluid(net.minecraft.tags.FluidTags.WATER);
             boolean hasAquaAffinity = net.minecraft.world.item.enchantment.EnchantmentHelper.hasAquaAffinity(player);
@@ -42,17 +42,17 @@ public class PlayerMixin {
 
             // Check if underwater slowdown is active (in water, no aqua affinity)
             if (inWater && !hasAquaAffinity) {
-                multiplier *= 5;
+                multiplier *= mc.sayda.twilight_lib.config.TwilightConfig.MINING_WATER_SLOWDOWN_MULTIPLIER.get();
             }
 
             // Check if flight break slowdown is active (not on ground)
             if (!onGround) {
-                multiplier *= 5;
+                multiplier *= mc.sayda.twilight_lib.config.TwilightConfig.MINING_FLIGHT_SLOWDOWN_MULTIPLIER.get();
             }
 
             // Restore speed by multiplying back
-            if (multiplier > 1) {
-                cir.setReturnValue(currentSpeed * multiplier);
+            if (multiplier > 1.0) {
+                cir.setReturnValue((float) (currentSpeed * multiplier));
             }
         }
     }

@@ -73,6 +73,15 @@ public record SyncEffectsPacket(UUID playerId, Set<String> effects, boolean trig
             }
 
             var effects = entity.getData(ModAttachments.EFFECTS);
+
+            // Type-safe cast with validation to prevent crashes in heavily modded environments
+            if (!(effects instanceof EffectsData)) {
+                LOGGER.error("Incompatible effects attachment implementation for player {}. Expected EffectsData but got {}. " +
+                             "This may be caused by another mod replacing the attachment.",
+                             entity.getName().getString(), effects.getClass().getName());
+                return; // Gracefully skip instead of crashing
+            }
+
             // Directly sync equipped effects from server (bypasses ownership validation)
             ((EffectsData) effects).syncEquippedFromPacket(msg.effects());
             LOGGER.debug("Time to change! Synced {} active effects for {}", msg.effects().size(), entity.getName().getString());

@@ -98,14 +98,22 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     // Render the addon - use player skin texture if specified, otherwise use addon's custom texture
                     var textureToUse = addonInfo.usePlayerSkin() ? player.getSkin().texture() : addonInfo.texture();
 
+                    // Check if THIS addon is the one forcing translucency
+                    boolean thisAddonForcesTranslucency = addonInfo.forceAllTranslucent();
+
+                    // Apply translucency if:
+                    // - This addon is naturally translucent, OR
+                    // - Another addon is forcing translucency (but not this one)
+                    boolean shouldBeTranslucent = addonInfo.translucent() || (forceAllTranslucent && !thisAddonForcesTranslucency);
+
                     // Use translucent render type for transparent addons
-                    RenderType renderType = addonInfo.translucent() ?
+                    RenderType renderType = shouldBeTranslucent ?
                         RenderType.entityTranslucent(textureToUse) :
                         RenderType.entityCutoutNoCull(textureToUse);
                     VertexConsumer vertexConsumer = buffer.getBuffer(renderType);
 
-                    // Apply transparency if translucent OR if forced by another addon - wrap vertex consumer to modify alpha
-                    if (addonInfo.translucent() || forceAllTranslucent) {
+                    // Apply transparency - wrap vertex consumer to modify alpha
+                    if (shouldBeTranslucent) {
                         final float targetAlpha = 0.5F;
                         VertexConsumer originalConsumer = vertexConsumer;
                         vertexConsumer = new VertexConsumer() {

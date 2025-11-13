@@ -44,7 +44,7 @@ public class AddonRegistry {
                                     Function<ModelPart, ?> modelFactory,
                                     ResourceLocation texture,
                                     boolean usePlayerSkin) {
-        registerAddon(id, layerLocation, layerDefinitionSupplier, modelFactory, texture, usePlayerSkin, false, false);
+        registerAddon(id, layerLocation, layerDefinitionSupplier, modelFactory, texture, usePlayerSkin, false, false, false);
     }
 
     /**
@@ -59,7 +59,7 @@ public class AddonRegistry {
                                     Supplier<LayerDefinition> layerDefinitionSupplier,
                                     Function<ModelPart, ?> modelFactory,
                                     ResourceLocation texture) {
-        registerAddon(id, layerLocation, layerDefinitionSupplier, modelFactory, texture, false, false, false);
+        registerAddon(id, layerLocation, layerDefinitionSupplier, modelFactory, texture, false, false, false, false);
     }
 
     /**
@@ -78,11 +78,11 @@ public class AddonRegistry {
                                     ResourceLocation texture,
                                     boolean usePlayerSkin,
                                     boolean translucent) {
-        registerAddon(id, layerLocation, layerDefinitionSupplier, modelFactory, texture, usePlayerSkin, translucent, false);
+        registerAddon(id, layerLocation, layerDefinitionSupplier, modelFactory, texture, usePlayerSkin, translucent, false, false);
     }
 
     /**
-     * Register a new addon model with all options
+     * Register a new addon model with standard options
      * @param id Unique identifier for the addon (e.g., "horns", "wings")
      * @param layerLocation Model layer location
      * @param layerDefinitionSupplier Supplier for the layer definition
@@ -99,11 +99,34 @@ public class AddonRegistry {
                                     boolean usePlayerSkin,
                                     boolean translucent,
                                     boolean hidePlayerModel) {
+        registerAddon(id, layerLocation, layerDefinitionSupplier, modelFactory, texture, usePlayerSkin, translucent, hidePlayerModel, false);
+    }
+
+    /**
+     * Register a new addon model with all options
+     * @param id Unique identifier for the addon (e.g., "horns", "wings")
+     * @param layerLocation Model layer location
+     * @param layerDefinitionSupplier Supplier for the layer definition
+     * @param modelFactory Function to create model instance from ModelPart (should return EntityModel & IAddonModel)
+     * @param texture Texture location for the addon (ignored if usePlayerSkin is true)
+     * @param usePlayerSkin If true, the addon will use the player's skin texture instead of the provided texture
+     * @param translucent If true, THIS addon will render with 50% transparency
+     * @param hidePlayerModel If true, the base player model will be hidden (nametag and shadow remain visible)
+     * @param forceAllTranslucent If true, ALL active addons will render with 50% transparency
+     */
+    public static void registerAddon(String id, ModelLayerLocation layerLocation,
+                                    Supplier<LayerDefinition> layerDefinitionSupplier,
+                                    Function<ModelPart, ?> modelFactory,
+                                    ResourceLocation texture,
+                                    boolean usePlayerSkin,
+                                    boolean translucent,
+                                    boolean hidePlayerModel,
+                                    boolean forceAllTranslucent) {
         if (ADDONS.containsKey(id)) {
             LOGGER.warn("If you won't pay attention to me, I'll blow up your world! Probably not... but I might! Addon '{}' already registered, overwriting...", id);
         }
 
-        ADDONS.put(id, new AddonModelInfo(id, layerLocation, layerDefinitionSupplier, modelFactory, texture, usePlayerSkin, translucent, hidePlayerModel));
+        ADDONS.put(id, new AddonModelInfo(id, layerLocation, layerDefinitionSupplier, modelFactory, texture, usePlayerSkin, translucent, hidePlayerModel, forceAllTranslucent));
         LOGGER.debug("What's your name? Registered addon: {}", id);
     }
 

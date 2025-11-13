@@ -20,5 +20,6 @@ public record AddonModelInfo(
     ResourceLocation texture,
     boolean usePlayerSkin,
     boolean translucent,
-    boolean hidePlayerModel
+    boolean hidePlayerModel,
+    boolean forceAllTranslucent
 ) {}

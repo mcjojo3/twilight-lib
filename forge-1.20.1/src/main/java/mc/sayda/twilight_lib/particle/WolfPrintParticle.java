@@ -18,6 +18,14 @@ import org.joml.Vector3f;
 
 @OnlyIn(Dist.CLIENT)
 public class WolfPrintParticle extends TextureSheetParticle {
+    // Pre-allocated vertices for rendering to avoid allocations every frame
+    // These define a unit quad in local space that will be transformed
+    private static final float[][] QUAD_OFFSETS = {
+        {-1.0f, -1.0f}, // back-left
+        {-1.0f, 1.0f},  // front-left
+        {1.0f, 1.0f},   // front-right
+        {1.0f, -1.0f}   // back-right
+    };
 
     public static WolfPrintParticleProvider provider(SpriteSet spriteSet) {
         return new WolfPrintParticleProvider(spriteSet);
@@ -35,12 +43,10 @@ public class WolfPrintParticle extends TextureSheetParticle {
         }
     }
 
-    private final SpriteSet spriteSet;
     private final float rotationYaw; // Store the yaw rotation for footprint direction
 
     protected WolfPrintParticle(ClientLevel world, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
         super(world, x, y, z);
-        this.spriteSet = spriteSet;
         this.setSize(0.25f, 0.25f);
         this.quadSize *= 1f; // Small footprint size
         this.lifetime = mc.sayda.twilight_lib.config.TwilightConfig.FOOTPRINT_LIFETIME_TICKS.get();
@@ -65,8 +71,12 @@ public class WolfPrintParticle extends TextureSheetParticle {
         super.tick();
 
         // Fade out as it ages
-        float ageRatio = (float) this.age / (float) this.lifetime;
-        this.alpha = 1.0f - ageRatio; // Gradually fade to transparent
+        if (this.lifetime > 0) {
+            float ageRatio = (float) this.age / (float) this.lifetime;
+            this.alpha = 1.0f - ageRatio; // Gradually fade to transparent
+        } else {
+            this.alpha = 0.0f; // Fully transparent if lifetime is 0
+        }
     }
 
     @Override
@@ -84,59 +94,38 @@ public class WolfPrintParticle extends TextureSheetParticle {
         float cos = (float) Math.cos(this.rotationYaw);
         float sin = (float) Math.sin(this.rotationYaw);
 
-        // Define corners in local space (horizontal quad)
-        Vector3f[] corners = new Vector3f[4];
-
-        // Corner 0: back-left
-        float x0 = -quadSize;
-        float z0 = -quadSize;
-        corners[0] = new Vector3f(
-            x + (x0 * cos - z0 * sin),
-            y,
-            z + (x0 * sin + z0 * cos)
-        );
-
-        // Corner 1: front-left
-        float x1 = -quadSize;
-        float z1 = quadSize;
-        corners[1] = new Vector3f(
-            x + (x1 * cos - z1 * sin),
-            y,
-            z + (x1 * sin + z1 * cos)
-        );
-
-        // Corner 2: front-right
-        float x2 = quadSize;
-        float z2 = quadSize;
-        corners[2] = new Vector3f(
-            x + (x2 * cos - z2 * sin),
-            y,
-            z + (x2 * sin + z2 * cos)
-        );
-
-        // Corner 3: back-right
-        float x3 = quadSize;
-        float z3 = -quadSize;
-        corners[3] = new Vector3f(
-            x + (x3 * cos - z3 * sin),
-            y,
-            z + (x3 * sin + z3 * cos)
-        );
-
         float minU = this.getU0();
         float maxU = this.getU1();
         float minV = this.getV0();
         float maxV = this.getV1();
         int light = this.getLightColor(partialTicks);
 
+        // Use pre-allocated offsets to calculate corner positions without allocations
+        // Transform each corner using rotation matrix and quadSize
         // Render quad with proper winding order
-        buffer.vertex(corners[0].x(), corners[0].y(), corners[0].z())
+
+        // Corner 0: back-left
+        float x0 = QUAD_OFFSETS[0][0] * quadSize;
+        float z0 = QUAD_OFFSETS[0][1] * quadSize;
+        buffer.vertex(x + (x0 * cos - z0 * sin), y, z + (x0 * sin + z0 * cos))
                 .uv(minU, maxV).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
-        buffer.vertex(corners[1].x(), corners[1].y(), corners[1].z())
+
+        // Corner 1: front-left
+        float x1 = QUAD_OFFSETS[1][0] * quadSize;
+        float z1 = QUAD_OFFSETS[1][1] * quadSize;
+        buffer.vertex(x + (x1 * cos - z1 * sin), y, z + (x1 * sin + z1 * cos))
                 .uv(minU, minV).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
-        buffer.vertex(corners[2].x(), corners[2].y(), corners[2].z())
+
+        // Corner 2: front-right
+        float x2 = QUAD_OFFSETS[2][0] * quadSize;
+        float z2 = QUAD_OFFSETS[2][1] * quadSize;
+        buffer.vertex(x + (x2 * cos - z2 * sin), y, z + (x2 * sin + z2 * cos))
                 .uv(maxU, minV).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
-        buffer.vertex(corners[3].x(), corners[3].y(), corners[3].z())
+
+        // Corner 3: back-right
+        float x3 = QUAD_OFFSETS[3][0] * quadSize;
+        float z3 = QUAD_OFFSETS[3][1] * quadSize;
+        buffer.vertex(x + (x3 * cos - z3 * sin), y, z + (x3 * sin + z3 * cos))
                 .uv(maxU, maxV).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
     }
 

@@ -14,6 +14,8 @@ public class ModEntityAttributes {
 
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
+        // DeferredHolder objects are always present after registration
+        // No null check needed - these are registered during mod construction
         List.of(
             ModEntities.WHITE_FOX,
             ModEntities.BLACK_FOX,

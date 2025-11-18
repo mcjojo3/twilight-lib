@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.cosmetics;
 
 import com.mojang.logging.LogUtils;
+import mc.sayda.twilight_lib.TwilightConstants;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
 import mc.sayda.twilight_lib.capabilities.IEffects;
 import net.minecraft.client.Minecraft;
@@ -15,6 +16,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Client-side ambient effect handler.
@@ -68,26 +70,26 @@ public class AmbientEffectHandler {
         int particlesPerTick = mc.sayda.twilight_lib.config.TwilightConfig.AMBIENT_PARTICLES_PER_TICK.get();
         for (int i = 0; i < particlesPerTick; i++) {
             // Random angle for this particle
-            double angle = Math.random() * 2 * Math.PI;
+            double angle = ThreadLocalRandom.current().nextDouble() * 2 * Math.PI;
 
             // Calculate position on the circle
             double offsetX = Math.cos(angle) * CIRCLE_RADIUS;
             double offsetZ = Math.sin(angle) * CIRCLE_RADIUS;
 
             double x = playerPos.x + offsetX;
-            double y = playerPos.y + 0.05; // Slightly above ground
+            double y = playerPos.y + TwilightConstants.AmbientEffect.PARTICLE_HEIGHT_ABOVE_GROUND;
             double z = playerPos.z + offsetZ;
 
             // Spawn regular flame particles
             level.addParticle(ParticleTypes.FLAME,
                     x, y, z,
-                    0.0, 0.02, 0.0); // Slight upward velocity
+                    0.0, TwilightConstants.AmbientEffect.FLAME_UPWARD_VELOCITY, 0.0);
 
             // Add some small flame particles for depth
-            if (Math.random() < 0.3) {
+            if (ThreadLocalRandom.current().nextDouble() < TwilightConstants.AmbientEffect.SMALL_FLAME_SPAWN_PROBABILITY) {
                 level.addParticle(ParticleTypes.SMALL_FLAME,
                         x, y, z,
-                        0.0, 0.01, 0.0);
+                        0.0, TwilightConstants.AmbientEffect.SMALL_FLAME_UPWARD_VELOCITY, 0.0);
             }
         }
     }
@@ -102,26 +104,26 @@ public class AmbientEffectHandler {
         int particlesPerTick = mc.sayda.twilight_lib.config.TwilightConfig.AMBIENT_PARTICLES_PER_TICK.get();
         for (int i = 0; i < particlesPerTick; i++) {
             // Random angle for this particle
-            double angle = Math.random() * 2 * Math.PI;
+            double angle = ThreadLocalRandom.current().nextDouble() * 2 * Math.PI;
 
             // Calculate position on the circle
             double offsetX = Math.cos(angle) * CIRCLE_RADIUS;
             double offsetZ = Math.sin(angle) * CIRCLE_RADIUS;
 
             double x = playerPos.x + offsetX;
-            double y = playerPos.y + 0.05; // Slightly above ground
+            double y = playerPos.y + TwilightConstants.AmbientEffect.PARTICLE_HEIGHT_ABOVE_GROUND;
             double z = playerPos.z + offsetZ;
 
             // Spawn snowflake particles
             level.addParticle(ParticleTypes.SNOWFLAKE,
                     x, y, z,
-                    0.0, 0.01, 0.0); // Slight upward velocity
+                    0.0, TwilightConstants.AmbientEffect.SNOWFLAKE_UPWARD_VELOCITY, 0.0);
 
             // Add some white ash for sparkle effect
-            if (Math.random() < 0.4) {
+            if (ThreadLocalRandom.current().nextDouble() < TwilightConstants.AmbientEffect.WHITE_ASH_SPAWN_PROBABILITY) {
                 level.addParticle(ParticleTypes.WHITE_ASH,
                         x, y, z,
-                        0.0, 0.02, 0.0);
+                        0.0, TwilightConstants.AmbientEffect.WHITE_ASH_UPWARD_VELOCITY, 0.0);
             }
         }
     }

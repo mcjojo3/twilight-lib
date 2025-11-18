@@ -29,11 +29,8 @@ public class GoldHeartParticle extends TextureSheetParticle {
         }
     }
 
-    private final SpriteSet spriteSet;
-
     protected GoldHeartParticle(ClientLevel world, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
         super(world, x, y, z);
-        this.spriteSet = spriteSet;
         this.setSize(0.2f, 0.2f);
         this.quadSize *= 0.9f;
         this.lifetime = 15;
@@ -48,10 +45,5 @@ public class GoldHeartParticle extends TextureSheetParticle {
     @Override
     public ParticleRenderType getRenderType() {
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
     }
 }

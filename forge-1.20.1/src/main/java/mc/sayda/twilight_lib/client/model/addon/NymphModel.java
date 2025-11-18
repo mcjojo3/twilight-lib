@@ -50,7 +50,7 @@ public class NymphModel<T extends Entity> extends BaseAddonModel<T> {
                 PartPose.offset(-5.0F, 2.0F, 0.0F));
 
         PartDefinition LeftArm = partdefinition.addOrReplaceChild("LeftArm",
-                CubeListBuilder.create().texOffs(48, 48).addBox(-1.0F, -2.0F, -2.0F, 3.0F, 12.0F, 4.0F,
+                CubeListBuilder.create().texOffs(49, 48).addBox(-1.0F, -2.0F, -2.0F, 3.0F, 12.0F, 4.0F,
                         new CubeDeformation(0.5F)),
                 PartPose.offset(5.0F, 2.0F, 0.0F));
 

@@ -29,11 +29,8 @@ public class BronzeHeartParticle extends TextureSheetParticle {
         }
     }
 
-    private final SpriteSet spriteSet;
-
     protected BronzeHeartParticle(ClientLevel world, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
         super(world, x, y, z);
-        this.spriteSet = spriteSet;
         this.setSize(0.2f, 0.2f);
         this.quadSize *= 0.8f;
         this.lifetime = 10;

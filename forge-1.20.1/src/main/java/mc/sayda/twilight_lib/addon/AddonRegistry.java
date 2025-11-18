@@ -22,12 +22,62 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Central registry for all player addon models.
- * Addons can be registered programmatically via registerAddon()
- * Thread-safe for concurrent mod loading.
+ * Central registry for all player addon models - 3D attachments rendered on players.
+ *
+ * <p><b>What are addons?</b> Addons are cosmetic 3D models attached to players:
+ * <ul>
+ *   <li>Tails that sway with player movement</li>
+ *   <li>Wings that animate during flight</li>
+ *   <li>Horns, ears, and other decorative attachments</li>
+ * </ul>
+ *
+ * <p><b>How to register an addon</b>:
+ * <pre>{@code
+ * // During client setup
+ * AddonRegistry.registerAddon(
+ *     "my_tail",                                    // Unique ID
+ *     new ModelLayerLocation(                       // Model layer
+ *         new ResourceLocation("mymod", "tail"),
+ *         "main"
+ *     ),
+ *     MyTailModel::createBodyLayer,                 // Layer definition supplier
+ *     MyTailModel::new,                             // Model factory
+ *     new ResourceLocation("mymod", "textures/tail.png"),  // Texture
+ *     false                                         // Don't use player skin
+ * );
+ * }</pre>
+ *
+ * <p><b>Advanced Options</b>:
+ * <ul>
+ *   <li><b>usePlayerSkin</b>: Use player's skin texture instead of custom texture</li>
+ *   <li><b>translucent</b>: Render addon with 50% transparency</li>
+ *   <li><b>hidePlayerModel</b>: Hide base player model (for full-body replacements)</li>
+ *   <li><b>forceAllTranslucent</b>: Make ALL active addons translucent (for ghost effects)</li>
+ * </ul>
+ *
+ * <p><b>Thread Safety</b>: Uses {@link ConcurrentHashMap} for safe concurrent registration
+ * during mod loading. Multiple mods can register addons simultaneously.
+ *
+ * <p><b>Performance</b>: Registry is built once during startup. Lookups during rendering
+ * are O(1) via hash map.
+ *
+ * @see AddonModelInfo for detailed addon configuration options
+ * @see IAddonModel for addon model interface requirements
+ * @author Sayda (MrJojo)
+ * @version 1.0
  */
 public class AddonRegistry {
     private static final Logger LOGGER = LogUtils.getLogger();
+
+    /**
+     * Thread-safe map of addon ID to model info.
+     *
+     * <p><b>Thread Safety</b>: ConcurrentHashMap allows safe concurrent registration
+     * from multiple mod loading threads.
+     *
+     * <p><b>Immutability</b>: AddonModelInfo objects are immutable after creation
+     * to prevent race conditions during rendering.
+     */
     private static final Map<String, AddonModelInfo> ADDONS = new ConcurrentHashMap<>();
 
     /**

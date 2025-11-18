@@ -2,19 +2,16 @@ package mc.sayda.twilight_lib.client;
 
 import mc.sayda.twilight_lib.ModAttributes;
 import mc.sayda.twilight_lib.TwilightLib;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 // In 1.21.1, bus parameter is deprecated - game bus is implied for non-mod events
 @EventBusSubscriber(modid = TwilightLib.MODID, value = Dist.CLIENT)
 public class FOVHandler {
-    private static float lastFovModifier = 1.0F;
+    private static volatile float lastFovModifier = 1.0F;
 
     @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOW)
     public static void onFOVModifier(ComputeFovModifierEvent event) {

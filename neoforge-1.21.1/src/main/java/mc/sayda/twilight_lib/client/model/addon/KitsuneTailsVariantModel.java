@@ -50,7 +50,7 @@ public class KitsuneTailsVariantModel<T extends Entity> extends BaseAddonModel<T
     // Store base rotations for each tail
     private float[] baseRotX = new float[9];
     private float[] baseRotZ = new float[9];
-    private boolean initialized = false;
+    private volatile boolean initialized = false;
 
     // Define which tails are visible for this variant
     private final Set<Integer> visibleTails;

@@ -76,13 +76,16 @@ public class TrailRenderer {
         }
 
         ITrails trails = player.getData(ModAttachments.TRAILS);
-        if (!trails.isTrailEnabled() || trails.getActiveTrail() == null) {
-            return;
+        // Get all active trails and render each one
+        for (String activeTrailId : trails.getActiveTrails()) {
+            TrailType trailType = TrailType.fromId(activeTrailId);
+            if (trailType == null) continue;
+
+            renderSingleTrail(player, trailType);
         }
+    }
 
-        TrailType trailType = TrailType.fromId(trails.getActiveTrail());
-        if (trailType == null) return;
-
+    private static void renderSingleTrail(AbstractClientPlayer player, TrailType trailType) {
         TrailSpawnMode spawnMode = trailType.getSpawnMode();
 
         // Don't render trails too frequently (configurable)

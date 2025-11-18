@@ -40,15 +40,59 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Main mod class for Twilight Lib - A cosmetic player customization library for Minecraft.
+ *
+ * <p>Twilight Lib provides a framework for player cosmetics including:
+ * <ul>
+ *   <li><b>Morphs</b>: Transform players into different entities with matching hitboxes</li>
+ *   <li><b>Addons</b>: Visual 3D attachments like tails, wings, and ears</li>
+ *   <li><b>Trails</b>: Particle effects that follow player movement</li>
+ *   <li><b>Effects</b>: Event-triggered cosmetics like spawn effects and ambient particles</li>
+ * </ul>
+ *
+ * <p><b>Supporter Integration</b>: Cosmetics are tied to Patreon supporter tiers.
+ * The mod fetches supporter data from GitHub on startup and grants cosmetics based on tier.
+ * Manual cosmetic grants persist independently of supporter status for gifting/admin purposes.
+ *
+ * <p><b>Thread Safety</b>: This class uses concurrent data structures for delayed sync tasks.
+ * The {@link #pendingTasks} map is thread-safe via {@link ConcurrentHashMap}.
+ * The {@link #serverTicks} counter uses {@link AtomicLong} for atomic increments during server ticks.
+ *
+ * @author Sayda (MrJojo)
+ * @version 1.0
+ */
 @Mod(TwilightLib.MODID)
 public class TwilightLib {
     public static final String MODID = "twilight_lib";
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    // Delayed task scheduler for proper tick-based delays
+    /**
+     * Delayed task scheduler for login cosmetics sync.
+     *
+     * <p><b>Why delayed sync?</b> When a player logs in, their client-side entity may not be
+     * fully loaded yet. Syncing cosmetics immediately can cause visual glitches or lost packets.
+     * This queue delays cosmetics sync by a configurable number of ticks (default: 20 ticks = 1 second)
+     * to ensure the client is ready to receive and render cosmetic data.
+     *
+     * <p><b>Thread Safety</b>: Uses ConcurrentHashMap to allow safe concurrent access from
+     * multiple server threads (login events and tick events may occur on different threads).
+     */
     private static final Map<UUID, DelayedSyncTask> pendingTasks = new ConcurrentHashMap<>();
+
+    /**
+     * Server tick counter for delayed task scheduling.
+     *
+     * <p><b>Thread Safety</b>: Uses AtomicLong for thread-safe increments without synchronization.
+     * Incremented once per server tick in {@link #onServerTick(ServerTickEvent.Post)}.
+     */
     private static final AtomicLong serverTicks = new AtomicLong(0);
 
+    /**
+     * Represents a cosmetics sync task scheduled for future execution.
+     *
+     * <p>Tasks are immutable after creation to prevent race conditions.
+     */
     private static class DelayedSyncTask {
         final UUID playerUUID;
         final long executeAtTick;
@@ -127,7 +171,13 @@ public class TwilightLib {
         }
 
         // Ensure supporter data is loaded before checking (waits if fetch is in progress)
-        SupporterService.fetchSupporters().join();  // Block until fetch completes
+        try {
+            SupporterService.fetchSupporters().get(10, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (java.util.concurrent.TimeoutException e) {
+            LOGGER.warn("Oh no! Supporter data fetch timed out after 10 seconds. Proceeding without supporter sync.");
+        } catch (Exception e) {
+            LOGGER.warn("Shoot! Error waiting for supporter data: {}", e.getMessage());
+        }
 
         // Check supporter status and auto-grant cosmetics (tier unlocks + manual overrides)
         String uuid = loggedInPlayer.getStringUUID();
@@ -153,36 +203,31 @@ public class TwilightLib {
 
             // Auto-grant trails (tier unlocks + manual overrides)
             ITrails trails = loggedInPlayer.getData(ModAttachments.TRAILS);
-            // Preserve active trail selection and enabled state
-            String activeTrail = trails.getActiveTrail();
-            boolean trailEnabled = trails.isTrailEnabled();
+            // Sync owned trails with current supporter status (preserves persistent active state)
+            Set<String> currentOwnedTrails = new java.util.HashSet<>(trails.getTrails());
 
-            // Sync owned trails with current supporter status (preserves admin grants)
-            Set<String> currentOwned = new java.util.HashSet<>(trails.getTrails());
-
-            // Remove trails no longer granted (selective removal preserves admin grants)
-            for (String trail : currentOwned) {
-                if (!allTrails.contains(trail)) {
-                    trails.removeTrail(trail);  // Will also clear active trail if this was it
-                }
-            }
-
-            // Add newly granted trails
-            for (String trail : allTrails) {
-                if (!currentOwned.contains(trail)) {
-                    trails.addTrail(trail);
-                }
-            }
-
-            // Restore active trail if still owned, otherwise explicitly clear it
-            if (activeTrail != null && trails.hasTrail(activeTrail)) {
-                trails.setActiveTrail(activeTrail);
+            // Type-safe cast to access implementation-specific methods
+            if (trails == null || !(trails instanceof mc.sayda.twilight_lib.capabilities.TrailsData)) {
+                LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected trails capability implementation: {}", trails == null ? "null" : trails.getClass());
             } else {
-                trails.setActiveTrail(null); // Clear invalid trail (no longer owned)
-            }
-            trails.setTrailEnabled(trailEnabled);
+                mc.sayda.twilight_lib.capabilities.TrailsData trailsData = (mc.sayda.twilight_lib.capabilities.TrailsData) trails;
 
-            loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
+                // Remove trails no longer granted (ownership only - doesn't affect persistent active)
+                for (String trail : currentOwnedTrails) {
+                    if (!allTrails.contains(trail)) {
+                        trailsData.removeTrailOwnership(trail);
+                    }
+                }
+
+                // Add newly granted trails
+                for (String trail : allTrails) {
+                    if (!currentOwnedTrails.contains(trail)) {
+                        trails.addTrail(trail);
+                    }
+                }
+
+                loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
+            }
 
             // Auto-grant addons (tier unlocks + manual overrides)
             IAddons addons = loggedInPlayer.getData(ModAttachments.ADDONS);
@@ -267,9 +312,12 @@ public class TwilightLib {
             LOGGER.info("We're gonna be best friends! Player {} logged in with {} active addons", loggedInPlayer.getGameProfile().getName(), loginAddons.getActiveAddons().size());
         }
 
-        // Send this player's trails to everyone else
+        // Send this player's active trails to everyone else
         ITrails loginTrails = loggedInPlayer.getData(ModAttachments.TRAILS);
-        NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(loggedInPlayer.getUUID(), loginTrails.serialize()));
+        if (!loginTrails.getActiveTrails().isEmpty()) {
+            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(loggedInPlayer.getUUID(), loginTrails.getActiveTrails()));
+            LOGGER.info("Sparkles everywhere! Player {} logged in with {} active trails", loggedInPlayer.getGameProfile().getName(), loginTrails.getActiveTrails().size());
+        }
 
         // Send this player's effects to everyone else (trigger spawn effect on login)
         IEffects loginEffects = loggedInPlayer.getData(ModAttachments.EFFECTS);
@@ -344,10 +392,12 @@ public class TwilightLib {
             LOGGER.debug("Aaand a skip-skip and a jump-jump! Player {} respawned with {} active addons", player.getGameProfile().getName(), respawnAddons.getActiveAddons().size());
         }
 
-        // Sync trails to client after respawn
+        // Sync active trails to client after respawn
         ITrails respawnTrails = player.getData(ModAttachments.TRAILS);
-        NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), respawnTrails.serialize()));
-        LOGGER.debug("Something good is going to happen. With sparkles! Player {} respawned with trails", player.getGameProfile().getName());
+        if (!respawnTrails.getActiveTrails().isEmpty()) {
+            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), respawnTrails.getActiveTrails()));
+            LOGGER.debug("Something good is going to happen. With sparkles! Player {} respawned with {} active trails", player.getGameProfile().getName(), respawnTrails.getActiveTrails().size());
+        }
 
         // Sync effects to client after respawn (trigger spawn effect on respawn)
         IEffects respawnEffects = player.getData(ModAttachments.EFFECTS);
@@ -379,7 +429,11 @@ public class TwilightLib {
         }
 
         ITrails trails = trackedPlayer.getData(ModAttachments.TRAILS);
-        NetworkHandler.sendTrailsToPlayer(trackingPlayer, new SyncTrailsPacket(trackedPlayer.getUUID(), trails.serialize()));
+        if (!trails.getActiveTrails().isEmpty()) {
+            NetworkHandler.sendTrailsToPlayer(trackingPlayer, new SyncTrailsPacket(trackedPlayer.getUUID(), trails.getActiveTrails()));
+            LOGGER.debug("Look at all the pretty trails! Sent {} trails for {} to tracking player {}",
+                trails.getActiveTrails().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
+        }
 
         IEffects effects = trackedPlayer.getData(ModAttachments.EFFECTS);
         if (!effects.getActiveEffects().isEmpty()) {

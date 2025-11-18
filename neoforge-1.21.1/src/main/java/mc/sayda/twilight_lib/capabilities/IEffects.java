@@ -39,7 +39,7 @@ import java.util.Set;
  *
  * <p>Players manage effects via /cosmetics effects commands.
  */
-public interface IEffects {
+public interface IEffects extends ISerializableData {
     // Owned effects (what the player has access to)
     /**
      * Get all owned effects.

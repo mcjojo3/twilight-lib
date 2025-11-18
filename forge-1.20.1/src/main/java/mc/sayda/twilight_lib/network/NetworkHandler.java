@@ -20,17 +20,71 @@ import org.slf4j.Logger;
 
 import java.util.Optional;
 
+/**
+ * Network packet handler for Twilight Lib - manages client-server synchronization of cosmetics.
+ *
+ * <p><b>Packet Flow</b>: Server-to-Client only (PLAY_TO_CLIENT direction).
+ * <ul>
+ *   <li>Server tracks player cosmetic state (authoritative)</li>
+ *   <li>Clients receive packets to render cosmetics on other players</li>
+ *   <li>No client-to-server packets (prevents cheating/spoofing)</li>
+ * </ul>
+ *
+ * <p><b>Registered Packets</b>:
+ * <ul>
+ *   <li>{@link SyncMorphPacket}: Syncs a player's active morph to clients</li>
+ *   <li>{@link SyncAddonsPacket}: Syncs a player's active addons to clients</li>
+ *   <li>{@link SyncTrailsPacket}: Syncs a player's trail configuration to clients</li>
+ *   <li>{@link SyncEffectsPacket}: Syncs a player's active effects to clients</li>
+ * </ul>
+ *
+ * <p><b>Protocol Versioning</b>: Protocol version "1" is hardcoded.
+ * If packet structure changes, increment PROTOCOL to prevent version mismatches.
+ * Mismatched protocol versions will prevent clients from joining.
+ *
+ * <p><b>Thread Safety</b>: All methods are called from server tick thread.
+ * Packet sending is thread-safe via Forge's network system.
+ *
+ * @author Sayda (MrJojo)
+ * @version 1.0
+ */
 public class NetworkHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
+
+    /**
+     * Network protocol version.
+     *
+     * <p><b>IMPORTANT</b>: Increment this when packet structure changes!
+     * Mismatched versions will prevent mod from working across client-server.
+     */
     private static final String PROTOCOL = "1";
 
+    /**
+     * Forge SimpleChannel for packet transmission.
+     *
+     * <p>Channel name: "twilight_lib:main" (prevents conflicts with other mods).
+     */
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(TwilightLib.MODID, "main"),
             () -> PROTOCOL, PROTOCOL::equals, PROTOCOL::equals
     );
 
+    /**
+     * Packet discriminator index (auto-incremented for each packet type).
+     *
+     * <p><b>Why track index?</b> Forge requires unique IDs for each packet type.
+     * Auto-incrementing prevents ID collisions.
+     */
     private static int index = 0;
 
+    /**
+     * Initializes the network channel and registers all packet types.
+     *
+     * <p><b>Registration Order</b>: Order matters! Discriminator IDs must match
+     * between client and server. Changing order requires protocol version bump.
+     *
+     * <p>Called once during mod construction in {@link TwilightLib#TwilightLib()}.
+     */
     public static void init() {
         CHANNEL.registerMessage(
                 index++, SyncMorphPacket.class,
@@ -74,6 +128,19 @@ public class NetworkHandler {
         }
     }
 
+    /**
+     * Sends all players' morphs to a specific recipient (used during delayed login sync).
+     *
+     * <p><b>When called</b>: After a player logs in, once their client is ready (delayed by ticks).
+     * This ensures the recipient sees ALL other players' morphs, even if they were already online.
+     *
+     * <p><b>Why iterate all players?</b> During login, the player tracking system might not
+     * have sent all nearby players yet. This ensures complete cosmetic state.
+     *
+     * <p><b>Performance</b>: Only sends non-empty morphs. Players without morphs are skipped.
+     *
+     * @param recipient The player who should receive all morph packets
+     */
     public static void sendAllMorphsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
         LOGGER.debug("Want to see something neat? Syncing all morphs to {}", recipient.getGameProfile().getName());
@@ -145,7 +212,9 @@ public class NetworkHandler {
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             p.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-                sendTrailsToPlayer(recipient, new SyncTrailsPacket(p.getUUID(), trails.serialize()));
+                if (!trails.getActiveTrails().isEmpty()) {
+                    sendTrailsToPlayer(recipient, new SyncTrailsPacket(p.getUUID(), trails.getActiveTrails()));
+                }
             });
         }
     }

@@ -68,6 +68,8 @@ public class SpawnEffectHandler {
                     Player player = mc.level.getPlayerByUUID(id);
                     if (player != null && !player.isInvisible()) {
                         var effects = player.getData(ModAttachments.EFFECTS);
+                        if (effects == null) return null; // Remove entry if no effects data
+
                         // Check which spawn effects are active and trigger them
                         if (effects.isEffectActive("spawn_ethereal")) {
                             spawnEtherealEffect(player);

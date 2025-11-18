@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
+import mc.sayda.twilight_lib.capabilities.TrailsData;
 import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
@@ -69,21 +70,51 @@ public class CosmeticsCommand {
         return builder.buildFuture();
     };
 
+    /**
+     * Registers the /cosmetics command and all its aliases.
+     *
+     * <p><b>Permission Level</b>: Level 0 (all players can use).
+     * This is a player-facing command for managing their own cosmetics.
+     * Admin commands are in {@link TwilightLibCommands} (Level 2).
+     *
+     * <p><b>Command Structure</b>:
+     * <pre>
+     * /cosmetics info - Show player's cosmetic status and tier
+     * /cosmetics trail set &lt;type&gt; - Activate a trail
+     * /cosmetics trail toggle - Enable/disable trail rendering
+     * /cosmetics trail list - List owned trails
+     * /cosmetics addons equip &lt;addon&gt; - Equip an addon
+     * /cosmetics addons unequip &lt;addon&gt; - Unequip an addon
+     * /cosmetics addons list - List owned addons
+     * /cosmetics effects equip &lt;effect&gt; - Equip an effect
+     * /cosmetics effects unequip &lt;effect&gt; - Unequip an effect
+     * /cosmetics effects list - List owned effects
+     * </pre>
+     *
+     * <p><b>Design Choice</b>: Separate "trail" (singular) vs "addons"/"effects" (plural)
+     * reflects the constraint that only ONE trail can be active, but MULTIPLE addons/effects
+     * can be equipped simultaneously.
+     *
+     * @param event The RegisterCommandsEvent from Forge
+     */
     public static void registerCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
 
         // Register all command aliases
         for (String alias : new String[]{"cosmetics", "tlc", "tlcosmetics", "twilightlibcosmetics"}) {
             dispatcher.register(Commands.literal(alias)
-                .then(Commands.literal("trail")
-                .then(Commands.literal("set")
+                .then(Commands.literal("trails")
+                .then(Commands.literal("equip")
                     .then(Commands.argument("type", StringArgumentType.word())
                         .suggests(PLAYER_TRAILS_SUGGESTIONS)
-                        .executes(CosmeticsCommand::setTrail)
+                        .executes(CosmeticsCommand::equipTrail)
                     )
                 )
-                .then(Commands.literal("toggle")
-                    .executes(CosmeticsCommand::toggleTrail)
+                .then(Commands.literal("unequip")
+                    .then(Commands.argument("type", StringArgumentType.word())
+                        .suggests(PLAYER_TRAILS_SUGGESTIONS)
+                        .executes(CosmeticsCommand::unequipTrail)
+                    )
                 )
                 .then(Commands.literal("list")
                     .executes(CosmeticsCommand::listTrails)
@@ -130,7 +161,7 @@ public class CosmeticsCommand {
         }
     }
 
-    private static int setTrail(CommandContext<CommandSourceStack> ctx) {
+    private static int equipTrail(CommandContext<CommandSourceStack> ctx) {
         if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
             return 0;
         }
@@ -141,64 +172,82 @@ public class CosmeticsCommand {
         if (!player.getCapability(TrailsProvider.TRAILS_CAP).isPresent()) {
             player.sendSystemMessage(Component.literal("❌ Error: Trail capability not initialized")
                 .withStyle(ChatFormatting.RED));
-            return 1;
+            return 0;
         }
 
         player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            // Check if player has this trail
+            // Check ownership - players can only interact with trails they own
             if (!trails.hasTrail(trailId)) {
                 player.sendSystemMessage(Component.literal("❌ You don't have access to that trail!")
                     .withStyle(ChatFormatting.RED));
-                player.sendSystemMessage(Component.literal("Use /cosmetics trail list to see available trails")
+                player.sendSystemMessage(Component.literal("Use /cosmetics trails list to see available trails")
                     .withStyle(ChatFormatting.GRAY));
                 return;
             }
 
-            trails.setActiveTrail(trailId);
-            trails.setTrailEnabled(true);
+            // Check if already active
+            if (trails.getActiveTrails().contains(trailId)) {
+                player.sendSystemMessage(Component.literal("⚠ Trail '" + trailId + "' is already equipped!")
+                    .withStyle(ChatFormatting.YELLOW));
+                return;
+            }
+
+            // Activate the trail (player action = non-persistent, cleared if trail removed from account)
+            trails.setActiveTrail(trailId, true);
 
             // Save to persistent NBT
             player.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
 
             // Sync to all clients
-            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
+            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.getActiveTrails()));
 
-            player.sendSystemMessage(Component.literal("Trail set to '" + trailId + "'")
+            player.sendSystemMessage(Component.literal("Trail '" + trailId + "' equipped")
                 .withStyle(ChatFormatting.GREEN));
         });
 
         return 1;
     }
 
-    private static int toggleTrail(CommandContext<CommandSourceStack> ctx) {
+    private static int unequipTrail(CommandContext<CommandSourceStack> ctx) {
         if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
             return 0;
         }
+
+        String trailId = StringArgumentType.getString(ctx, "type");
 
         // Check if capability exists
         if (!player.getCapability(TrailsProvider.TRAILS_CAP).isPresent()) {
             player.sendSystemMessage(Component.literal("❌ Error: Trail capability not initialized")
                 .withStyle(ChatFormatting.RED));
-            return 1;
+            return 0;
         }
 
         player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            boolean newState = !trails.isTrailEnabled();
-            trails.setTrailEnabled(newState);
+            // Check ownership - players can only interact with trails they own
+            if (!trails.hasTrail(trailId)) {
+                player.sendSystemMessage(Component.literal("❌ You don't have access to that trail!")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            // Check if trail is active
+            if (!trails.getActiveTrails().contains(trailId)) {
+                player.sendSystemMessage(Component.literal("❌ Trail '" + trailId + "' is not equipped!")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            // Deactivate the trail
+            trails.setActiveTrail(trailId, false);
 
             // Save to persistent NBT
             player.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
 
             // Sync to all clients
-            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
+            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.getActiveTrails()));
 
-            if (newState) {
-                player.sendSystemMessage(Component.literal("Trail enabled")
-                    .withStyle(ChatFormatting.GREEN));
-            } else {
-                player.sendSystemMessage(Component.literal("Trail disabled")
-                    .withStyle(ChatFormatting.GREEN));
-            }
+            player.sendSystemMessage(Component.literal("Trail '" + trailId + "' unequipped")
+                .withStyle(ChatFormatting.GREEN));
         });
 
         return 1;
@@ -230,27 +279,19 @@ public class CosmeticsCommand {
                 player.sendSystemMessage(Component.literal("💜 Support to unlock exclusive trails!")
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
             } else {
-                String activeTrail = trails.getActiveTrail();
-                boolean isEnabled = trails.isTrailEnabled();
-
-                // Show enabled/disabled status
-                String statusText = isEnabled ? "Enabled" : "Disabled";
-                ChatFormatting statusColor = isEnabled ? ChatFormatting.GREEN : ChatFormatting.RED;
-                player.sendSystemMessage(Component.literal("  Status: ")
-                    .withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(statusText).withStyle(statusColor)));
-                player.sendSystemMessage(Component.literal(""));
+                Set<String> activeTrails = trails.getActiveTrails();
 
                 for (String trail : supporterTrailsOwned) {
-                    boolean isActive = trail.equals(activeTrail);
-                    String marker = isActive ? "➤ " : "  • ";
+                    boolean isActive = activeTrails.contains(trail);
+                    String marker = isActive ? "✓ " : "  • ";
+                    ChatFormatting color = isActive ? ChatFormatting.GOLD : ChatFormatting.WHITE;
                     player.sendSystemMessage(Component.literal(marker + trail)
-                        .withStyle(isActive ? ChatFormatting.GOLD : ChatFormatting.WHITE));
+                        .withStyle(color));
                 }
                 player.sendSystemMessage(Component.literal(""));
-                player.sendSystemMessage(Component.literal("Use /cosmetics trail set <type> to change trail")
+                player.sendSystemMessage(Component.literal("Use /cosmetics trails equip <type> to equip a trail")
                     .withStyle(ChatFormatting.GRAY));
-                player.sendSystemMessage(Component.literal("Use /cosmetics trail toggle to toggle the trail")
+                player.sendSystemMessage(Component.literal("Use /cosmetics trails unequip <type> to unequip a trail")
                         .withStyle(ChatFormatting.GRAY));
             }
 
@@ -471,7 +512,7 @@ public class CosmeticsCommand {
         if (!player.getCapability(EffectsProvider.EFFECTS_CAP).isPresent()) {
             player.sendSystemMessage(Component.literal("❌ Error: Effects capability not initialized")
                 .withStyle(ChatFormatting.RED));
-            return 1;
+            return 0;
         }
 
         player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
@@ -514,7 +555,7 @@ public class CosmeticsCommand {
         if (!player.getCapability(EffectsProvider.EFFECTS_CAP).isPresent()) {
             player.sendSystemMessage(Component.literal("❌ Error: Effects capability not initialized")
                 .withStyle(ChatFormatting.RED));
-            return 1;
+            return 0;
         }
 
         player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
@@ -592,21 +633,17 @@ public class CosmeticsCommand {
             }
 
             // Count cosmetics from capabilities (actual active cosmetics)
-            final String[] activeTrail = {"none"};
             final int[] trailCount = {0};
+            final int[] trailEquippedCount = {0};
             final int[] addonCount = {0};
             final int[] addonEquippedCount = {0};
             final int[] effectCount = {0};
             final int[] effectEquippedCount = {0};
 
             player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-                // Count all trails (including manual overrides not in registry)
+                // Count ALL owned/equipped trails (including manual grants not in registry)
                 trailCount[0] = trails.getTrails().size();
-
-                // Get active trail if enabled
-                if (trails.isTrailEnabled() && trails.getActiveTrail() != null) {
-                    activeTrail[0] = trails.getActiveTrail();
-                }
+                trailEquippedCount[0] = trails.getActiveTrails().size();
             });
 
             player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
@@ -626,7 +663,7 @@ public class CosmeticsCommand {
             player.sendSystemMessage(Component.literal(""));
             player.sendSystemMessage(Component.literal("Your Cosmetics:")
                 .withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
-            player.sendSystemMessage(Component.literal("  ✨ Trails: " + activeTrail[0] + " / " + trailCount[0] + " owned")
+            player.sendSystemMessage(Component.literal("  ✨ Trails: " + trailEquippedCount[0] + " equipped / " + trailCount[0] + " owned")
                 .withStyle(ChatFormatting.AQUA));
             player.sendSystemMessage(Component.literal("  🎨 Addons: " + addonEquippedCount[0] + " equipped / " + addonCount[0] + " owned")
                 .withStyle(ChatFormatting.AQUA));
@@ -695,7 +732,7 @@ public class CosmeticsCommand {
         player.sendSystemMessage(Component.literal(""));
         player.sendSystemMessage(Component.literal("Commands:")
             .withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
-        player.sendSystemMessage(Component.literal("  /cosmetics trail list - View your trails")
+        player.sendSystemMessage(Component.literal("  /cosmetics trails list - View your trails")
             .withStyle(ChatFormatting.GRAY));
         player.sendSystemMessage(Component.literal("  /cosmetics addons list - View your addons")
             .withStyle(ChatFormatting.GRAY));
@@ -721,7 +758,7 @@ public class CosmeticsCommand {
         if (!player.getCapability(AddonsProvider.ADDONS_CAP).isPresent()) {
             player.sendSystemMessage(Component.literal("❌ Error: Addons capability not initialized")
                 .withStyle(ChatFormatting.RED));
-            return 1;
+            return 0;
         }
 
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
@@ -764,7 +801,7 @@ public class CosmeticsCommand {
         if (!player.getCapability(AddonsProvider.ADDONS_CAP).isPresent()) {
             player.sendSystemMessage(Component.literal("❌ Error: Addons capability not initialized")
                 .withStyle(ChatFormatting.RED));
-            return 1;
+            return 0;
         }
 
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {

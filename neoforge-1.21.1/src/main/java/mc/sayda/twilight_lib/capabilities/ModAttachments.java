@@ -63,11 +63,10 @@ public class ModAttachments {
     );
 
     /**
-     * Custom serializer for data classes that have serialize/deserialize methods
-     * Note: Does not use type bounds to allow common module classes to be used
+     * Type-safe serializer for data classes that implement ISerializableData.
+     * Uses proper type bounds instead of instanceof chains for better maintainability and type safety.
      */
-    @SuppressWarnings("unchecked")
-    private static class DataSerializer<T> implements IAttachmentSerializer<CompoundTag, T> {
+    private static class DataSerializer<T extends ISerializableData> implements IAttachmentSerializer<CompoundTag, T> {
         private final Supplier<T> factory;
 
         public DataSerializer(Supplier<T> factory) {
@@ -77,22 +76,13 @@ public class ModAttachments {
         @Override
         public T read(net.neoforged.neoforge.attachment.IAttachmentHolder holder, CompoundTag tag, HolderLookup.Provider provider) {
             T data = factory.get();
-            // Use reflection-like approach - assumes data has deserialize(CompoundTag) method
-            if (data instanceof MorphData) ((MorphData) data).deserialize(tag);
-            else if (data instanceof AddonsData) ((AddonsData) data).deserialize(tag);
-            else if (data instanceof TrailsData) ((TrailsData) data).deserialize(tag);
-            else if (data instanceof EffectsData) ((EffectsData) data).deserialize(tag);
+            data.deserialize(tag);
             return data;
         }
 
         @Override
         public CompoundTag write(T attachment, HolderLookup.Provider provider) {
-            // Use reflection-like approach - assumes data has serialize() method
-            if (attachment instanceof MorphData) return ((MorphData) attachment).serialize();
-            else if (attachment instanceof AddonsData) return ((AddonsData) attachment).serialize();
-            else if (attachment instanceof TrailsData) return ((TrailsData) attachment).serialize();
-            else if (attachment instanceof EffectsData) return ((EffectsData) attachment).serialize();
-            return new CompoundTag();
+            return attachment.serialize();
         }
     }
 }

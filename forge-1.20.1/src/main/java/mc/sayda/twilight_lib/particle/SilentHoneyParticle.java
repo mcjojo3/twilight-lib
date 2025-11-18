@@ -10,6 +10,8 @@ import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /**
  * Silent version of falling honey particle.
  * Uses vanilla honey textures but doesn't play landing sounds.
@@ -34,17 +36,15 @@ public class SilentHoneyParticle extends TextureSheetParticle {
         }
     }
 
-    private final SpriteSet spriteSet;
     private int hangTime;
 
     protected SilentHoneyParticle(ClientLevel world, double x, double y, double z, SpriteSet spriteSet) {
         super(world, x, y, z);
-        this.spriteSet = spriteSet;
 
         // Match vanilla falling honey particle properties
         this.setSize(0.01f, 0.01f);
         this.gravity = 0.06f;
-        this.lifetime = (int)(128.0 / (Math.random() * 0.8 + 0.2));
+        this.lifetime = (int)(128.0 / (ThreadLocalRandom.current().nextDouble() * 0.8 + 0.2));
         this.hasPhysics = false;
 
         // Honey color (orange-ish) with slight transparency

@@ -18,7 +18,7 @@ import java.util.Set;
  * Supporter tiers grant addons additively (never removed on login).
  * Admin grants via /twilightlib persist independently of supporter status.
  */
-public interface IAddons {
+public interface IAddons extends ISerializableData {
     // Owned addons (what the player has access to)
     /**
      * Get all owned addons.

@@ -46,14 +46,65 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Admin commands for Twilight Lib - server operator tools for managing player cosmetics.
+ *
+ * <p><b>Permission Level</b>: Level 2 (operators only).
+ * These commands allow admins to:
+ * <ul>
+ *   <li>Morph players into any LivingEntity</li>
+ *   <li>Grant trails, addons, and effects to players</li>
+ *   <li>Toggle persistent vs temporary cosmetic grants</li>
+ *   <li>Reload supporter data from GitHub</li>
+ * </ul>
+ *
+ * <p><b>Thread Safety</b>: Entity cache uses synchronized collections and volatile flags
+ * to handle concurrent access from multiple command threads.
+ *
+ * <p><b>Performance Optimization</b>: Entity type suggestions are cached to avoid
+ * creating test entities on every keystroke. Cache is invalidated when:
+ * <ul>
+ *   <li>Registry size changes (new mods loaded entities)</li>
+ *   <li>Reload command is executed</li>
+ * </ul>
+ *
+ * @author Sayda (MrJojo)
+ * @version 1.0
+ */
 public class TwilightLibCommands {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    // Cache of valid living entity types to avoid creating test entities repeatedly
-    // Note: Cache is invalidated on world unload to detect dynamically registered entities
-    // Thread-safe: Synchronized set for concurrent command access
+    /**
+     * Cache of valid LivingEntity types for command suggestions.
+     *
+     * <p><b>Why cache?</b> Validating entity types requires creating test entities,
+     * which is expensive (registry lookups, object allocation, NBT parsing).
+     * Caching avoids creating test entities on every keystroke during command autocomplete.
+     *
+     * <p><b>Thread Safety</b>: Synchronized set allows safe concurrent reads/writes
+     * from multiple command threads (operators typing commands simultaneously).
+     *
+     * <p><b>Invalidation</b>: Cache is cleared when registry size changes or on reload command.
+     * This detects mods that dynamically register entities after startup.
+     */
     private static final Set<ResourceLocation> VALID_LIVING_ENTITIES = Collections.synchronizedSet(new HashSet<>());
+
+    /**
+     * Flag indicating whether entity cache has been populated.
+     *
+     * <p><b>Thread Safety</b>: Volatile ensures visibility across threads.
+     * Double-check locking pattern in {@link #initializeEntityCache} prevents duplicate initialization.
+     */
     private static volatile boolean cacheInitialized = false;
+
+    /**
+     * Cached size of entity registry when cache was last built.
+     *
+     * <p><b>Why track size?</b> Detects when new entities are registered (e.g., by mods loaded after startup).
+     * If current registry size != cached size, cache is invalidated and rebuilt.
+     *
+     * <p><b>Thread Safety</b>: Volatile for cross-thread visibility.
+     */
     private static volatile int cachedRegistrySize = 0;
 
     // Suggestion provider for all entity types
@@ -205,9 +256,9 @@ public class TwilightLibCommands {
                                     )
                             )
 
-                            // trail ...
-                            .then(Commands.literal("trail")
-                                    .then(Commands.literal("set")
+                            // trails ...
+                            .then(Commands.literal("trails")
+                                    .then(Commands.literal("equip")
                                             .then(Commands.argument("trail", StringArgumentType.word())
                                                     .suggests(TRAIL_SUGGESTIONS)
                                                     .executes(ctx -> {
@@ -217,49 +268,53 @@ public class TwilightLibCommands {
                                                             ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                                             return 0;
                                                         }
-                                                        return executeSetTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"), false);
+                                                        return executeEquipTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"), false);
                                                     })
 
-                                                    // trail <trail> <target>
+                                                    // trails equip <trail> <target>
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
-                                                                return executeSetTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"), false);
+                                                                return executeEquipTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"), false);
                                                             })
 
-                                                            // trail <trail> <target> <persistent>
+                                                            // trails equip <trail> <target> <persistent>
                                                             .then(Commands.argument("persistent", BoolArgumentType.bool())
                                                                     .executes(ctx -> {
                                                                         ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
-                                                                        return executeSetTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"), BoolArgumentType.getBool(ctx, "persistent"));
+                                                                        return executeEquipTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"), BoolArgumentType.getBool(ctx, "persistent"));
                                                                     })
                                                             )
                                                     )
                                             )
                                     )
 
-                                    // trail toggle
-                                    .then(Commands.literal("toggle")
-                                            .executes(ctx -> {
-                                                ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
-                                                if (target == null) {
-                                                    ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
-                                                    return 0;
-                                                }
-                                                return executeToggleTrail(ctx.getSource(), target);
-                                            })
-                                            // trail toggle <target>
-                                            .then(Commands.argument("target", EntityArgument.player())
+                                    // trails unequip <trail>
+                                    .then(Commands.literal("unequip")
+                                            .then(Commands.argument("trail", StringArgumentType.word())
+                                                    .suggests(TRAIL_SUGGESTIONS)
                                                     .executes(ctx -> {
-                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
-                                                        return executeToggleTrail(ctx.getSource(), target);
+                                                        ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
+                                                        if (target == null) {
+                                                            ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                            return 0;
+                                                        }
+                                                        return executeUnequipTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"));
                                                     })
+
+                                                    // trails unequip <trail> <target>
+                                                    .then(Commands.argument("target", EntityArgument.player())
+                                                            .executes(ctx -> {
+                                                                ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                return executeUnequipTrail(ctx.getSource(), target, StringArgumentType.getString(ctx, "trail"));
+                                                            })
+                                                    )
                                             )
                                     )
 
-                                    // trail list
+                                    // trails list
                                     .then(Commands.literal("list")
-                                            .executes(ctx -> executeListTrails(ctx.getSource(), null))
+                                            .executes(ctx -> executeListTrails(ctx.getSource()))
                                     )
                             )
 
@@ -479,7 +534,7 @@ public class TwilightLibCommands {
         }
     }
 
-    private static int executeSetTrail(CommandSourceStack source, ServerPlayer target, String trailId, boolean persistent) {
+    private static int executeEquipTrail(CommandSourceStack source, ServerPlayer target, String trailId, boolean persistent) {
         // Validate trail type
         TrailType trailType = TrailType.fromId(trailId);
         if (trailType == null) {
@@ -488,29 +543,28 @@ public class TwilightLibCommands {
         }
 
         target.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            // Use forceSetActiveTrail() with persistence control
+            // Activate trail with persistence control
             // persistent=true: persists through logout/death (for race mods and admin grants)
             // persistent=false: Temporary admin preview (cleared on logout)
-            ((TrailsData) trails).forceSetActiveTrail(trailId, persistent);
-            trails.setTrailEnabled(true);
+            ((TrailsData) trails).setActiveTrail(trailId, true, persistent);
 
             // Save to persistent NBT
             target.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
 
-            // Sync to all clients
-            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
+            // Sync to all clients (we only sync active trails now)
+            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(target.getUUID(), trails.getActiveTrails()));
         });
 
         // Send feedback only to admin/console (not when player targets self)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             String persistMode = persistent ? " (persistent)" : " (temporary)";
-            source.sendSuccess(() -> Component.literal("Trail '" + trailId + "' set for " + target.getGameProfile().getName() + persistMode), true);
+            source.sendSuccess(() -> Component.literal("Trail '" + trailId + "' equipped for " + target.getGameProfile().getName() + persistMode), true);
         }
 
         return 1;
     }
 
-    private static int executeListTrails(CommandSourceStack source, ServerPlayer target) {
+    private static int executeListTrails(CommandSourceStack source) {
         // Admin command - list ALL available trail types
         String[] trailIds = new String[TrailType.values().length];
         int i = 0;
@@ -527,29 +581,21 @@ public class TwilightLibCommands {
         return 1;
     }
 
-    private static int executeToggleTrail(CommandSourceStack source, ServerPlayer target) {
-        final boolean[] newState = {false};
-
+    private static int executeUnequipTrail(CommandSourceStack source, ServerPlayer target, String trailId) {
         target.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            // Toggle trail enabled state
-            newState[0] = !trails.isTrailEnabled();
-            trails.setTrailEnabled(newState[0]);
+            // Admin command: Force unequip regardless of source (player selection or external grant)
+            ((TrailsData) trails).forceUnequipTrail(trailId);
 
             // Save to persistent NBT
             target.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
 
             // Sync to all clients
-            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(target.getUUID(), trails.serialize()));
-
-            LOGGER.debug("Paradigm shift time! Trail {} for {}",
-                    newState[0] ? "enabled" : "disabled",
-                    target.getGameProfile().getName());
+            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(target.getUUID(), trails.getActiveTrails()));
         });
 
         // Send feedback only to admin/console (not when player targets self)
-        String status = newState[0] ? "enabled" : "disabled";
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
-            source.sendSuccess(() -> Component.literal("Trail " + status + " for " + target.getGameProfile().getName()), true);
+            source.sendSuccess(() -> Component.literal("Trail '" + trailId + "' unequipped for " + target.getGameProfile().getName()), true);
         }
 
         return 1;
@@ -695,24 +741,27 @@ public class TwilightLibCommands {
 
             // Sync trails
             player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-                String activeTrail = trails.getActiveTrail();
-                boolean trailEnabled = trails.isTrailEnabled();
+                Set<String> currentOwned = new HashSet<>(trails.getTrails());
+                TrailsData trailsData = (TrailsData) trails;
 
-                trails.clearTrails();
+                // Remove trails no longer granted
+                for (String trail : currentOwned) {
+                    if (!allTrails.contains(trail)) {
+                        trailsData.removeTrailOwnership(trail);
+                    }
+                }
+
+                // Add newly granted trails
                 for (String trail : allTrails) {
-                    trails.addTrail(trail);
+                    if (!currentOwned.contains(trail)) {
+                        trails.addTrail(trail);
+                    }
                 }
-
-                // Restore active trail if still owned
-                if (activeTrail != null && trails.hasTrail(activeTrail)) {
-                    trails.setActiveTrail(activeTrail);
-                } else {
-                    trails.setActiveTrail(null);
-                }
-                trails.setTrailEnabled(trailEnabled);
 
                 player.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
-                NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
+                if (!trails.getActiveTrails().isEmpty()) {
+                    NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.getActiveTrails()));
+                }
             });
 
             // Sync addons

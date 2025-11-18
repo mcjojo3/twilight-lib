@@ -6,10 +6,13 @@ import net.minecraft.world.level.Level;
 
 public class CustomFoxEntity extends Fox {
     private final FoxColor foxColor;
-    private boolean forceSleeping = false;
+    private volatile boolean forceSleeping = false;
 
     public CustomFoxEntity(EntityType<? extends Fox> type, Level level, FoxColor color) {
         super(type, level);
+        if (color == null) {
+            throw new IllegalArgumentException("FoxColor cannot be null");
+        }
         this.foxColor = color;
     }
 

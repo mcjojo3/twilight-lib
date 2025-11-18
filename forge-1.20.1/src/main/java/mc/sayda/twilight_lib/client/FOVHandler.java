@@ -10,7 +10,7 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = TwilightLib.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class FOVHandler {
-    private static float lastFovModifier = 1.0F;
+    private static volatile float lastFovModifier = 1.0F;
 
     @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOW)
     public static void onFOVModifier(ComputeFovModifierEvent event) {

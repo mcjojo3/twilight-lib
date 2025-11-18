@@ -27,6 +27,9 @@ public class AddonRenderHandler {
 
         // Check if any active addon wants to hide the player model
         var addons = player.getData(ModAttachments.ADDONS);
+        if (addons == null) {
+            return; // Safe early exit if no addon data
+        }
         boolean shouldHidePlayerModel = addons.getActiveAddons().stream()
                 .anyMatch(addonId -> AddonRegistry.getAddon(addonId)
                         .map(info -> info.hidePlayerModel())

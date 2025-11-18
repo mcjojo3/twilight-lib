@@ -4,14 +4,47 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Registry that defines which addons/trails/effects are supporter-exclusive.
- * Items listed here require supporter status to be granted via /cosmetics.
- * Admins can still grant these via /twilightlib regardless.
+ * Registry that defines which cosmetics are supporter-exclusive per Patreon tier.
  *
- * Each tier defines only the NEW cosmetics introduced at that tier.
- * Higher tiers automatically inherit all cosmetics from lower tiers via the getter methods.
+ * <p><b>Supporter Tier System</b>: Cosmetics are unlocked based on Patreon support tier:
+ * <ul>
+ *   <li><b>Stone</b>: Reserved for future basic tier (currently no cosmetics)</li>
+ *   <li><b>Bronze</b>: First paid tier (hearts trail)</li>
+ *   <li><b>Silver</b>: Mid tier (ash, sparkles, cherry_blossom trails)</li>
+ *   <li><b>Gold</b>: High tier (white_ash, twilight, stars trails + ethereal/ambient effects)</li>
+ *   <li><b>Platinum</b>: Top tier (tiara addon + all spawn effects)</li>
+ * </ul>
  *
- * NOTE: Morphs are NOT part of the supporter system and are admin-only via /twilightlib morph
+ * <p><b>Tier Inheritance</b>: Higher tiers automatically include all lower tier cosmetics.
+ * Each tier constant (e.g., {@code GOLD_TRAILS}) defines ONLY the NEW cosmetics for that tier.
+ * The getter methods (e.g., {@link #getTrailsForTier(String)}) return cumulative sets.
+ *
+ * <p><b>Example</b>:
+ * <pre>
+ * BRONZE_TRAILS = ["hearts"]
+ * SILVER_TRAILS = ["ash", "sparkles", "cherry_blossom"]
+ *
+ * getTrailsForTier("bronze") returns ["hearts"]
+ * getTrailsForTier("silver") returns ["hearts", "ash", "sparkles", "cherry_blossom"]
+ * </pre>
+ *
+ * <p><b>Performance Optimization</b>: Tier results are pre-computed at class load time
+ * and cached in immutable maps. This avoids repeated set construction during player login.
+ *
+ * <p><b>Access Control</b>:
+ * <ul>
+ *   <li>Players with supporter tier: Cosmetics auto-granted on login via {@link mc.sayda.twilight_lib.TwilightLib#onPlayerLogin}</li>
+ *   <li>Admins: Can grant any cosmetic via {@code /twilightlib} commands (bypasses supporter check)</li>
+ *   <li>Manual grants: Persist independently of tier (for gifts/special events)</li>
+ * </ul>
+ *
+ * <p><b>Important</b>: Morphs are NOT part of the supporter system. Morphs are admin-only
+ * via {@code /twilightlib morph} and cannot be unlocked through Patreon support.
+ *
+ * @see mc.sayda.twilight_lib.supporter.SupporterData for supporter tier data structure
+ * @see mc.sayda.twilight_lib.supporter.SupporterService for supporter data fetching
+ * @author Sayda (MrJojo)
+ * @version 1.0
  */
 public class SupporterRegistry {
 

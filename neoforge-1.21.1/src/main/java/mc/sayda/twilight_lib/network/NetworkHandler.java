@@ -72,6 +72,10 @@ public class NetworkHandler {
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             IMorph morph = p.getData(ModAttachments.MORPH);
+            if (morph == null) {
+                LOGGER.warn("Failed to get morph data for player {}", p.getUUID());
+                continue;
+            }
             morph.getEntityType().ifPresent(rl ->
                 sendToPlayer(recipient, SyncMorphPacket.of(p.getUUID(), rl))
             );
@@ -104,6 +108,10 @@ public class NetworkHandler {
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             var addons = p.getData(ModAttachments.ADDONS);
+            if (addons == null) {
+                LOGGER.warn("Failed to get addons data for player {}", p.getUUID());
+                continue;
+            }
             if (!addons.getActiveAddons().isEmpty()) {
                 sendAddonsToPlayer(recipient, new SyncAddonsPacket(p.getUUID(), addons.getActiveAddons()));
             }
@@ -136,7 +144,13 @@ public class NetworkHandler {
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             var trails = p.getData(ModAttachments.TRAILS);
-            sendTrailsToPlayer(recipient, new SyncTrailsPacket(p.getUUID(), trails.serialize()));
+            if (trails == null) {
+                LOGGER.warn("Failed to get trails data for player {}", p.getUUID());
+                continue;
+            }
+            if (!trails.getActiveTrails().isEmpty()) {
+                sendTrailsToPlayer(recipient, new SyncTrailsPacket(p.getUUID(), trails.getActiveTrails()));
+            }
         }
     }
 
@@ -166,6 +180,10 @@ public class NetworkHandler {
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             var effects = p.getData(ModAttachments.EFFECTS);
+            if (effects == null) {
+                LOGGER.warn("Failed to get effects data for player {}", p.getUUID());
+                continue;
+            }
             if (!effects.getActiveEffects().isEmpty()) {
                 sendEffectsToPlayer(recipient, new SyncEffectsPacket(p.getUUID(), effects.getActiveEffects()));
             }

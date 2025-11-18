@@ -9,6 +9,7 @@ import net.minecraft.world.entity.Entity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
@@ -23,6 +24,10 @@ public abstract class BaseAddonModel<T extends Entity> extends EntityModel<T> im
     protected ModelPart rightLeg;
     protected ModelPart leftLeg;
 
+    // Pre-allocated list for rendering - reused every frame to avoid allocations
+    private final List<ModelPart> renderParts = new ArrayList<>(6);
+    private boolean renderPartsInitialized = false;
+
     /**
      * Try to get a child part from root, returning null if it doesn't exist.
      * This allows your addon to only define the parts it needs.
@@ -30,9 +35,11 @@ public abstract class BaseAddonModel<T extends Entity> extends EntityModel<T> im
     protected ModelPart getChildSafe(ModelPart root, String name) {
         try {
             return root.getChild(name);
-        } catch (Exception e) {
+        } catch (NoSuchElementException e) {
+            // Expected - part doesn't exist in this model
             return null;
         }
+        // Let other exceptions propagate - they indicate real bugs!
     }
 
     @Override
@@ -42,18 +49,30 @@ public abstract class BaseAddonModel<T extends Entity> extends EntityModel<T> im
         // Override this method in your addon model to add custom idle animations (e.g., wagging tail, flapping wings)
     }
 
+    /**
+     * Initialize the render parts list with all non-null parts.
+     * Called lazily on first render to avoid allocations every frame.
+     */
+    private void initializeRenderParts() {
+        renderParts.clear();
+        if (head != null) renderParts.add(head);
+        if (body != null) renderParts.add(body);
+        if (rightArm != null) renderParts.add(rightArm);
+        if (leftArm != null) renderParts.add(leftArm);
+        if (rightLeg != null) renderParts.add(rightLeg);
+        if (leftLeg != null) renderParts.add(leftLeg);
+        renderPartsInitialized = true;
+    }
+
     @Override
     public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        // Render all non-null parts
-        List<ModelPart> parts = new ArrayList<>();
-        if (head != null) parts.add(head);
-        if (body != null) parts.add(body);
-        if (rightArm != null) parts.add(rightArm);
-        if (leftArm != null) parts.add(leftArm);
-        if (rightLeg != null) parts.add(rightLeg);
-        if (leftLeg != null) parts.add(leftLeg);
+        // Initialize render parts list on first render (lazy initialization)
+        if (!renderPartsInitialized) {
+            initializeRenderParts();
+        }
 
-        for (ModelPart part : parts) {
+        // Render all non-null parts using pre-allocated list
+        for (ModelPart part : renderParts) {
             part.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
         }
     }

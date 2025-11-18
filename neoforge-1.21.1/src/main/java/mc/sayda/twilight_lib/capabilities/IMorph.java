@@ -22,7 +22,7 @@ import java.util.Optional;
  * <p>Morphs are admin-only and granted via /twilightlib morph command.
  * Data persists through death and dimension changes via NBT serialization.
  */
-public interface IMorph {
+public interface IMorph extends ISerializableData {
     /**
      * Get the currently morphed entity type.
      * @return Optional containing the entity type ResourceLocation, or empty if not morphed

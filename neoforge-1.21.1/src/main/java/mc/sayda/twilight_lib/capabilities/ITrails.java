@@ -2,7 +2,6 @@ package mc.sayda.twilight_lib.capabilities;
 
 import net.minecraft.nbt.CompoundTag;
 
-import javax.annotation.Nullable;
 import java.util.Set;
 
 /**
@@ -12,17 +11,14 @@ import java.util.Set;
  * <p>Trails have two states:
  * <ul>
  *   <li><b>Owned</b>: Trails the player has unlocked (via supporter tier or admin grant)</li>
- *   <li><b>Active</b>: The single trail currently being rendered (only one at a time)</li>
+ *   <li><b>Active</b>: Trails currently equipped and visible (multiple can be active simultaneously)</li>
  * </ul>
  *
- * <p>IMPORTANT: Unlike addons and effects, trails are CLEARED on login to match supporter tier.
- * This prevents tier drift where players retain trails after their subscription expires.
- * Admin grants still persist, but supporter tier trails are re-granted on each login.
- *
  * <p>Players manage trails via /cosmetics trails commands.
- * Trails can be toggled on/off without losing the selection.
+ * Supporter tiers grant trails additively (never removed on login).
+ * Admin grants via /twilightlib persist independently of supporter status.
  */
-public interface ITrails {
+public interface ITrails extends ISerializableData {
     // Owned trails (what the player has access to)
     /**
      * Get all owned trails.
@@ -38,7 +34,7 @@ public interface ITrails {
 
     /**
      * Remove an owned trail from the player.
-     * Also clears active trail if it was the removed trail.
+     * Also deactivates the trail if currently active.
      * @param trailId The trail ID to remove
      */
     void removeTrail(String trailId);
@@ -52,51 +48,40 @@ public interface ITrails {
 
     /**
      * Remove all owned trails.
-     * Also clears the active trail.
+     * Also clears all active trails.
      */
     void clearTrails();
 
-    // Active trail (what's currently visible) - singular because only one can be active
+    // Active trails (what's currently visible) - plural because multiple can be active
     /**
-     * Get the currently active trail.
-     * @return The trail ID currently being rendered, or null if none
+     * Get all currently active (equipped) trails.
+     * @return Set of trail IDs currently being rendered
      */
-    @Nullable
-    String getActiveTrail();
+    Set<String> getActiveTrails();
 
     /**
-     * Set the active trail.
+     * Set whether a trail is active (equipped).
      * Player must own the trail to activate it.
-     * Pass null to clear the active trail.
-     * @param trail The trail ID to activate, or null to clear
+     * @param trailId The trail ID to activate/deactivate
+     * @param active true to activate, false to deactivate
      */
-    void setActiveTrail(String trail);
+    void setActiveTrail(String trailId, boolean active);
 
     /**
-     * Check if a trail is currently active and enabled.
+     * Check if a trail is currently active.
      * @param trailId The trail ID to check
-     * @return true if this trail is active AND the trail toggle is enabled
+     * @return true if the trail is both owned and active
      */
     boolean isTrailActive(String trailId);
 
-    // Enable/disable toggle for trail rendering
     /**
-     * Check if trail rendering is enabled.
-     * When disabled, no particles are rendered even if a trail is active.
-     * @return true if trail rendering is enabled
+     * Deactivate all trails without removing ownership.
      */
-    boolean isTrailEnabled();
-
-    /**
-     * Enable or disable trail rendering.
-     * Does not affect the active trail selection.
-     * @param enabled true to enable trail rendering
-     */
-    void setTrailEnabled(boolean enabled);
+    void clearActiveTrails();
 
     /**
      * Serialize trail data to NBT for persistence.
-     * @return CompoundTag containing owned trails, active trail, and enabled state
+     * @return CompoundTag containing owned and active trail data
      */
     CompoundTag serialize();
 

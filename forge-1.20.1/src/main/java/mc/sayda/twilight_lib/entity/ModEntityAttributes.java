@@ -21,6 +21,10 @@ public class ModEntityAttributes {
             ModEntities.ORANGE_FOX,
             ModEntities.PURPLE_FOX,
             ModEntities.RED_FOX
-        ).forEach(fox -> event.put(fox.get(), Fox.createAttributes().build()));
+        ).forEach(fox -> {
+            if (fox != null && fox.isPresent()) {
+                event.put(fox.get(), Fox.createAttributes().build());
+            }
+        });
     }
 }

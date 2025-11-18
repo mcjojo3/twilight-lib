@@ -10,6 +10,7 @@ import mc.sayda.twilight_lib.capabilities.IEffects;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.ITrails;
 import mc.sayda.twilight_lib.capabilities.MorphProvider;
+import mc.sayda.twilight_lib.capabilities.TrailsData;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
 import mc.sayda.twilight_lib.commands.CosmeticsCommand;
 import mc.sayda.twilight_lib.commands.TwilightLibCommands;
@@ -42,19 +43,68 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Main mod class for Twilight Lib - A cosmetic player customization library for Minecraft.
+ *
+ * <p>Twilight Lib provides a framework for player cosmetics including:
+ * <ul>
+ *   <li><b>Morphs</b>: Transform players into different entities with matching hitboxes</li>
+ *   <li><b>Addons</b>: Visual 3D attachments like tails, wings, and ears</li>
+ *   <li><b>Trails</b>: Particle effects that follow player movement</li>
+ *   <li><b>Effects</b>: Event-triggered cosmetics like spawn effects and ambient particles</li>
+ * </ul>
+ *
+ * <p><b>Supporter Integration</b>: Cosmetics are tied to Patreon supporter tiers.
+ * The mod fetches supporter data from GitHub on startup and grants cosmetics based on tier.
+ * Manual cosmetic grants persist independently of supporter status for gifting/admin purposes.
+ *
+ * <p><b>Thread Safety</b>: This class uses concurrent data structures for delayed sync tasks.
+ * The {@link #pendingTasks} map is thread-safe via {@link ConcurrentHashMap}.
+ * The {@link #serverTicks} counter uses {@link AtomicLong} for atomic increments during server ticks.
+ *
+ * @author Sayda (MrJojo)
+ * @version 1.0
+ */
 @Mod(TwilightLib.MODID)
 public class TwilightLib {
     public static final String MODID = "twilight_lib";
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    // Delayed task scheduler for proper tick-based delays
+    /**
+     * Delayed task scheduler for login cosmetics sync.
+     *
+     * <p><b>Why delayed sync?</b> When a player logs in, their client-side entity may not be
+     * fully loaded yet. Syncing cosmetics immediately can cause visual glitches or lost packets.
+     * This queue delays cosmetics sync by a configurable number of ticks (default: 20 ticks = 1 second)
+     * to ensure the client is ready to receive and render cosmetic data.
+     *
+     * <p><b>Thread Safety</b>: Uses ConcurrentHashMap to allow safe concurrent access from
+     * multiple server threads (login events and tick events may occur on different threads).
+     */
     private static final Map<UUID, DelayedSyncTask> pendingTasks = new ConcurrentHashMap<>();
+
+    /**
+     * Server tick counter for delayed task scheduling.
+     *
+     * <p><b>Thread Safety</b>: Uses AtomicLong for thread-safe increments without synchronization.
+     * Incremented once per server tick in {@link #onServerTick(TickEvent.ServerTickEvent)}.
+     */
     private static final AtomicLong serverTicks = new AtomicLong(0);
 
+    /**
+     * Represents a cosmetics sync task scheduled for future execution.
+     *
+     * <p>Tasks are immutable after creation to prevent race conditions.
+     */
     private static class DelayedSyncTask {
         final UUID playerUUID;
         final long executeAtTick;
@@ -65,6 +115,22 @@ public class TwilightLib {
         }
     }
 
+    /**
+     * Mod constructor - initializes Twilight Lib and registers all systems.
+     *
+     * <p><b>Initialization Order</b>:
+     * <ol>
+     *   <li>Register configuration (accessible before game loads)</li>
+     *   <li>Register entities, particles, and attributes on mod bus</li>
+     *   <li>Initialize network packet handlers</li>
+     *   <li>Attach event listeners for player events (login, respawn, tracking)</li>
+     *   <li>Fetch supporter data asynchronously (non-blocking)</li>
+     * </ol>
+     *
+     * <p><b>Why async supporter fetch?</b> The supporter list is fetched from GitHub on startup
+     * to avoid blocking server startup. The first player to join will wait for the fetch to complete
+     * via {@code SupporterService.fetchSupporters().join()} in {@link #onPlayerLogin}.
+     */
     public TwilightLib() {
         LOGGER.info("Yes! This'll be fun! Right? Twilight Lib is loading...");
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -132,6 +198,36 @@ public class TwilightLib {
         }
     }
 
+    /**
+     * Handles player login - loads persisted cosmetics, syncs with supporter tier, and broadcasts to clients.
+     *
+     * <p><b>Execution Order (Critical!)</b>:
+     * <ol>
+     *   <li>Restore cosmetics from persistent NBT (preserves player's previous state)</li>
+     *   <li>Wait for supporter data fetch to complete (blocking via {@code join()})</li>
+     *   <li>Sync owned cosmetics with current supporter tier (grants/revokes based on tier)</li>
+     *   <li>Broadcast cosmetics to all tracking clients immediately</li>
+     *   <li>Schedule delayed full sync to logged-in player (ensures client entity is loaded)</li>
+     * </ol>
+     *
+     * <p><b>Why restore BEFORE supporter sync?</b> Supporter tier may have changed since last login.
+     * By loading NBT first, we preserve the player's active selection (e.g., active trail choice),
+     * then sync ownership with current tier. If they lost access to a cosmetic, it's deactivated
+     * but their other selections are preserved.
+     *
+     * <p><b>Why block on supporter fetch?</b> The first player to join after server startup will
+     * wait for the GitHub fetch to complete. Subsequent players use the cached data.
+     * This prevents race conditions where cosmetics are granted before supporter data loads.
+     *
+     * <p><b>Supporter Tier Sync Logic</b>:
+     * <ul>
+     *   <li><b>Trails</b>: CLEARED and re-granted on each login (prevents tier drift)</li>
+     *   <li><b>Addons</b>: Granted additively, removed selectively (preserves admin grants)</li>
+     *   <li><b>Effects</b>: Granted additively, removed selectively (preserves admin grants)</li>
+     * </ul>
+     *
+     * @param evt The PlayerLoggedInEvent containing the player entity
+     */
     private void onPlayerLogin(final PlayerEvent.PlayerLoggedInEvent evt) {
         Player loggedInPlayer = evt.getEntity();
         if (loggedInPlayer.level().isClientSide) return;
@@ -170,7 +266,13 @@ public class TwilightLib {
         }
 
         // Ensure supporter data is loaded before checking (waits if fetch is in progress)
-        SupporterService.fetchSupporters().join();  // Block until fetch completes
+        try {
+            SupporterService.fetchSupporters().get(10, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (java.util.concurrent.TimeoutException e) {
+            LOGGER.warn("Oh no! Supporter data fetch timed out after 10 seconds. Proceeding without supporter sync.");
+        } catch (Exception e) {
+            LOGGER.warn("Shoot! Error waiting for supporter data: {}", e.getMessage());
+        }
 
         // Check supporter status and auto-grant cosmetics (tier unlocks + manual overrides)
         String uuid = loggedInPlayer.getStringUUID();
@@ -196,17 +298,20 @@ public class TwilightLib {
 
             // Auto-grant trails (tier unlocks + manual overrides)
             loggedInPlayer.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-                // Preserve active trail selection and enabled state
-                String activeTrail = trails.getActiveTrail();
-                boolean trailEnabled = trails.isTrailEnabled();
-
-                // Sync owned trails with current supporter status (preserves admin grants)
+                // Sync owned trails with current supporter status (preserves persistent active state)
                 Set<String> currentOwned = new java.util.HashSet<>(trails.getTrails());
 
-                // Remove trails no longer granted (selective removal preserves admin grants)
+                // Type-safe cast to access implementation-specific methods
+                if (trails == null || !(trails instanceof TrailsData)) {
+                    LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected trails capability implementation: {}", trails == null ? "null" : trails.getClass());
+                    return;
+                }
+                TrailsData trailsData = (TrailsData) trails;
+
+                // Remove trails no longer granted (ownership only - doesn't affect persistent active)
                 for (String trail : currentOwned) {
                     if (!allTrails.contains(trail)) {
-                        trails.removeTrail(trail);  // Will also clear active trail if this was it
+                        trailsData.removeTrailOwnership(trail);
                     }
                 }
 
@@ -216,14 +321,6 @@ public class TwilightLib {
                         trails.addTrail(trail);
                     }
                 }
-
-                // Restore active trail if still owned, otherwise explicitly clear it
-                if (activeTrail != null && trails.hasTrail(activeTrail)) {
-                    trails.setActiveTrail(activeTrail);
-                } else {
-                    trails.setActiveTrail(null); // Clear invalid trail (no longer owned)
-                }
-                trails.setTrailEnabled(trailEnabled);
 
                 loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_TRAILS, trails.serialize());
             });
@@ -315,9 +412,12 @@ public class TwilightLib {
             }
         });
 
-        // Send this player's trails to everyone else
-        loggedInPlayer.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(loggedInPlayer.getUUID(), trails.serialize()));
+        // Send this player's active trails to everyone else
+        loggedInPlayer.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(loginTrails -> {
+            if (!loginTrails.getActiveTrails().isEmpty()) {
+                NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(loggedInPlayer.getUUID(), loginTrails.getActiveTrails()));
+                LOGGER.info("Sparkles everywhere! Player {} logged in with {} active trails", loggedInPlayer.getGameProfile().getName(), loginTrails.getActiveTrails().size());
+            }
         });
 
         // Send this player's effects to everyone else (trigger spawn effect on login)
@@ -399,10 +499,12 @@ public class TwilightLib {
             }
         });
 
-        // Sync trails to client after respawn
+        // Sync active trails to client after respawn
         player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.serialize()));
-            LOGGER.debug("Something good is going to happen. With sparkles! Player {} respawned with trails", player.getGameProfile().getName());
+            if (!trails.getActiveTrails().isEmpty()) {
+                NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.getActiveTrails()));
+                LOGGER.debug("Something good is going to happen. With sparkles! Player {} respawned with {} active trails", player.getGameProfile().getName(), trails.getActiveTrails().size());
+            }
         });
 
         // Sync effects to client after respawn (trigger spawn effect on respawn)
@@ -438,7 +540,11 @@ public class TwilightLib {
         });
 
         trackedPlayer.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-            NetworkHandler.sendTrailsToPlayer(trackingPlayer, new SyncTrailsPacket(trackedPlayer.getUUID(), trails.serialize()));
+            if (!trails.getActiveTrails().isEmpty()) {
+                NetworkHandler.sendTrailsToPlayer(trackingPlayer, new SyncTrailsPacket(trackedPlayer.getUUID(), trails.getActiveTrails()));
+                LOGGER.debug("Look at all the pretty trails! Sent {} trails for {} to tracking player {}",
+                    trails.getActiveTrails().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
+            }
         });
 
         trackedPlayer.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
@@ -450,6 +556,38 @@ public class TwilightLib {
         });
     }
 
+    /**
+     * Server tick handler - processes delayed cosmetics sync tasks.
+     *
+     * <p><b>Why delayed sync?</b> When a player logs in, their client needs time to:
+     * <ol>
+     *   <li>Create the client-side player entity</li>
+     *   <li>Initialize rendering systems</li>
+     *   <li>Load nearby chunks and entities</li>
+     * </ol>
+     *
+     * Sending cosmetics data immediately can cause:
+     * <ul>
+     *   <li>Lost packets (client not ready to receive)</li>
+     *   <li>Visual glitches (rendering systems not initialized)</li>
+     *   <li>Missing cosmetics for other players (tracking not established)</li>
+     * </ul>
+     *
+     * <p><b>How it works</b>:
+     * <ol>
+     *   <li>On player login, schedule a task for {@code currentTick + delay}</li>
+     *   <li>Every tick, check if any tasks are ready (current tick >= execute tick)</li>
+     *   <li>Send full cosmetics sync to the logged-in player (all other players' cosmetics)</li>
+     *   <li>Remove completed task from queue</li>
+     * </ol>
+     *
+     * <p><b>Thread Safety</b>: Uses iterator.remove() to safely remove tasks during iteration.
+     * ConcurrentHashMap prevents ConcurrentModificationException if new tasks are added during iteration.
+     *
+     * <p><b>Performance</b>: Early return if no tasks pending. Iterator allocation only when needed.
+     *
+     * @param evt The ServerTickEvent (only processes during END phase)
+     */
     private static void onServerTick(final TickEvent.ServerTickEvent evt) {
         if (evt.phase != TickEvent.Phase.END) return; // Only process at end of tick
         long currentTick = serverTicks.incrementAndGet();

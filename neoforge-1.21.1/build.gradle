@@ -143,6 +143,10 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // Add Mixin annotation processor arguments for refmap generation
+    options.compilerArgs << "-AoutSrgFile=${buildDir}/tmp/compileJava/mixin.refmap.srg"
+    options.compilerArgs << "-AoutRefMapFile=${buildDir}/resources/main/twilight_lib.refmap.json"
+    options.compilerArgs << "-AdefaultObfuscationEnv=searge"
 }
 
 // IDEA module settings

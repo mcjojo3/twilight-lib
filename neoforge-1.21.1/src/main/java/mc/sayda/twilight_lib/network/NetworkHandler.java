@@ -44,6 +44,12 @@ public class NetworkHandler {
             SyncEffectsPacket::handle
         );
 
+        registrar.playToClient(
+            SyncModelVariantPacket.TYPE,
+            SyncModelVariantPacket.STREAM_CODEC,
+            SyncModelVariantPacket::handle
+        );
+
         LOGGER.debug("This is the precipice of a new reality! Network payloads registered.");
     }
 
@@ -187,6 +193,40 @@ public class NetworkHandler {
             if (!effects.getActiveEffects().isEmpty()) {
                 sendEffectsToPlayer(recipient, new SyncEffectsPacket(p.getUUID(), effects.getActiveEffects()));
             }
+        }
+    }
+
+    // Model Variant packet methods
+    public static void sendModelVariantToAll(SyncModelVariantPacket pkt) {
+        try {
+            PacketDistributor.sendToAllPlayers(pkt);
+            LOGGER.debug("Shape-shifter extraordinaire! Sending model variant packet to all players.");
+        } catch (Exception e) {
+            LOGGER.error("What?! Failed to send model variant packet to all players", e);
+        }
+    }
+
+    public static void sendModelVariantToPlayer(Player player, SyncModelVariantPacket pkt) {
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
+        try {
+            PacketDistributor.sendToPlayer(serverPlayer, pkt);
+            LOGGER.debug("Changing forms! Sending model variant to {}", player.getGameProfile().getName());
+        } catch (Exception e) {
+            LOGGER.warn("Nope! Failed to send model variant to {}", player.getGameProfile().getName(), e);
+        }
+    }
+
+    public static void sendAllModelVariantsToPlayer(Player recipient) {
+        if (recipient.level() == null) return;
+        LOGGER.debug("Let's see all the different forms! Syncing all model variants to {}", recipient.getGameProfile().getName());
+        for (Player p : recipient.level().players()) {
+            if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
+            var modelVariant = p.getData(ModAttachments.MODEL_VARIANT);
+            if (modelVariant == null) {
+                LOGGER.warn("Failed to get model variant data for player {}", p.getUUID());
+                continue;
+            }
+            sendModelVariantToPlayer(recipient, SyncModelVariantPacket.of(p.getUUID(), modelVariant));
         }
     }
 }

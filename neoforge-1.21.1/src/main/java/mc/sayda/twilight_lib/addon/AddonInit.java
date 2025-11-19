@@ -5,7 +5,6 @@ import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.client.model.addon.BeanieModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestModel;
 import mc.sayda.twilight_lib.client.model.addon.OpaqueModel;
-import mc.sayda.twilight_lib.client.model.addon.BodyModel;
 import mc.sayda.twilight_lib.client.model.addon.NymphModel;
 import mc.sayda.twilight_lib.client.model.addon.HatModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneEarsModel;
@@ -145,19 +144,6 @@ public class AddonInit {
                 true, // Translucent (50% transparency)
                 true, // Hide player model
                 true  // Force all addons translucent (makes all equipped addons semi-transparent)
-        );
-
-        // Register body addon - uses player skin and hides the base player model
-        AddonRegistry.registerAddon(
-                "body",
-                BodyModel.LAYER_LOCATION,
-                BodyModel::createBodyLayer,
-                BodyModel::new,
-                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/body.png"), // Placeholder texture (not used)
-                true, // Use player skin texture
-                false, // Translucent (50% transparency)
-                true, // Hide player model
-                false  // Force all addons translucent (makes all equipped addons semi-transparent)
         );
 
         // Register slime body addon - uses player skin and hides the base player model

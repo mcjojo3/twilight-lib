@@ -7,6 +7,7 @@ import mc.sayda.twilight_lib.capabilities.MorphProvider;
 import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.capabilities.TrailsProvider;
 import mc.sayda.twilight_lib.capabilities.EffectsProvider;
+import mc.sayda.twilight_lib.capabilities.ModelVariantProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -36,6 +37,7 @@ import java.util.Optional;
  *   <li>{@link SyncAddonsPacket}: Syncs a player's active addons to clients</li>
  *   <li>{@link SyncTrailsPacket}: Syncs a player's trail configuration to clients</li>
  *   <li>{@link SyncEffectsPacket}: Syncs a player's active effects to clients</li>
+ *   <li>{@link SyncModelVariantPacket}: Syncs a player's model variant (Steve/Alex) to clients</li>
  * </ul>
  *
  * <p><b>Protocol Versioning</b>: Protocol version "1" is hardcoded.
@@ -104,6 +106,11 @@ public class NetworkHandler {
         CHANNEL.registerMessage(
                 index++, SyncEffectsPacket.class,
                 SyncEffectsPacket::encode, SyncEffectsPacket::decode, SyncEffectsPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT)
+        );
+        CHANNEL.registerMessage(
+                index++, SyncModelVariantPacket.class,
+                SyncModelVariantPacket::encode, SyncModelVariantPacket::decode, SyncModelVariantPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT)
         );
         LOGGER.debug("This is the precipice of a new reality! Network channel initialized.");
@@ -248,6 +255,37 @@ public class NetworkHandler {
                 if (!effects.getActiveEffects().isEmpty()) {
                     sendEffectsToPlayer(recipient, new SyncEffectsPacket(p.getUUID(), effects.getActiveEffects()));
                 }
+            });
+        }
+    }
+
+    // Model Variant packet methods
+    public static void sendModelVariantToAll(SyncModelVariantPacket pkt) {
+        try {
+            CHANNEL.send(PacketDistributor.ALL.noArg(), pkt);
+            LOGGER.debug("Shape-shifter extraordinaire! Sending model variant packet to all players.");
+        } catch (Exception e) {
+            LOGGER.error("What?! Failed to send model variant packet to all players", e);
+        }
+    }
+
+    public static void sendModelVariantToPlayer(Player player, SyncModelVariantPacket pkt) {
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
+        try {
+            CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), pkt);
+            LOGGER.debug("Changing forms! Sending model variant to {}", player.getGameProfile().getName());
+        } catch (Exception e) {
+            LOGGER.warn("Nope! Failed to send model variant to {}", player.getGameProfile().getName(), e);
+        }
+    }
+
+    public static void sendAllModelVariantsToPlayer(Player recipient) {
+        if (recipient.level() == null) return;
+        LOGGER.debug("Let's see all the different forms! Syncing all model variants to {}", recipient.getGameProfile().getName());
+        for (Player p : recipient.level().players()) {
+            if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
+            p.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
+                sendModelVariantToPlayer(recipient, SyncModelVariantPacket.of(p.getUUID(), modelVariant));
             });
         }
     }

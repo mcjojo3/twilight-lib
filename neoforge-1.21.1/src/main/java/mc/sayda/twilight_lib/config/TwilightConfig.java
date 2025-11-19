@@ -19,6 +19,7 @@ public class TwilightConfig {
     public static final ModConfigSpec.IntValue MAX_SUPPORTERS;
 
     // Network & Caching
+    public static final ModConfigSpec.ConfigValue<String> SUPPORTER_BACKUP_URL;
     public static final ModConfigSpec.IntValue SUPPORTER_CONNECT_TIMEOUT_MS;
     public static final ModConfigSpec.IntValue SUPPORTER_READ_TIMEOUT_MS;
     public static final ModConfigSpec.IntValue SUPPORTER_CACHE_DURATION_MINUTES;
@@ -86,6 +87,9 @@ public class TwilightConfig {
 
         builder.push("network_and_caching");
         builder.comment("Network timeouts and cache duration settings");
+        SUPPORTER_BACKUP_URL = builder
+                .comment("Backup URL for supporter data (used if primary URL fails or times out)")
+                .define("supporter_backup_url", "https://raw.githubusercontent.com/mcjojo3/twilight-database/main/supporters.json");
         SUPPORTER_CONNECT_TIMEOUT_MS = builder
                 .comment("HTTP connection timeout for supporter fetch in milliseconds")
                 .defineInRange("supporter_connect_timeout_ms", 5000, 1000, 30000);

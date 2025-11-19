@@ -35,6 +35,7 @@ public class TwilightConstants {
     public static final String NBT_ADDONS = "TwilightLibAddons";
     public static final String NBT_TRAILS = "TwilightLibTrails";
     public static final String NBT_EFFECTS = "TwilightLibEffects";
+    public static final String NBT_MODEL_VARIANT = "TwilightLibModelVariant";
 
     /**
      * Animation constants for cosmetic addons.
@@ -149,6 +150,9 @@ public class TwilightConstants {
      * <p>All values can be overridden via {@link mc.sayda.twilight_lib.config.TwilightConfig}.
      */
     public static final class Supporter {
+        /** Default backup URL for supporter data. Used if primary URL fails. */
+        public static final String DEFAULT_BACKUP_URL = "https://raw.githubusercontent.com/mcjojo3/twilight-database/main/supporters.json";
+
         /** Default maximum supporter JSON file size in megabytes. Prevents memory exhaustion. */
         public static final int DEFAULT_MAX_JSON_SIZE_MB = 10;
 

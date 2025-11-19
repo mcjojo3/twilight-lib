@@ -13,6 +13,8 @@ import mc.sayda.twilight_lib.capabilities.EffectsData;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
 import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.capabilities.AddonsData;
+import mc.sayda.twilight_lib.capabilities.ModelVariantProvider;
+import mc.sayda.twilight_lib.capabilities.IModelVariant;
 import mc.sayda.twilight_lib.commands.CommandUtils;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
 import mc.sayda.twilight_lib.cosmetics.EffectType;
@@ -21,6 +23,7 @@ import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncMorphPacket;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
 import mc.sayda.twilight_lib.network.SyncEffectsPacket;
+import mc.sayda.twilight_lib.network.SyncModelVariantPacket;
 import mc.sayda.twilight_lib.TwilightConstants;
 import mc.sayda.twilight_lib.config.TwilightConfig;
 import mc.sayda.twilight_lib.supporter.SupporterData;
@@ -138,6 +141,10 @@ public class TwilightLibCommands {
     // Suggestion provider for addon types
     private static final SuggestionProvider<CommandSourceStack> ADDON_SUGGESTIONS = (context, builder) ->
         SharedSuggestionProvider.suggest(AddonRegistry.getAllAddonIds(), builder);
+
+    // Suggestion provider for model variants (steve/alex)
+    private static final SuggestionProvider<CommandSourceStack> MODEL_VARIANT_SUGGESTIONS = (context, builder) ->
+        SharedSuggestionProvider.suggest(new String[]{"steve", "alex"}, builder);
 
     /**
      * Check if entity registry has changed (new mods loaded entities).
@@ -460,6 +467,47 @@ public class TwilightLibCommands {
                                     )
                             )
 
+                            // model ...
+                            .then(Commands.literal("model")
+                                    .then(Commands.literal("set")
+                                            .then(Commands.argument("variant", StringArgumentType.word())
+                                                    .suggests(MODEL_VARIANT_SUGGESTIONS)
+                                                    .executes(ctx -> {
+                                                        ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
+                                                        if (target == null) {
+                                                            ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                            return 0;
+                                                        }
+                                                        return executeSetModelVariant(ctx.getSource(), target, StringArgumentType.getString(ctx, "variant"));
+                                                    })
+                                                    // model set <variant> <target>
+                                                    .then(Commands.argument("target", EntityArgument.player())
+                                                            .executes(ctx -> {
+                                                                ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                return executeSetModelVariant(ctx.getSource(), target, StringArgumentType.getString(ctx, "variant"));
+                                                            })
+                                                    )
+                                            )
+                                    )
+                                    .then(Commands.literal("clear")
+                                            .executes(ctx -> {
+                                                ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
+                                                if (target == null) {
+                                                    ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                    return 0;
+                                                }
+                                                return executeClearModelVariant(ctx.getSource(), target);
+                                            })
+                                            // model clear <target>
+                                            .then(Commands.argument("target", EntityArgument.player())
+                                                    .executes(ctx -> {
+                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                        return executeClearModelVariant(ctx.getSource(), target);
+                                                    })
+                                            )
+                                    )
+                            )
+
                             // reload
                             .then(Commands.literal("reload")
                                     .executes(ctx -> executeReload(ctx.getSource()))
@@ -510,6 +558,13 @@ public class TwilightLibCommands {
     private static void setMorph(CommandSourceStack source, ServerPlayer target, Optional<ResourceLocation> morph) {
         LazyOptional<IMorph> cap = target.getCapability(MorphProvider.MORPH_CAP);
         cap.ifPresent(m -> {
+            // Optimization: Skip if already morphed to this entity
+            if (m.getEntityType().equals(morph)) {
+                LOGGER.debug("Dusk and dawn are the same. {} is already morphed as {}, skipping unnecessary update",
+                    target.getGameProfile().getName(), morph.map(ResourceLocation::toString).orElse("none"));
+                return;
+            }
+
             m.setEntityType(morph);
 
             // Save to persistent NBT for death persistence
@@ -543,6 +598,13 @@ public class TwilightLibCommands {
         }
 
         target.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+            // Optimization: Skip if trail is already active
+            if (trails.isTrailActive(trailId)) {
+                LOGGER.debug("Or, what. {} already has trail '{}' active, skipping unnecessary update",
+                    target.getGameProfile().getName(), trailId);
+                return;
+            }
+
             // Activate trail with persistence control
             // persistent=true: persists through logout/death (for race mods and admin grants)
             // persistent=false: Temporary admin preview (cleared on logout)
@@ -603,6 +665,13 @@ public class TwilightLibCommands {
 
     private static int executeEquipEffect(CommandSourceStack source, ServerPlayer target, String effectId, boolean persistent) {
         target.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+            // Optimization: Skip if effect is already active
+            if (effects.isEffectActive(effectId)) {
+                LOGGER.debug("Yeah? Well... {} already has effect '{}' active, skipping unnecessary update",
+                    target.getGameProfile().getName(), effectId);
+                return;
+            }
+
             // Activate effect with persistence control
             // persistent=true: persists through logout/death (for race mods and admin grants)
             // persistent=false: Temporary admin preview (cleared on logout)
@@ -823,6 +892,13 @@ public class TwilightLibCommands {
         }
 
         target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
+            // Optimization: Skip if addon is already active
+            if (addons.isAddonActive(addonId)) {
+                LOGGER.debug("Was that... sharing? {} already has addon '{}' active, skipping unnecessary update",
+                    target.getGameProfile().getName(), addonId);
+                return;
+            }
+
             // Activate addon with persistence control
             // persistent=true: persists through logout/death (for race mods and admin grants)
             // persistent=false: Temporary admin preview (cleared on logout)
@@ -872,6 +948,66 @@ public class TwilightLibCommands {
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             source.sendSuccess(() -> Component.literal("All addons cleared for " + target.getGameProfile().getName()), true);
         }
+        return 1;
+    }
+
+    private static int executeSetModelVariant(CommandSourceStack source, ServerPlayer target, String variant) {
+        // Validate variant (should be "steve" or "alex")
+        String normalized = variant.toLowerCase();
+        if (!normalized.equals("steve") && !normalized.equals("alex")) {
+            source.sendFailure(Component.literal("Invalid model variant: " + variant + ". Must be 'steve' or 'alex'."));
+            return 0;
+        }
+
+        target.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
+            // Optimization: Skip if already set to avoid unnecessary NBT writes and network syncs
+            if (modelVariant.hasCustomVariant() && modelVariant.getModelVariant().equals(normalized)) {
+                LOGGER.debug("Things totally change so they can be the same but also totally different! {} already has model variant '{}', skipping unnecessary update", target.getGameProfile().getName(), normalized);
+                return;
+            }
+
+            try {
+                modelVariant.setModelVariant(normalized);
+
+                // Save to persistent NBT
+                target.getPersistentData().put(TwilightConstants.NBT_MODEL_VARIANT, modelVariant.serialize());
+
+                // Sync to all clients
+                NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(target.getUUID(), modelVariant));
+
+                LOGGER.debug("Shape-shifter! {} changed model variant to {}", target.getGameProfile().getName(), normalized);
+            } catch (IllegalArgumentException e) {
+                source.sendFailure(Component.literal("Error setting model variant: " + e.getMessage()));
+                LOGGER.error("Oh no! Failed to set model variant for {}: {}", target.getGameProfile().getName(), e.getMessage());
+            }
+        });
+
+        // Send feedback only to admin/console (not when player targets self)
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+            source.sendSuccess(() -> Component.literal("Model variant '" + normalized + "' set for " + target.getGameProfile().getName()), true);
+        }
+
+        return 1;
+    }
+
+    private static int executeClearModelVariant(CommandSourceStack source, ServerPlayer target) {
+        target.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
+            modelVariant.clearCustomVariant();
+
+            // Remove from persistent NBT
+            target.getPersistentData().remove(TwilightConstants.NBT_MODEL_VARIANT);
+
+            // Sync to all clients
+            NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(target.getUUID(), modelVariant));
+
+            LOGGER.debug("Back to normal! {} cleared custom model variant", target.getGameProfile().getName());
+        });
+
+        // Send feedback only to admin/console (not when player targets self)
+        if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+            source.sendSuccess(() -> Component.literal("Model variant cleared for " + target.getGameProfile().getName()), true);
+        }
+
         return 1;
     }
 }

@@ -38,6 +38,7 @@ public class SupporterService {
 
     /**
      * Fetch supporters list from GitHub (async, cached)
+     * Tries primary URL first, falls back to backup URL if primary fails
      */
     public static CompletableFuture<Void> fetchSupporters() {
         // Check cache validity (convert minutes to milliseconds)
@@ -62,70 +63,116 @@ public class SupporterService {
         }
 
         return CompletableFuture.runAsync(() -> {
-            HttpURLConnection conn = null;
+            boolean primarySuccess = false;
+
+            // Try primary URL first
             try {
-                LOGGER.info("I wonder who's around. Fetching supporter list from GitHub...");
-                URL url = new URL(SUPPORTERS_URL);
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                // Use defaults if config not yet loaded
-                int connectTimeout = TwilightConstants.Supporter.DEFAULT_CONNECT_TIMEOUT_MS;
-                int readTimeout = TwilightConstants.Supporter.DEFAULT_READ_TIMEOUT_MS;
-                try {
-                    connectTimeout = TwilightConfig.SUPPORTER_CONNECT_TIMEOUT_MS.get();
-                    readTimeout = TwilightConfig.SUPPORTER_READ_TIMEOUT_MS.get();
-                } catch (IllegalStateException e) {
-                    // Config not loaded yet, use defaults
-                }
-                conn.setConnectTimeout(connectTimeout);
-                conn.setReadTimeout(readTimeout);
-                conn.setRequestProperty("User-Agent", "TwilightLib-Minecraft-Mod");
-
-                int responseCode = conn.getResponseCode();
-                if (responseCode == 200) {
-                    try (InputStreamReader isr = new InputStreamReader(conn.getInputStream());
-                         BufferedReader in = new BufferedReader(isr)) {
-                        StringBuilder content = new StringBuilder();
-                        String line;
-
-                        // Validate config value to prevent integer overflow and unreasonable memory usage
-                        int maxSizeMB = TwilightConstants.Supporter.DEFAULT_MAX_JSON_SIZE_MB;
-                        try {
-                            maxSizeMB = TwilightConfig.MAX_SUPPORTER_JSON_SIZE.get();
-                        } catch (IllegalStateException e) {
-                            // Config not loaded yet, use default
-                        }
-                        if (maxSizeMB <= 0 || maxSizeMB > 100) { // Reasonable max: 100MB for JSON
-                            LOGGER.error("Invalid max JSON size: {}MB (must be between 1-100). Using default 10MB", maxSizeMB);
-                            maxSizeMB = 10;
-                        }
-                        long maxSizeBytes = (long) maxSizeMB * 1024L * 1024L;  // Convert MB to bytes (force long arithmetic)
-
-                        while ((line = in.readLine()) != null) {
-                            // Check size limit BEFORE appending to prevent OOM attacks
-                            if (content.length() + line.length() + 1 > maxSizeBytes) {
-                                LOGGER.error("Oh no! Supporter JSON exceeds size limit of {}MB", maxSizeMB);
-                                return;  // Don't update cache
-                            }
-                            content.append(line).append('\n');
-                        }
-
-                        parseSupportersJson(content.toString());
-                        lastFetchTime = System.currentTimeMillis();
-                        LOGGER.info("We are going to be best friends! Successfully fetched {} supporters", supporterCache.get().size());
-                    }
-                } else {
-                    LOGGER.warn("Are we done in this reality yet? Hello? Hellooo? Failed to fetch supporters list. Response code: {}", responseCode);
+                LOGGER.info("I wonder who's around. Fetching supporter list from primary URL...");
+                if (fetchFromUrl(SUPPORTERS_URL)) {
+                    primarySuccess = true;
+                    lastFetchTime = System.currentTimeMillis();
+                    LOGGER.info("We are going to be best friends! Successfully fetched {} supporters from primary URL", supporterCache.get().size());
                 }
             } catch (Exception e) {
-                LOGGER.error("How did I?! Uuuughh! Error fetching supporters list", e);
-            } finally {
-                if (conn != null) {
-                    conn.disconnect();
-                }
-                fetchInProgress.set(false);
+                LOGGER.warn("Are we done in this reality yet? Hello? Hellooo? Primary URL failed: {}", e.getMessage());
             }
+
+            // If primary failed, try backup URL
+            if (!primarySuccess) {
+                try {
+                    // Get backup URL from config
+                    String backupUrl = TwilightConstants.Supporter.DEFAULT_BACKUP_URL;
+                    try {
+                        backupUrl = TwilightConfig.SUPPORTER_BACKUP_URL.get();
+                    } catch (IllegalStateException e) {
+                        // Config not loaded yet, use default
+                    }
+
+                    LOGGER.info("Is this the best physical representation you can manifest? Trying backup URL...");
+                    if (fetchFromUrl(backupUrl)) {
+                        lastFetchTime = System.currentTimeMillis();
+                        LOGGER.info("We are going to be best friends! Successfully fetched {} supporters from backup URL", supporterCache.get().size());
+                    } else {
+                        LOGGER.warn("Oh no! Both primary and backup URLs failed. Skipping supporter sync.");
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("How did I?! Uuuughh! Backup URL also failed: {}", e.getMessage());
+                    LOGGER.warn("Really?! Both primary and backup URLs failed. Skipping supporter sync.");
+                }
+            }
+
+            fetchInProgress.set(false);
         });
+    }
+
+    /**
+     * Fetch supporters from a specific URL
+     * @param urlString The URL to fetch from
+     * @return true if successful, false otherwise
+     */
+    private static boolean fetchFromUrl(String urlString) {
+        HttpURLConnection conn = null;
+        try {
+            URL url = new URL(urlString);
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            // Use defaults if config not yet loaded
+            int connectTimeout = TwilightConstants.Supporter.DEFAULT_CONNECT_TIMEOUT_MS;
+            int readTimeout = TwilightConstants.Supporter.DEFAULT_READ_TIMEOUT_MS;
+            try {
+                connectTimeout = TwilightConfig.SUPPORTER_CONNECT_TIMEOUT_MS.get();
+                readTimeout = TwilightConfig.SUPPORTER_READ_TIMEOUT_MS.get();
+            } catch (IllegalStateException e) {
+                // Config not loaded yet, use defaults
+            }
+            conn.setConnectTimeout(connectTimeout);
+            conn.setReadTimeout(readTimeout);
+            conn.setRequestProperty("User-Agent", "TwilightLib-Minecraft-Mod");
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 200) {
+                try (InputStreamReader isr = new InputStreamReader(conn.getInputStream());
+                     BufferedReader in = new BufferedReader(isr)) {
+                    StringBuilder content = new StringBuilder();
+                    String line;
+
+                    // Validate config value to prevent integer overflow and unreasonable memory usage
+                    int maxSizeMB = TwilightConstants.Supporter.DEFAULT_MAX_JSON_SIZE_MB;
+                    try {
+                        maxSizeMB = TwilightConfig.MAX_SUPPORTER_JSON_SIZE.get();
+                    } catch (IllegalStateException e) {
+                        // Config not loaded yet, use default
+                    }
+                    if (maxSizeMB <= 0 || maxSizeMB > 100) { // Reasonable max: 100MB for JSON
+                        LOGGER.error("Invalid max JSON size: {}MB (must be between 1-100). Using default 10MB", maxSizeMB);
+                        maxSizeMB = 10;
+                    }
+                    long maxSizeBytes = (long) maxSizeMB * 1024L * 1024L;  // Convert MB to bytes (force long arithmetic)
+
+                    while ((line = in.readLine()) != null) {
+                        // Check size limit BEFORE appending to prevent OOM attacks
+                        if (content.length() + line.length() + 1 > maxSizeBytes) {
+                            LOGGER.error("Oh no! Supporter JSON exceeds size limit of {}MB", maxSizeMB);
+                            return false;  // Don't update cache
+                        }
+                        content.append(line).append('\n');
+                    }
+
+                    parseSupportersJson(content.toString());
+                    return true;  // Success!
+                }
+            } else {
+                LOGGER.warn("Are we done in this reality yet? Hello? Hellooo? Failed to fetch from {}. Response code: {}", urlString, responseCode);
+                return false;
+            }
+        } catch (Exception e) {
+            LOGGER.error("How did I?! Uuuughh! Error fetching from {}: {}", urlString, e.getMessage());
+            return false;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
     }
 
     /**

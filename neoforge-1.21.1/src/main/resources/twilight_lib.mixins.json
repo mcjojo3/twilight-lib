@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "mc.sayda.twilight_lib.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "priority": 1000,
+  "refmap": "twilight_lib.refmap.json",
+  "mixins": [],
+  "client": [
+    "PlayerMixin",
+    "PlayerInfoMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

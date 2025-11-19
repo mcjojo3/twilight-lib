@@ -5,6 +5,7 @@ import mc.sayda.twilight_lib.capabilities.AddonsData;
 import mc.sayda.twilight_lib.capabilities.EffectsData;
 import mc.sayda.twilight_lib.capabilities.IAddons;
 import mc.sayda.twilight_lib.capabilities.IEffects;
+import mc.sayda.twilight_lib.capabilities.IModelVariant;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.ITrails;
 import mc.sayda.twilight_lib.capabilities.ModAttachments;
@@ -15,6 +16,7 @@ import mc.sayda.twilight_lib.entity.ModEntities;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncAddonsPacket;
 import mc.sayda.twilight_lib.network.SyncEffectsPacket;
+import mc.sayda.twilight_lib.network.SyncModelVariantPacket;
 import mc.sayda.twilight_lib.network.SyncMorphPacket;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
 import mc.sayda.twilight_lib.particle.ModParticles;
@@ -168,6 +170,12 @@ public class TwilightLib {
             IEffects effects = loggedInPlayer.getData(ModAttachments.EFFECTS);
             effects.deserialize(persistentData.getCompound(TwilightConstants.NBT_EFFECTS));
             LOGGER.debug("Magic is in the air! Restored {} effects from NBT for {}", effects.getEffects().size(), loggedInPlayer.getGameProfile().getName());
+        }
+
+        if (persistentData.contains(TwilightConstants.NBT_MODEL_VARIANT, CompoundTag.TAG_COMPOUND)) {
+            IModelVariant modelVariant = loggedInPlayer.getData(ModAttachments.MODEL_VARIANT);
+            modelVariant.deserialize(persistentData.getCompound(TwilightConstants.NBT_MODEL_VARIANT));
+            LOGGER.debug("Shape-shifting! Restored model variant from NBT for {}", loggedInPlayer.getGameProfile().getName());
         }
 
         // Ensure supporter data is loaded before checking (waits if fetch is in progress)
@@ -369,6 +377,15 @@ public class TwilightLib {
             LOGGER.debug("Yes, more magic! Restoring effects from death.");
             evt.getEntity().getPersistentData().put(TwilightConstants.NBT_EFFECTS, effectsData);
         }
+
+        // Restore model variant (attachment is already copied via copyOnDeath())
+        if (oldData.contains(TwilightConstants.NBT_MODEL_VARIANT, CompoundTag.TAG_COMPOUND)) {
+            CompoundTag modelVariantData = oldData.getCompound(TwilightConstants.NBT_MODEL_VARIANT);
+            IModelVariant newModelVariant = evt.getEntity().getData(ModAttachments.MODEL_VARIANT);
+            newModelVariant.deserialize(modelVariantData);
+            LOGGER.debug("Changing forms! Restoring model variant from death.");
+            evt.getEntity().getPersistentData().put(TwilightConstants.NBT_MODEL_VARIANT, modelVariantData);
+        }
     }
 
     private void onPlayerRespawn(final PlayerEvent.PlayerRespawnEvent evt) {
@@ -405,6 +422,11 @@ public class TwilightLib {
             NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), respawnEffects.getActiveEffects(), true));
             LOGGER.debug("Aw, this spell is neat! Player {} respawned with {} active effects", player.getGameProfile().getName(), respawnEffects.getActiveEffects().size());
         }
+
+        // Sync model variant to client after respawn
+        IModelVariant modelVariant = player.getData(ModAttachments.MODEL_VARIANT);
+        NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
+        LOGGER.debug("Shifting shapes! Player {} respawned as {} model", player.getGameProfile().getName(), modelVariant.getModelVariant());
     }
 
     private void onPlayerStartTracking(final PlayerEvent.StartTracking evt) {
@@ -441,6 +463,11 @@ public class TwilightLib {
             LOGGER.debug("Magic everywhere! Sent {} effects for {} to tracking player {}",
                 effects.getActiveEffects().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
         }
+
+        IModelVariant modelVariant = trackedPlayer.getData(ModAttachments.MODEL_VARIANT);
+        NetworkHandler.sendModelVariantToPlayer(trackingPlayer, SyncModelVariantPacket.of(trackedPlayer.getUUID(), modelVariant));
+        LOGGER.debug("See the different forms! Sent model variant {} for {} to tracking player {}",
+            modelVariant.getModelVariant(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
     }
 
     private static void onServerTick(final ServerTickEvent.Post evt) {
@@ -464,6 +491,7 @@ public class TwilightLib {
                     NetworkHandler.sendAllAddonsToPlayer(player);
                     NetworkHandler.sendAllTrailsToPlayer(player);
                     NetworkHandler.sendAllEffectsToPlayer(player);
+                    NetworkHandler.sendAllModelVariantsToPlayer(player);
                     LOGGER.debug("Time passes differently here. Delayed cosmetics sync complete for {}", player.getGameProfile().getName());
                 } else {
                     LOGGER.debug("Player left before delayed sync could complete");

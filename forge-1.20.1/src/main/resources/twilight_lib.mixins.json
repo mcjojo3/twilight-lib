@@ -4,9 +4,11 @@
   "package": "mc.sayda.twilight_lib.mixin",
   "compatibilityLevel": "JAVA_17",
   "priority": 1000,
+  "refmap": "twilight_lib.refmap.json",
   "mixins": [],
   "client": [
-    "PlayerMixin"
+    "PlayerMixin",
+    "PlayerInfoMixin"
   ],
   "injectors": {
     "defaultRequire": 1

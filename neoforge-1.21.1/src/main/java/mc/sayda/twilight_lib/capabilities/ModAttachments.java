@@ -63,6 +63,17 @@ public class ModAttachments {
     );
 
     /**
+     * Model Variant attachment - stores player's model type (Steve/Alex)
+     */
+    public static final Supplier<AttachmentType<ModelVariantData>> MODEL_VARIANT = ATTACHMENT_TYPES.register(
+        "model_variant",
+        () -> AttachmentType.builder(() -> new ModelVariantData())
+            .serialize(new DataSerializer<>(ModelVariantData::new))
+            .copyOnDeath() // Preserve model variant on death
+            .build()
+    );
+
+    /**
      * Type-safe serializer for data classes that implement ISerializableData.
      * Uses proper type bounds instead of instanceof chains for better maintainability and type safety.
      */

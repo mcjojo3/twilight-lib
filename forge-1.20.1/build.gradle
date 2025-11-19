@@ -71,6 +71,9 @@ dependencies {
 }
 
 tasks.named('processResources', ProcessResources).configure {
+    // Prefer files from src/main/resources over ../common for duplicates (e.g., mixin configs)
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
     var replaceProperties = [
             minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
             forge_version: forge_version, forge_version_range: forge_version_range,
@@ -109,4 +112,11 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // Add Mixin annotation processor arguments for refmap generation
+    if (project.hasProperty('createSrgToMcp')) {
+        options.compilerArgs << "-AreobfSrgFile=${tasks.createSrgToMcp.output.get().asFile}"
+    }
+    options.compilerArgs << "-AoutSrgFile=${buildDir}/tmp/compileJava/mixin.refmap.srg"
+    options.compilerArgs << "-AoutRefMapFile=${buildDir}/resources/main/twilight_lib.refmap.json"
+    options.compilerArgs << "-AdefaultObfuscationEnv=searge"
 }

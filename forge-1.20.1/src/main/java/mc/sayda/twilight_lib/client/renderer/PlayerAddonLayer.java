@@ -1,7 +1,9 @@
 package mc.sayda.twilight_lib.client.renderer;
 
+import com.mojang.logging.LogUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import org.slf4j.Logger;
 import mc.sayda.twilight_lib.addon.AddonModelInfo;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
 import mc.sayda.twilight_lib.capabilities.AddonsProvider;
@@ -25,10 +27,12 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     /**
      * LRU cache for baked addon models.
@@ -36,15 +40,24 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
      * Value: Baked EntityModel & IAddonModel instance
      * Access-ordered to evict least recently used models when capacity is exceeded.
      * Max size is configurable via TwilightConfig.MAX_CACHED_ADDON_MODELS.
+     *
+     * <p><b>Thread Safety</b>: Wrapped with Collections.synchronizedMap() to prevent
+     * ConcurrentModificationException when multiple players are rendered simultaneously
+     * on multi-threaded renderers. The removeEldestEntry check is synchronized internally.
      */
-    private final Map<String, Object> bakedModels = new LinkedHashMap<String, Object>(16, 0.75f, true) {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<String, Object> eldest) {
-            // No explicit cleanup needed - models don't hold native GPU resources
-            // Minecraft's resource management handles texture/geometry lifecycle
-            return size() > TwilightConfig.MAX_CACHED_ADDON_MODELS.get();
+    private final Map<String, Object> bakedModels = Collections.synchronizedMap(
+        new LinkedHashMap<String, Object>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, Object> eldest) {
+                // Synchronized access to size() and config value
+                synchronized(this) {
+                    // No explicit cleanup needed - models don't hold native GPU resources
+                    // Minecraft's resource management handles texture/geometry lifecycle
+                    return size() > TwilightConfig.MAX_CACHED_ADDON_MODELS.get();
+                }
+            }
         }
-    };
+    );
 
     public PlayerAddonLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
         super(parent);
@@ -90,6 +103,11 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     addonModel.getLeftLeg().ifPresent(part -> copyModelPart(playerModel.leftLeg, part));
 
                     // Setup animations (runs AFTER sync so custom animations can use player movement)
+                    // Validate type before unchecked cast
+                    if (!(addonModel instanceof EntityModel<?>)) {
+                        LOGGER.error("Addon model {} is not an EntityModel: {}", addonId, addonModel.getClass());
+                        return;
+                    }
                     @SuppressWarnings("unchecked")
                     EntityModel<Entity> entityModel = (EntityModel<Entity>) addonModel;
                     entityModel.setupAnim((Entity) player, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
@@ -178,6 +196,11 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                             chestArmorModel.getBody().ifPresent(part -> copyModelPart(playerModel.body, part));
 
                             // Setup animations
+                            // Validate type before unchecked cast
+                            if (!(chestArmorModel instanceof EntityModel<?>)) {
+                                LOGGER.error("Chest armor model is not an EntityModel: {}", chestArmorModel.getClass());
+                                return;
+                            }
                             @SuppressWarnings("unchecked")
                             EntityModel<Entity> armorEntityModel = (EntityModel<Entity>) chestArmorModel;
                             armorEntityModel.setupAnim((Entity) player, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);

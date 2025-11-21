@@ -46,6 +46,18 @@ public interface IMorph {
     }
 
     /**
+     * Check if the player's nametag should be hidden when morphed.
+     * @return true if nametag should be hidden, false if visible (default)
+     */
+    boolean isNametagHidden();
+
+    /**
+     * Set whether the player's nametag should be hidden when morphed.
+     * @param hidden true to hide nametag, false to show it
+     */
+    void setNametagHidden(boolean hidden);
+
+    /**
      * Serialize morph data to NBT for persistence.
      * @return CompoundTag containing morph data
      */

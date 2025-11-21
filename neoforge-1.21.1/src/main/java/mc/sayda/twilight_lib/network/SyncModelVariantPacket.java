@@ -38,7 +38,7 @@ public record SyncModelVariantPacket(UUID playerId, String modelVariant, boolean
                 long leastSig = buf.readLong();
                 return new UUID(mostSig, leastSig);
             } catch (Exception e) {
-                LOGGER.warn("Failed to decode UUID in SyncModelVariantPacket: {}", e.getMessage());
+                LOGGER.warn("How did I?! Uuuughh! Failed to decode UUID in SyncModelVariantPacket: {}", e.getMessage());
                 return SENTINEL_UUID; // Return sentinel on decode error
             }
         }
@@ -78,7 +78,7 @@ public record SyncModelVariantPacket(UUID playerId, String modelVariant, boolean
             try {
                 // Detect malformed packets from decode errors
                 if (msg.playerId().equals(SENTINEL_UUID)) {
-                    LOGGER.warn("Received malformed model variant packet with null UUID - packet decode failed");
+                    LOGGER.warn("This will be fine! Things break all the time. Received malformed model variant packet with null UUID - packet decode failed");
                     return;
                 }
 
@@ -113,7 +113,7 @@ public record SyncModelVariantPacket(UUID playerId, String modelVariant, boolean
                 } else {
                     modelVariant.setModelVariant(msg.modelVariant());
                 }
-                LOGGER.debug("Trickster never loses. Synced model variant {} for {}", msg.modelVariant(), entity.getName().getString());
+                LOGGER.debug("Time to change! Synced model variant {} for {}", msg.modelVariant(), entity.getName().getString());
             } catch (Exception e) {
                 LOGGER.error("Failed to sync model variant for player {}", msg.playerId(), e);
             }

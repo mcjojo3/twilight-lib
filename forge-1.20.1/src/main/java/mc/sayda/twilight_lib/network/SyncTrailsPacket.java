@@ -51,7 +51,7 @@ public class SyncTrailsPacket {
             }
             return new SyncTrailsPacket(id, trails);
         } catch (Exception e) {
-            LOGGER.error("Or, what. Failed to decode SyncTrailsPacket: {}", e.getMessage());
+            LOGGER.error("How did I?! Uuuughh! Failed to decode SyncTrailsPacket: {}", e.getMessage());
             // Return empty packet to prevent crash
             return new SyncTrailsPacket(new UUID(0, 0), new HashSet<>());
         }
@@ -61,7 +61,7 @@ public class SyncTrailsPacket {
         ctx.get().enqueueWork(() -> {
             // Detect malformed packets from decode errors
             if (msg.playerId.equals(new UUID(0, 0))) {
-                LOGGER.error("Or, what. Received malformed SyncTrailsPacket with invalid UUID - packet decode failed");
+                LOGGER.error("This will be fine! Things break all the time. Received malformed SyncTrailsPacket with invalid UUID - packet decode failed");
                 return;
             }
 
@@ -79,7 +79,7 @@ public class SyncTrailsPacket {
             entity.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
                 // Type-safe cast with validation to prevent crashes in heavily modded environments
                 if (!(trails instanceof TrailsData)) {
-                    LOGGER.error("Incompatible trails capability implementation for player {}. Expected TrailsData but got {}. " +
+                    LOGGER.error("What's with all the negative waves? Incompatible trails capability implementation for player {}. Expected TrailsData but got {}. " +
                                  "This may be caused by another mod replacing the capability.",
                                  entity.getName().getString(), trails.getClass().getName());
                     return; // Gracefully skip instead of crashing
@@ -87,7 +87,7 @@ public class SyncTrailsPacket {
 
                 // Directly sync equipped trails from server (bypasses ownership validation)
                 ((TrailsData) trails).syncEquippedFromPacket(msg.trails);
-                LOGGER.debug("Isn't this cool? Synced {} active trails for {}",
+                LOGGER.debug("Time to change! Synced {} active trails for {}",
                     msg.trails.size(), entity.getName().getString());
             });
         });

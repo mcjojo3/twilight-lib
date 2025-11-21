@@ -112,7 +112,24 @@ public class SpawnEffectHandler {
     public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         UUID playerId = event.getEntity().getUUID();
         if (PENDING_EFFECTS.remove(playerId) != null) {
-            LOGGER.debug("Well, this is a pretty chill reality. Cleaned up pending spawn effect for disconnected player UUID: {}", playerId);
+            LOGGER.debug("Goodbye, my new friend! Cleaned up pending spawn effect for disconnected player UUID: {}", playerId);
+        }
+    }
+
+    /**
+     * Cleanup all pending effects when the level unloads to prevent memory leaks.
+     * Called on client side when disconnecting from server or changing dimensions.
+     * This ensures we don't accumulate stale player UUIDs across world changes.
+     */
+    @SubscribeEvent
+    public static void onLevelUnload(net.neoforged.neoforge.event.level.LevelEvent.Unload event) {
+        // Only clear on client side
+        if (event.getLevel().isClientSide()) {
+            int size = PENDING_EFFECTS.size();
+            if (size > 0) {
+                PENDING_EFFECTS.clear();
+                LOGGER.debug("I hope this world survives... Cleared {} pending spawn effects on level unload", size);
+            }
         }
     }
 

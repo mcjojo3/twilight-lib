@@ -14,9 +14,11 @@ import java.util.Optional;
 public class MorphData implements IMorph {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String NBT_ENTITY = "Entity";
+    private static final String NBT_HIDE_NAMETAG = "HideNametag";
 
     private Optional<ResourceLocation> entityType = Optional.empty();
     private EntityType<?> cachedEntityType = null;
+    private boolean hideNametag = false; // Default: show nametag
 
     @Override
     public synchronized Optional<ResourceLocation> getEntityType() {
@@ -38,9 +40,20 @@ public class MorphData implements IMorph {
     }
 
     @Override
+    public synchronized boolean isNametagHidden() {
+        return hideNametag;
+    }
+
+    @Override
+    public synchronized void setNametagHidden(boolean hidden) {
+        this.hideNametag = hidden;
+    }
+
+    @Override
     public synchronized CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
         entityType.ifPresent(rl -> tag.putString(NBT_ENTITY, rl.toString()));
+        tag.putBoolean(NBT_HIDE_NAMETAG, hideNametag);
         return tag;
     }
 
@@ -53,11 +66,18 @@ public class MorphData implements IMorph {
                 setEntityType(Optional.of(rl));
                 LOGGER.debug("Ahh... I need a nap. Deserialized morph: {}", rl);
             } catch (Exception e) {
-                LOGGER.warn("Oh, farn it! Failed to deserialize morph from NBT", e);
+                LOGGER.warn("How did I?! Uuuughh! Failed to deserialize morph from NBT", e);
                 setEntityType(Optional.empty());
             }
         } else {
             setEntityType(Optional.empty());
+        }
+
+        // Deserialize nametag visibility (default: false = show nametag)
+        if (tag.contains(NBT_HIDE_NAMETAG, Tag.TAG_BYTE)) {
+            this.hideNametag = tag.getBoolean(NBT_HIDE_NAMETAG);
+        } else {
+            this.hideNametag = false;
         }
     }
 }

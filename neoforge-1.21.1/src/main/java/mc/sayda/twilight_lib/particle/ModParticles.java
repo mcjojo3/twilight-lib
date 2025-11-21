@@ -21,6 +21,9 @@ public class ModParticles {
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> GOLD_HEART =
             PARTICLE_TYPES.register("gold_heart", () -> new SimpleParticleType(false));
 
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> PLATINUM_HEART =
+            PARTICLE_TYPES.register("platinum_heart", () -> new SimpleParticleType(false));
+
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> RATVENOM =
             PARTICLE_TYPES.register("ratvenom", () -> new SimpleParticleType(false));
 

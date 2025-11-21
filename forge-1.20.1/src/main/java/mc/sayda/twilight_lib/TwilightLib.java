@@ -151,6 +151,7 @@ public class TwilightLib {
         MinecraftForge.EVENT_BUS.addListener(TwilightLibCommands::registerCommands);
         MinecraftForge.EVENT_BUS.addListener(CosmeticsCommand::registerCommands);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLogin);
+        MinecraftForge.EVENT_BUS.addListener(this::onPlayerLogout);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerClone);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerRespawn);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerStartTracking);
@@ -174,7 +175,7 @@ public class TwilightLib {
         // Add custom attributes to all living entities (especially players)
         evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.MINING_PENALTY.get());
         evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.FOV_MODIFIER.get());
-        LOGGER.debug("It's something new! Added MINING_PENALTY and FOV_MODIFIER attributes to players.");
+        LOGGER.debug("Come on, this is gonna be fun! Added MINING_PENALTY and FOV_MODIFIER attributes to players.");
     }
 
     private void attachEntityCaps(final AttachCapabilitiesEvent<Entity> evt) {
@@ -255,28 +256,28 @@ public class TwilightLib {
         if (persistentData.contains(TwilightConstants.NBT_ADDONS, CompoundTag.TAG_COMPOUND)) {
             loggedInPlayer.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
                 addons.deserialize(persistentData.getCompound(TwilightConstants.NBT_ADDONS));
-                LOGGER.debug("All the neat things! Restored {} addons from NBT for {}", addons.getAddons().size(), loggedInPlayer.getGameProfile().getName());
+                LOGGER.debug("Come on, this is gonna be fun! Restored {} addons from NBT for {}", addons.getAddons().size(), loggedInPlayer.getGameProfile().getName());
             });
         }
 
         if (persistentData.contains(TwilightConstants.NBT_TRAILS, CompoundTag.TAG_COMPOUND)) {
             loggedInPlayer.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
                 trails.deserialize(persistentData.getCompound(TwilightConstants.NBT_TRAILS));
-                LOGGER.debug("Sparkles everywhere! Restored {} trails from NBT for {}", trails.getTrails().size(), loggedInPlayer.getGameProfile().getName());
+                LOGGER.debug("Come on, this is gonna be fun! Restored {} trails from NBT for {}", trails.getTrails().size(), loggedInPlayer.getGameProfile().getName());
             });
         }
 
         if (persistentData.contains(TwilightConstants.NBT_EFFECTS, CompoundTag.TAG_COMPOUND)) {
             loggedInPlayer.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
                 effects.deserialize(persistentData.getCompound(TwilightConstants.NBT_EFFECTS));
-                LOGGER.debug("Magic is in the air! Restored {} effects from NBT for {}", effects.getEffects().size(), loggedInPlayer.getGameProfile().getName());
+                LOGGER.debug("Come on, this is gonna be fun! Restored {} effects from NBT for {}", effects.getEffects().size(), loggedInPlayer.getGameProfile().getName());
             });
         }
 
         if (persistentData.contains(TwilightConstants.NBT_MODEL_VARIANT, CompoundTag.TAG_COMPOUND)) {
             loggedInPlayer.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
                 modelVariant.deserialize(persistentData.getCompound(TwilightConstants.NBT_MODEL_VARIANT));
-                LOGGER.debug("Shape-shifting! Restored model variant from NBT for {}", loggedInPlayer.getGameProfile().getName());
+                LOGGER.debug("Come on, this is gonna be fun! Restored model variant from NBT for {}", loggedInPlayer.getGameProfile().getName());
             });
         }
 
@@ -318,7 +319,7 @@ public class TwilightLib {
 
                 // Type-safe cast to access implementation-specific methods
                 if (trails == null || !(trails instanceof TrailsData)) {
-                    LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected trails capability implementation: {}", trails == null ? "null" : trails.getClass());
+                    LOGGER.error("Is this the best physical representation you can manifest? Unexpected trails capability implementation: {}", trails == null ? "null" : trails.getClass());
                     return;
                 }
                 TrailsData trailsData = (TrailsData) trails;
@@ -347,7 +348,7 @@ public class TwilightLib {
 
                 // Type-safe cast to access implementation-specific methods
                 if (addons == null || !(addons instanceof AddonsData)) {
-                    LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected addons capability implementation: {}", addons == null ? "null" : addons.getClass());
+                    LOGGER.error("Is this the best physical representation you can manifest? Unexpected addons capability implementation: {}", addons == null ? "null" : addons.getClass());
                     return;
                 }
                 AddonsData addonsData = (AddonsData) addons;
@@ -376,7 +377,7 @@ public class TwilightLib {
 
                 // Type-safe cast to access implementation-specific methods
                 if (effects == null || !(effects instanceof EffectsData)) {
-                    LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected effects capability implementation: {}", effects == null ? "null" : effects.getClass());
+                    LOGGER.error("Is this the best physical representation you can manifest? Unexpected effects capability implementation: {}", effects == null ? "null" : effects.getClass());
                     return;
                 }
                 EffectsData effectsData = (EffectsData) effects;
@@ -410,12 +411,12 @@ public class TwilightLib {
         // Send this player's morph to everyone else
         loggedInPlayer.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
             morph.getEntityType().ifPresent(rl -> {
-                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(loggedInPlayer.getUUID(), rl));
+                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(loggedInPlayer.getUUID(), Optional.of(rl), morph.isNametagHidden()));
                 // Force dimension refresh to apply morph hitbox immediately
                 loggedInPlayer.refreshDimensions();
                 // Persist morph state to NBT to prevent data loss on logout
                 loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
-                LOGGER.info("I wanna have fun and chat with someone besides myself! Player {} logged in with morph: {}", loggedInPlayer.getGameProfile().getName(), rl);
+                LOGGER.info("We're gonna be best friends! Player {} logged in with morph: {}", loggedInPlayer.getGameProfile().getName(), rl);
             });
         });
 
@@ -431,7 +432,7 @@ public class TwilightLib {
         loggedInPlayer.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(loginTrails -> {
             if (!loginTrails.getActiveTrails().isEmpty()) {
                 NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(loggedInPlayer.getUUID(), loginTrails.getActiveTrails()));
-                LOGGER.info("Sparkles everywhere! Player {} logged in with {} active trails", loggedInPlayer.getGameProfile().getName(), loginTrails.getActiveTrails().size());
+                LOGGER.info("We're gonna be best friends! Player {} logged in with {} active trails", loggedInPlayer.getGameProfile().getName(), loginTrails.getActiveTrails().size());
             }
         });
 
@@ -441,6 +442,37 @@ public class TwilightLib {
                 NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(loggedInPlayer.getUUID(), effects.getActiveEffects(), true));
             }
         });
+
+        // Send this player's model variant to everyone else
+        loggedInPlayer.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
+            NetworkHandler.sendModelVariantToAll(mc.sayda.twilight_lib.network.SyncModelVariantPacket.of(loggedInPlayer.getUUID(), modelVariant));
+            LOGGER.info("We're gonna be best friends! Player {} logged in as {} model variant",
+                loggedInPlayer.getGameProfile().getName(), modelVariant.getModelVariant());
+        });
+    }
+
+    /**
+     * Handles player logout - explicitly invalidates all capabilities to prevent memory leaks.
+     *
+     * <p><b>Why explicit invalidation?</b> Forge capabilities use LazyOptional<T> which can hold
+     * references to capability instances. While the {@code AttachCapabilitiesEvent} adds invalidation
+     * listeners, they may not trigger reliably on all logout scenarios (crashes, forcekicks, etc.).
+     * This explicit cleanup ensures LazyOptionals are properly released.
+     *
+     * <p><b>Memory Leak Prevention</b>: Without invalidation, LazyOptionals can retain references
+     * to capability providers, preventing garbage collection. On long-running servers with many
+     * player join/disconnect cycles, this can accumulate and cause memory issues.
+     *
+     * @param evt The PlayerLoggedOutEvent containing the disconnecting player
+     */
+    private void onPlayerLogout(final PlayerEvent.PlayerLoggedOutEvent evt) {
+        Player player = evt.getEntity();
+        if (player.level().isClientSide) return;
+
+        // Force invalidate all capabilities to free LazyOptionals
+        player.invalidateCaps();
+        LOGGER.debug("Goodbye, my new friend! Invalidated capabilities for disconnecting player: {}",
+            player.getGameProfile().getName());
     }
 
     private void onPlayerClone(final PlayerEvent.Clone evt) {
@@ -465,7 +497,7 @@ public class TwilightLib {
             CompoundTag addonsData = oldData.getCompound(TwilightConstants.NBT_ADDONS);
             evt.getEntity().getCapability(AddonsProvider.ADDONS_CAP).ifPresent(newAddons -> {
                 newAddons.deserialize(addonsData);
-                LOGGER.debug("Here you go! Restoring addons from death.");
+                LOGGER.debug("This will be fine! Things break all the time. Restoring addons from death.");
                 evt.getEntity().getPersistentData().put(TwilightConstants.NBT_ADDONS, addonsData);
             });
         }
@@ -475,7 +507,7 @@ public class TwilightLib {
             CompoundTag trailsData = oldData.getCompound(TwilightConstants.NBT_TRAILS);
             evt.getEntity().getCapability(TrailsProvider.TRAILS_CAP).ifPresent(newTrails -> {
                 newTrails.deserialize(trailsData);
-                LOGGER.debug("More sparkles, now! Restoring trails from death.");
+                LOGGER.debug("This will be fine! Things break all the time. Restoring trails from death.");
                 evt.getEntity().getPersistentData().put(TwilightConstants.NBT_TRAILS, trailsData);
             });
         }
@@ -485,7 +517,7 @@ public class TwilightLib {
             CompoundTag effectsData = oldData.getCompound(TwilightConstants.NBT_EFFECTS);
             evt.getEntity().getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(newEffects -> {
                 newEffects.deserialize(effectsData);
-                LOGGER.debug("Yes, more magic! Restoring effects from death.");
+                LOGGER.debug("This will be fine! Things break all the time. Restoring effects from death.");
                 evt.getEntity().getPersistentData().put(TwilightConstants.NBT_EFFECTS, effectsData);
             });
         }
@@ -495,7 +527,7 @@ public class TwilightLib {
             CompoundTag modelVariantData = oldData.getCompound(TwilightConstants.NBT_MODEL_VARIANT);
             evt.getEntity().getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(newModelVariant -> {
                 newModelVariant.deserialize(modelVariantData);
-                LOGGER.debug("Changing forms! Restoring model variant from death.");
+                LOGGER.debug("This will be fine! Things break all the time. Restoring model variant from death.");
                 evt.getEntity().getPersistentData().put(TwilightConstants.NBT_MODEL_VARIANT, modelVariantData);
             });
         }
@@ -508,7 +540,7 @@ public class TwilightLib {
         // Sync morph to client after respawn (when client-side player entity exists)
         player.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
             morph.getEntityType().ifPresent(rl -> {
-                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), rl));
+                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), Optional.of(rl), morph.isNametagHidden()));
                 player.refreshDimensions();
                 // Persist morph state to NBT to prevent data loss
                 player.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
@@ -556,7 +588,7 @@ public class TwilightLib {
         // Send the tracked player's cosmetics to the tracking player
         trackedPlayer.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
             morph.getEntityType().ifPresent(rl -> {
-                NetworkHandler.sendToPlayer(trackingPlayer, SyncMorphPacket.of(trackedPlayer.getUUID(), rl));
+                NetworkHandler.sendToPlayer(trackingPlayer, SyncMorphPacket.of(trackedPlayer.getUUID(), Optional.of(rl), morph.isNametagHidden()));
                 LOGGER.debug("Peek-a-boo! Sent morph {} for {} to tracking player {}",
                     rl, trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
             });
@@ -648,7 +680,7 @@ public class TwilightLib {
                     NetworkHandler.sendAllTrailsToPlayer(player);
                     NetworkHandler.sendAllEffectsToPlayer(player);
                     NetworkHandler.sendAllModelVariantsToPlayer(player);
-                    LOGGER.debug("Time passes differently here. Delayed cosmetics sync complete for {}", player.getGameProfile().getName());
+                    LOGGER.debug("While I wait, I will stay happy! Delayed cosmetics sync complete for {}", player.getGameProfile().getName());
                 } else {
                     LOGGER.debug("Player left before delayed sync could complete");
                 }

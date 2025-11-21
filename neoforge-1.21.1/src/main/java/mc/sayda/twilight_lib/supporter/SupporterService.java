@@ -162,7 +162,7 @@ public class SupporterService {
                     return true;  // Success!
                 }
             } else {
-                LOGGER.warn("Are we done in this reality yet? Hello? Hellooo? Failed to fetch from {}. Response code: {}", urlString, responseCode);
+                LOGGER.warn("How did I?! Uuuughh! Failed to fetch from {}. Response code: {}", urlString, responseCode);
                 return false;
             }
         } catch (Exception e) {
@@ -256,7 +256,7 @@ public class SupporterService {
                     newCache.put(uuid, data);
                 } catch (Exception entryError) {
                     // Skip malformed entries but continue parsing others
-                    LOGGER.warn("Shoot! Skipping malformed supporter entry: {}", entryError.getMessage());
+                    LOGGER.warn("This will be fine! Things break all the time. Skipping malformed supporter entry: {}", entryError.getMessage());
                 }
             }
 

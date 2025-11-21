@@ -23,6 +23,7 @@ public class TwilightEventHandler {
         if (!(evt.getEntity() instanceof Player player)) return;
 
         IMorph morph = player.getData(ModAttachments.MORPH);
+        if (morph == null) return;  // Null safety check
         EntityType<?> type = morph.getCachedEntityType();
         if (type == null) return;
 
@@ -47,6 +48,7 @@ public class TwilightEventHandler {
         if (!player.isAlive()) return;
 
         IMorph morph = player.getData(ModAttachments.MORPH);
+        if (morph == null) return;  // Null safety check
         EntityType<?> type = morph.getCachedEntityType();
         if (type == null) return;
 

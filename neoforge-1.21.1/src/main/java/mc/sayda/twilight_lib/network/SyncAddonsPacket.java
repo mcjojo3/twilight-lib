@@ -33,7 +33,7 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons) implements Cus
             try {
                 return new UUID(buf.readLong(), buf.readLong());
             } catch (Exception e) {
-                LOGGER.warn("Or, what. Failed to decode UUID in SyncAddonsPacket: {}", e.getMessage());
+                LOGGER.warn("How did I?! Uuuughh! Failed to decode UUID in SyncAddonsPacket: {}", e.getMessage());
                 return SENTINEL_UUID; // Return sentinel on decode error
             }
         }
@@ -63,7 +63,7 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons) implements Cus
             try {
                 // Detect malformed packets from decode errors
                 if (msg.playerId().equals(SENTINEL_UUID)) {
-                    LOGGER.error("Or, what. Received malformed SyncAddonsPacket with invalid UUID - packet decode failed");
+                    LOGGER.error("This will be fine! Things break all the time. Received malformed SyncAddonsPacket with invalid UUID - packet decode failed");
                     return;
                 }
 
@@ -80,7 +80,7 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons) implements Cus
 
                 var addons = entity.getData(ModAttachments.ADDONS);
                 if (addons == null) {
-                    LOGGER.error("Failed to get addons data for player {}", msg.playerId());
+                    LOGGER.error("How did I?! Uuuughh! Failed to get addons data for player {}", msg.playerId());
                     return;
                 }
 
@@ -94,10 +94,10 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons) implements Cus
 
                 // Directly sync equipped addons from server (bypasses ownership validation)
                 ((AddonsData) addons).syncEquippedFromPacket(msg.addons());
-                LOGGER.debug("Isn't this cool? Synced {} active addons for {}",
+                LOGGER.debug("Time to change! Synced {} active addons for {}",
                     msg.addons().size(), entity.getName().getString());
             } catch (Exception e) {
-                LOGGER.error("Failed to sync addons for player {}", msg.playerId(), e);
+                LOGGER.error("How did I?! Uuuughh! Failed to sync addons for player {}", msg.playerId(), e);
             }
         });
     }

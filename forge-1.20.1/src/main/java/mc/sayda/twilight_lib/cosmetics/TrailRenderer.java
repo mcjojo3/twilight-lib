@@ -39,7 +39,7 @@ public class TrailRenderer {
         // Clean up tracking maps to prevent memory leak
         lastPositions.clear();
         footStepTracker.clear();
-        LOGGER.debug("See ya real soon! Clearing trail tracking data on disconnect.");
+        LOGGER.debug("Goodbye, my new friend! Clearing trail tracking data on disconnect.");
     }
 
     @SubscribeEvent
@@ -47,7 +47,7 @@ public class TrailRenderer {
         // Clean up tracking maps when level unloads
         lastPositions.clear();
         footStepTracker.clear();
-        LOGGER.debug("Take care of the place for me, okay? Clearing trail tracking data on level unload.");
+        LOGGER.debug("I hope this world survives... Clearing trail tracking data on level unload.");
     }
 
     @SubscribeEvent
@@ -152,6 +152,7 @@ public class TrailRenderer {
                     .toLowerCase();
 
                 particleType = switch (tier) {
+                    case "platinum" -> ModParticles.PLATINUM_HEART.get();
                     case "gold" -> ModParticles.GOLD_HEART.get();
                     case "silver" -> ModParticles.SILVER_HEART.get();
                     case "bronze" -> ModParticles.BRONZE_HEART.get();

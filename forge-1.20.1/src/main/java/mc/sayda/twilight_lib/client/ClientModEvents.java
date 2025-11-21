@@ -10,6 +10,7 @@ import mc.sayda.twilight_lib.entity.ModEntities;
 import mc.sayda.twilight_lib.particle.BronzeHeartParticle;
 import mc.sayda.twilight_lib.particle.GoldHeartParticle;
 import mc.sayda.twilight_lib.particle.ModParticles;
+import mc.sayda.twilight_lib.particle.PlatinumHeartParticle;
 import mc.sayda.twilight_lib.particle.RatvenomParticle;
 import mc.sayda.twilight_lib.particle.SilentHoneyParticle;
 import mc.sayda.twilight_lib.particle.SilverHeartParticle;
@@ -85,6 +86,7 @@ public class ClientModEvents {
         event.registerSpriteSet(ModParticles.BRONZE_HEART.get(), BronzeHeartParticle::provider);
         event.registerSpriteSet(ModParticles.SILVER_HEART.get(), SilverHeartParticle::provider);
         event.registerSpriteSet(ModParticles.GOLD_HEART.get(), GoldHeartParticle::provider);
+        event.registerSpriteSet(ModParticles.PLATINUM_HEART.get(), PlatinumHeartParticle::provider);
         event.registerSpriteSet(ModParticles.RATVENOM.get(), RatvenomParticle::provider);
         event.registerSpriteSet(ModParticles.SILENT_HONEY.get(), SilentHoneyParticle::provider);
         event.registerSpriteSet(ModParticles.WOLF_PRINT.get(), WolfPrintParticle::provider);

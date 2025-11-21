@@ -196,14 +196,14 @@ public class TwilightLibCommands {
                 }
             } catch (Exception e) {
                 // Ignore entities that fail to create
-                LOGGER.trace("Failed to create test entity for {}: {}", rl, e.getMessage());
+                LOGGER.trace("How did I?! Uuuughh! Failed to create test entity for {}: {}", rl, e.getMessage());
             } finally {
                 // Always discard test entity to prevent leak
                 if (testEntity != null) {
                     try {
                         testEntity.discard();
                     } catch (Exception e) {
-                        LOGGER.warn("This will be fine! Things break all the time. Failed to discard test entity for {}: {}", rl, e.getMessage());
+                        LOGGER.warn("How did I?! Uuuughh! Failed to discard test entity for {}: {}", rl, e.getMessage());
                     }
                 }
             }
@@ -230,14 +230,32 @@ public class TwilightLibCommands {
                                                     ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                                     return 0;
                                                 }
-                                                return executeMorph(ctx.getSource(), target, ResourceLocationArgument.getId(ctx, "entity"));
+                                                return executeMorph(ctx.getSource(), target, ResourceLocationArgument.getId(ctx, "entity"), false);
                                             })
+                                            // morph <entity> <hidenametag>
+                                            .then(Commands.argument("hidenametag", BoolArgumentType.bool())
+                                                    .executes(ctx -> {
+                                                        ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
+                                                        if (target == null) {
+                                                            ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                            return 0;
+                                                        }
+                                                        return executeMorph(ctx.getSource(), target, ResourceLocationArgument.getId(ctx, "entity"), BoolArgumentType.getBool(ctx, "hidenametag"));
+                                                    })
+                                            )
                                             // morph <entity> <target>
                                             .then(Commands.argument("target", EntityArgument.player())
                                                     .executes(ctx -> {
                                                         ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
-                                                        return executeMorph(ctx.getSource(), target, ResourceLocationArgument.getId(ctx, "entity"));
+                                                        return executeMorph(ctx.getSource(), target, ResourceLocationArgument.getId(ctx, "entity"), false);
                                                     })
+                                                    // morph <entity> <target> <hidenametag>
+                                                    .then(Commands.argument("hidenametag", BoolArgumentType.bool())
+                                                            .executes(ctx -> {
+                                                                ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                return executeMorph(ctx.getSource(), target, ResourceLocationArgument.getId(ctx, "entity"), BoolArgumentType.getBool(ctx, "hidenametag"));
+                                                            })
+                                                    )
                                             )
                                     )
                             )
@@ -250,14 +268,14 @@ public class TwilightLibCommands {
                                             ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
                                             return 0;
                                         }
-                                        setMorph(ctx.getSource(), target, Optional.empty());
+                                        setMorph(ctx.getSource(), target, Optional.empty(), false);
                                         return 1;
                                     })
                                     // unmorph <target>
                                     .then(Commands.argument("target", EntityArgument.player())
                                             .executes(ctx -> {
                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
-                                                setMorph(ctx.getSource(), target, Optional.empty());
+                                                setMorph(ctx.getSource(), target, Optional.empty(), false);
                                                 return 1;
                                             })
                                     )
@@ -516,7 +534,7 @@ public class TwilightLibCommands {
         }
     }
 
-    private static int executeMorph(CommandSourceStack source, ServerPlayer target, ResourceLocation rl) {
+    private static int executeMorph(CommandSourceStack source, ServerPlayer target, ResourceLocation rl, boolean hideNametag) {
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(rl);
 
         if (type == null || type == EntityType.PLAYER) {
@@ -538,7 +556,7 @@ public class TwilightLibCommands {
 
             if (!isLiving) {
                 source.sendFailure(Component.literal("Entity must be a LivingEntity."));
-                LOGGER.warn("Is this the best physical representation you can manifest? It completely lacks zazz! {}", rl);
+                LOGGER.warn("Is this the best physical representation you can manifest? {}", rl);
                 return 0;
             }
         } finally {
@@ -546,26 +564,27 @@ public class TwilightLibCommands {
             try {
                 testEntity.discard();
             } catch (Exception e) {
-                LOGGER.error("Oh, dung beetles! Failed to discard test entity for {}: {}", rl, e.getMessage());
+                LOGGER.error("How did I?! Uuuughh! Failed to discard test entity for {}: {}", rl, e.getMessage());
             }
         }
 
-        setMorph(source, target, Optional.of(rl));
-        LOGGER.debug("Want to see something neat? {} morphed into {}", target.getGameProfile().getName(), rl);
+        setMorph(source, target, Optional.of(rl), hideNametag);
+        LOGGER.debug("Want to see something neat? {} morphed into {} (nametag hidden: {})", target.getGameProfile().getName(), rl, hideNametag);
         return 1;
     }
 
-    private static void setMorph(CommandSourceStack source, ServerPlayer target, Optional<ResourceLocation> morph) {
+    private static void setMorph(CommandSourceStack source, ServerPlayer target, Optional<ResourceLocation> morph, boolean hideNametag) {
         LazyOptional<IMorph> cap = target.getCapability(MorphProvider.MORPH_CAP);
         cap.ifPresent(m -> {
             // Optimization: Skip if already morphed to this entity
             if (m.getEntityType().equals(morph)) {
-                LOGGER.debug("Dusk and dawn are the same. {} is already morphed as {}, skipping unnecessary update",
+                LOGGER.debug("Yeah? Well... {} is already morphed as {}, skipping unnecessary update",
                     target.getGameProfile().getName(), morph.map(ResourceLocation::toString).orElse("none"));
                 return;
             }
 
             m.setEntityType(morph);
+            m.setNametagHidden(hideNametag); // Set nametag visibility
 
             // Save to persistent NBT for death persistence
             if (morph.isPresent()) {
@@ -575,14 +594,15 @@ public class TwilightLibCommands {
                 LOGGER.debug("Paradigm shift time! {} has been unmorphed", target.getGameProfile().getName());
             }
 
-            NetworkHandler.sendMorphToAll(SyncMorphPacket.of(target.getUUID(), morph));
+            NetworkHandler.sendMorphToAll(SyncMorphPacket.of(target.getUUID(), morph, hideNametag));
             target.refreshDimensions();
         });
 
         // Send feedback only to admin/console (not when player targets self)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             if (morph.isPresent()) {
-                source.sendSuccess(() -> Component.literal("Morph '" + morph.get() + "' set for " + target.getGameProfile().getName()), true);
+                String nametagStatus = hideNametag ? " (nametag hidden)" : " (nametag visible)";
+                source.sendSuccess(() -> Component.literal("Morph '" + morph.get() + "' set for " + target.getGameProfile().getName() + nametagStatus), true);
             } else {
                 source.sendSuccess(() -> Component.literal("Morph removed for " + target.getGameProfile().getName()), true);
             }
@@ -600,7 +620,7 @@ public class TwilightLibCommands {
         target.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
             // Optimization: Skip if trail is already active
             if (trails.isTrailActive(trailId)) {
-                LOGGER.debug("Or, what. {} already has trail '{}' active, skipping unnecessary update",
+                LOGGER.debug("Yeah? Well... {} already has trail '{}' active, skipping unnecessary update",
                     target.getGameProfile().getName(), trailId);
                 return;
             }
@@ -754,7 +774,7 @@ public class TwilightLibCommands {
 
                     int finalCount = syncedPlayers;
                     source.sendSuccess(() -> Component.literal("✓ Re-synced cosmetics for " + finalCount + " online players"), false);
-                    LOGGER.info("More magic! Re-synced cosmetics for {} online players", finalCount);
+                    LOGGER.info("Time to change! Re-synced cosmetics for {} online players", finalCount);
                 }
             }).exceptionally(ex -> {
                 source.sendFailure(Component.literal("✗ Failed to reload supporter data: " + ex.getMessage()));
@@ -795,10 +815,10 @@ public class TwilightLibCommands {
         // Sync morph (independent of supporter status - set by commands)
         player.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
             morph.getEntityType().ifPresent(rl -> {
-                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), rl));
+                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), Optional.of(rl), morph.isNametagHidden()));
                 player.refreshDimensions();
                 player.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
-                LOGGER.debug("Changing shapes! Re-synced morph {} for {}", rl, player.getGameProfile().getName());
+                LOGGER.debug("Time to change! Re-synced morph {} for {}", rl, player.getGameProfile().getName());
             });
         });
 
@@ -876,12 +896,20 @@ public class TwilightLibCommands {
                 }
 
                 player.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
-                NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
+                if (!effects.getActiveEffects().isEmpty()) {
+                    NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
+                }
             });
 
-            LOGGER.debug("Let's go! Re-synced {} trails, {} addons, {} effects for {}",
+            LOGGER.debug("Time to change! Re-synced {} trails, {} addons, {} effects for {}",
                 allTrails.size(), allAddons.size(), allEffects.size(), player.getGameProfile().getName());
         }
+
+        // Sync model variant (independent of supporter status - set by commands)
+        player.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
+            NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
+            LOGGER.debug("Time to change! Re-synced model variant for {}", player.getGameProfile().getName());
+        });
     }
 
     private static int executeEquipAddon(CommandSourceStack source, ServerPlayer target, String addonId, boolean persistent) {
@@ -894,7 +922,7 @@ public class TwilightLibCommands {
         target.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             // Optimization: Skip if addon is already active
             if (addons.isAddonActive(addonId)) {
-                LOGGER.debug("Was that... sharing? {} already has addon '{}' active, skipping unnecessary update",
+                LOGGER.debug("Yeah? Well... {} already has addon '{}' active, skipping unnecessary update",
                     target.getGameProfile().getName(), addonId);
                 return;
             }
@@ -962,7 +990,7 @@ public class TwilightLibCommands {
         target.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
             // Optimization: Skip if already set to avoid unnecessary NBT writes and network syncs
             if (modelVariant.hasCustomVariant() && modelVariant.getModelVariant().equals(normalized)) {
-                LOGGER.debug("Things totally change so they can be the same but also totally different! {} already has model variant '{}', skipping unnecessary update", target.getGameProfile().getName(), normalized);
+                LOGGER.debug("Yeah? Well... {} already has model variant '{}', skipping unnecessary update", target.getGameProfile().getName(), normalized);
                 return;
             }
 

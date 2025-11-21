@@ -39,13 +39,15 @@ public class SyncModelVariantPacket {
 
     public static void encode(SyncModelVariantPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.playerId);
-        buf.writeUtf(msg.modelVariant);
+        // Limit string length to 16 chars (sufficient for "steve"/"alex")
+        buf.writeUtf(msg.modelVariant, 16);
         buf.writeBoolean(msg.hasCustomVariant);
     }
 
     public static SyncModelVariantPacket decode(FriendlyByteBuf buf) {
         UUID id = buf.readUUID();
-        String variant = buf.readUtf();
+        // Limit string length to 16 chars to prevent malicious large strings
+        String variant = buf.readUtf(16);
         boolean hasCustom = buf.readBoolean();
         return new SyncModelVariantPacket(id, variant, hasCustom);
     }
@@ -84,7 +86,7 @@ public class SyncModelVariantPacket {
                 } else {
                     m.setModelVariant(msg.modelVariant);
                 }
-                LOGGER.debug("Trickster never loses. Synced model variant {} for {}", msg.modelVariant, entity.getName().getString());
+                LOGGER.debug("Time to change! Synced model variant {} for {}", msg.modelVariant, entity.getName().getString());
             });
         });
         ctx.get().setPacketHandled(true);

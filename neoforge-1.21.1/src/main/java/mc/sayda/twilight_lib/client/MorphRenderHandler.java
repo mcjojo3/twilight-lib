@@ -113,6 +113,23 @@ public class MorphRenderHandler {
 
         final float pt = evt.getPartialTick();
 
+        // === NAMETAG ===
+        // Copy player's display name (includes team colors, prefixes, etc.) to proxy
+        // and show it unless hideNametag is enabled
+        boolean shouldShowNametag = !morph.isNametagHidden();
+        // Debug logging to verify nametag visibility setting
+        /*if (player.tickCount % 100 == 0) { // Log every 100 ticks to avoid spam
+            LOGGER.debug("Nametag visibility for {}: hideNametag={}, shouldShow={}",
+                player.getGameProfile().getName(), morph.isNametagHidden(), shouldShowNametag);
+        }*/
+        if (shouldShowNametag) {
+            proxy.setCustomName(player.getDisplayName());
+            proxy.setCustomNameVisible(true);
+        } else {
+            proxy.setCustomName(null); // Remove custom name entirely when hidden
+            proxy.setCustomNameVisible(false);
+        }
+
         // === POSITION & ROTATION ===
         proxy.xo = (float) player.xo;
         proxy.yo = (float) player.yo;
@@ -298,7 +315,7 @@ public class MorphRenderHandler {
             Entity e = type.create(level);
 
             if (e == null) {
-                LOGGER.error("Failed to create entity for morph: {}. Player: {}. " +
+                LOGGER.error("How did I?! Uuuughh! Failed to create entity for morph: {}. Player: {}. " +
                              "This may indicate a mod incompatibility or corrupted entity registry.",
                              rl, uuid);
                 return cached; // Keep old entity on failure

@@ -11,6 +11,8 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.slf4j.Logger;
 
+import java.util.Optional;
+
 public class NetworkHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String PROTOCOL = "1";
@@ -66,9 +68,9 @@ public class NetworkHandler {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
         try {
             PacketDistributor.sendToPlayer(serverPlayer, pkt);
-            LOGGER.debug("I'm coming over to say 'Hi!' Sending morph to {}", player.getGameProfile().getName());
+            LOGGER.debug("Here you go! Sending morph to {}", player.getGameProfile().getName());
         } catch (Exception e) {
-            LOGGER.warn("What? No! Why isn't he moving anymore? Failed to send morph to {}", player.getGameProfile().getName(), e);
+            LOGGER.warn("How did I?! Uuuughh! Failed to send morph to {}", player.getGameProfile().getName(), e);
         }
     }
 
@@ -79,11 +81,11 @@ public class NetworkHandler {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             IMorph morph = p.getData(ModAttachments.MORPH);
             if (morph == null) {
-                LOGGER.warn("Failed to get morph data for player {}", p.getUUID());
+                LOGGER.warn("How did I?! Uuuughh! Failed to get morph data for player {}", p.getUUID());
                 continue;
             }
             morph.getEntityType().ifPresent(rl ->
-                sendToPlayer(recipient, SyncMorphPacket.of(p.getUUID(), rl))
+                sendToPlayer(recipient, SyncMorphPacket.of(p.getUUID(), Optional.of(rl), morph.isNametagHidden()))
             );
         }
     }
@@ -92,9 +94,9 @@ public class NetworkHandler {
     public static void sendAddonsToAll(SyncAddonsPacket pkt) {
         try {
             PacketDistributor.sendToAllPlayers(pkt);
-            LOGGER.debug("Things totally change so they can be the same but also totally different! Sending addons packet to all players.");
+            LOGGER.debug("Here you go! Sending addons packet to all players.");
         } catch (Exception e) {
-            LOGGER.error("Oh, dung beetles! Failed to send addons packet to all players", e);
+            LOGGER.error("How did I?! Uuuughh! Failed to send addons packet to all players", e);
         }
     }
 
@@ -102,9 +104,9 @@ public class NetworkHandler {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
         try {
             PacketDistributor.sendToPlayer(serverPlayer, pkt);
-            LOGGER.debug("Starlight is an expression of something inside bursting to get out! Sending addons to {}", player.getGameProfile().getName());
+            LOGGER.debug("Here you go! Sending addons to {}", player.getGameProfile().getName());
         } catch (Exception e) {
-            LOGGER.warn("Really?! Failed to send addons to {}", player.getGameProfile().getName(), e);
+            LOGGER.warn("How did I?! Uuuughh! Failed to send addons to {}", player.getGameProfile().getName(), e);
         }
     }
 
@@ -128,9 +130,9 @@ public class NetworkHandler {
     public static void sendTrailsToAll(SyncTrailsPacket pkt) {
         try {
             PacketDistributor.sendToAllPlayers(pkt);
-            LOGGER.debug("The wheel turns, day becomes night... time to make colors! Sending trails packet to all players.");
+            LOGGER.debug("Here you go! Sending trails packet to all players.");
         } catch (Exception e) {
-            LOGGER.error("Oh, farn it! Failed to send trails packet to all players", e);
+            LOGGER.error("How did I?! Uuuughh! Failed to send trails packet to all players", e);
         }
     }
 
@@ -138,9 +140,9 @@ public class NetworkHandler {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
         try {
             PacketDistributor.sendToPlayer(serverPlayer, pkt);
-            LOGGER.debug("Whoo! Sending trails to {}", player.getGameProfile().getName());
+            LOGGER.debug("Here you go! Sending trails to {}", player.getGameProfile().getName());
         } catch (Exception e) {
-            LOGGER.warn("Shoot! Failed to send trails to {}", player.getGameProfile().getName(), e);
+            LOGGER.warn("How did I?! Uuuughh! Failed to send trails to {}", player.getGameProfile().getName(), e);
         }
     }
 
@@ -164,9 +166,9 @@ public class NetworkHandler {
     public static void sendEffectsToAll(SyncEffectsPacket pkt) {
         try {
             PacketDistributor.sendToAllPlayers(pkt);
-            LOGGER.debug("Yes, more magic! Sending effects packet to all players.");
+            LOGGER.debug("Here you go! Sending effects packet to all players.");
         } catch (Exception e) {
-            LOGGER.error("Dang! Failed to send effects packet to all players", e);
+            LOGGER.error("How did I?! Uuuughh! Failed to send effects packet to all players", e);
         }
     }
 
@@ -174,9 +176,9 @@ public class NetworkHandler {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
         try {
             PacketDistributor.sendToPlayer(serverPlayer, pkt);
-            LOGGER.debug("Ooh! Oooooh! Sending effects to {}", player.getGameProfile().getName());
+            LOGGER.debug("Here you go! Sending effects to {}", player.getGameProfile().getName());
         } catch (Exception e) {
-            LOGGER.warn("Miss! Failed to send effects to {}", player.getGameProfile().getName(), e);
+            LOGGER.warn("How did I?! Uuuughh! Failed to send effects to {}", player.getGameProfile().getName(), e);
         }
     }
 
@@ -200,9 +202,9 @@ public class NetworkHandler {
     public static void sendModelVariantToAll(SyncModelVariantPacket pkt) {
         try {
             PacketDistributor.sendToAllPlayers(pkt);
-            LOGGER.debug("Shape-shifter extraordinaire! Sending model variant packet to all players.");
+            LOGGER.debug("Here you go! Sending model variant packet to all players.");
         } catch (Exception e) {
-            LOGGER.error("What?! Failed to send model variant packet to all players", e);
+            LOGGER.error("How did I?! Uuuughh! Failed to send model variant packet to all players", e);
         }
     }
 
@@ -210,9 +212,9 @@ public class NetworkHandler {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
         try {
             PacketDistributor.sendToPlayer(serverPlayer, pkt);
-            LOGGER.debug("Changing forms! Sending model variant to {}", player.getGameProfile().getName());
+            LOGGER.debug("Here you go! Sending model variant to {}", player.getGameProfile().getName());
         } catch (Exception e) {
-            LOGGER.warn("Nope! Failed to send model variant to {}", player.getGameProfile().getName(), e);
+            LOGGER.warn("How did I?! Uuuughh! Failed to send model variant to {}", player.getGameProfile().getName(), e);
         }
     }
 

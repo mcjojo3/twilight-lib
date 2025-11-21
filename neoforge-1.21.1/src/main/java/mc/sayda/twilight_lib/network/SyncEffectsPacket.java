@@ -34,7 +34,7 @@ public record SyncEffectsPacket(UUID playerId, Set<String> effects, boolean trig
             try {
                 return new UUID(buf.readLong(), buf.readLong());
             } catch (Exception e) {
-                LOGGER.warn("Oh. Wow. That's like, totally off the mandala. Failed to decode UUID in SyncEffectsPacket: {}", e.getMessage());
+                LOGGER.warn("How did I?! Uuuughh! Failed to decode UUID in SyncEffectsPacket: {}", e.getMessage());
                 return SENTINEL_UUID; // Return sentinel on decode error
             }
         }
@@ -71,14 +71,14 @@ public record SyncEffectsPacket(UUID playerId, Set<String> effects, boolean trig
             try {
                 // Detect malformed packets from decode errors
                 if (msg.playerId().equals(SENTINEL_UUID)) {
-                    LOGGER.error("This will be fine! Don't worry about it Zoe, things break all the time. Received malformed SyncEffectsPacket with invalid UUID - packet decode failed");
+                    LOGGER.error("This will be fine! Things break all the time. Received malformed SyncEffectsPacket with invalid UUID - packet decode failed");
                     return;
                 }
 
                 var mc = Minecraft.getInstance();
                 var level = mc.level;
                 if (level == null) {
-                    LOGGER.warn("Daylight is too bright, the night is too dark! Cannot sync effects - level is null");
+                    LOGGER.warn("Are we done in this reality yet? Cannot sync effects - level is null");
                     return;
                 }
                 var entity = level.getPlayerByUUID(msg.playerId());
@@ -89,7 +89,7 @@ public record SyncEffectsPacket(UUID playerId, Set<String> effects, boolean trig
 
                 var effects = entity.getData(ModAttachments.EFFECTS);
                 if (effects == null) {
-                    LOGGER.error("Failed to get effects data for player {}", msg.playerId());
+                    LOGGER.error("How did I?! Uuuughh! Failed to get effects data for player {}", msg.playerId());
                     return;
                 }
 
@@ -112,7 +112,7 @@ public record SyncEffectsPacket(UUID playerId, Set<String> effects, boolean trig
                     SpawnEffectHandler.scheduleSpawnEffect(msg.playerId());
                 }
             } catch (Exception e) {
-                LOGGER.error("Failed to sync effects for player {}", msg.playerId(), e);
+                LOGGER.error("How did I?! Uuuughh! Failed to sync effects for player {}", msg.playerId(), e);
             }
         });
     }

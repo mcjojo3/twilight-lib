@@ -60,7 +60,7 @@ public class SyncEffectsPacket {
             boolean triggerSpawnEffect = buf.readBoolean();
             return new SyncEffectsPacket(id, effects, triggerSpawnEffect);
         } catch (Exception e) {
-            LOGGER.error("Oh. Wow. That's like, totally off the mandala. Failed to decode SyncEffectsPacket: {}", e.getMessage());
+            LOGGER.error("How did I?! Uuuughh! Failed to decode SyncEffectsPacket: {}", e.getMessage());
             // Return empty packet to prevent crash
             return new SyncEffectsPacket(new UUID(0, 0), new HashSet<>(), false);
         }
@@ -70,14 +70,14 @@ public class SyncEffectsPacket {
         ctx.get().enqueueWork(() -> {
             // Detect malformed packets from decode errors
             if (msg.playerId.equals(new UUID(0, 0))) {
-                LOGGER.error("This will be fine! Don't worry about it Zoe, things break all the time. Received malformed SyncEffectsPacket with invalid UUID - packet decode failed");
+                LOGGER.error("This will be fine! Things break all the time. Received malformed SyncEffectsPacket with invalid UUID - packet decode failed");
                 return;
             }
 
             var mc = Minecraft.getInstance();
             var level = mc.level;
             if (level == null) {
-                LOGGER.warn("Daylight is too bright, the night is too dark! Cannot sync effects - level is null");
+                LOGGER.warn("Are we done in this reality yet? Cannot sync effects - level is null");
                 return;
             }
             var entity = level.getPlayerByUUID(msg.playerId);
@@ -89,7 +89,7 @@ public class SyncEffectsPacket {
             entity.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
                 // Type-safe cast with validation to prevent crashes in heavily modded environments
                 if (!(effects instanceof EffectsData)) {
-                    LOGGER.error("Incompatible effects capability implementation for player {}. Expected EffectsData but got {}. " +
+                    LOGGER.error("What's with all the negative waves? Incompatible effects capability implementation for player {}. Expected EffectsData but got {}. " +
                                  "This may be caused by another mod replacing the capability.",
                                  entity.getName().getString(), effects.getClass().getName());
                     return; // Gracefully skip instead of crashing

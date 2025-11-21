@@ -136,7 +136,7 @@ public class TwilightLib {
         // Add custom attributes to all living entities (especially players)
         evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.MINING_PENALTY);
         evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.FOV_MODIFIER);
-        LOGGER.debug("It's something new! Added MINING_PENALTY and FOV_MODIFIER attributes to players.");
+        LOGGER.debug("Come on, this is gonna be fun! Added MINING_PENALTY and FOV_MODIFIER attributes to players.");
     }
 
     private void onPlayerLogin(final PlayerEvent.PlayerLoggedInEvent evt) {
@@ -150,32 +150,42 @@ public class TwilightLib {
 
         if (persistentData.contains(TwilightConstants.NBT_MORPH, CompoundTag.TAG_COMPOUND)) {
             IMorph morph = loggedInPlayer.getData(ModAttachments.MORPH);
-            morph.deserialize(persistentData.getCompound(TwilightConstants.NBT_MORPH));
-            LOGGER.debug("Come on, this is gonna be fun! Restored morph from NBT for {}", loggedInPlayer.getGameProfile().getName());
+            if (morph != null) {
+                morph.deserialize(persistentData.getCompound(TwilightConstants.NBT_MORPH));
+                LOGGER.debug("Come on, this is gonna be fun! Restored morph from NBT for {}", loggedInPlayer.getGameProfile().getName());
+            }
         }
 
         if (persistentData.contains(TwilightConstants.NBT_ADDONS, CompoundTag.TAG_COMPOUND)) {
             IAddons addons = loggedInPlayer.getData(ModAttachments.ADDONS);
-            addons.deserialize(persistentData.getCompound(TwilightConstants.NBT_ADDONS));
-            LOGGER.debug("All the neat things! Restored {} addons from NBT for {}", addons.getAddons().size(), loggedInPlayer.getGameProfile().getName());
+            if (addons != null) {
+                addons.deserialize(persistentData.getCompound(TwilightConstants.NBT_ADDONS));
+                LOGGER.debug("Come on, this is gonna be fun! Restored {} addons from NBT for {}", addons.getAddons().size(), loggedInPlayer.getGameProfile().getName());
+            }
         }
 
         if (persistentData.contains(TwilightConstants.NBT_TRAILS, CompoundTag.TAG_COMPOUND)) {
             ITrails trails = loggedInPlayer.getData(ModAttachments.TRAILS);
-            trails.deserialize(persistentData.getCompound(TwilightConstants.NBT_TRAILS));
-            LOGGER.debug("Sparkles everywhere! Restored {} trails from NBT for {}", trails.getTrails().size(), loggedInPlayer.getGameProfile().getName());
+            if (trails != null) {
+                trails.deserialize(persistentData.getCompound(TwilightConstants.NBT_TRAILS));
+                LOGGER.debug("Come on, this is gonna be fun! Restored {} trails from NBT for {}", trails.getTrails().size(), loggedInPlayer.getGameProfile().getName());
+            }
         }
 
         if (persistentData.contains(TwilightConstants.NBT_EFFECTS, CompoundTag.TAG_COMPOUND)) {
             IEffects effects = loggedInPlayer.getData(ModAttachments.EFFECTS);
-            effects.deserialize(persistentData.getCompound(TwilightConstants.NBT_EFFECTS));
-            LOGGER.debug("Magic is in the air! Restored {} effects from NBT for {}", effects.getEffects().size(), loggedInPlayer.getGameProfile().getName());
+            if (effects != null) {
+                effects.deserialize(persistentData.getCompound(TwilightConstants.NBT_EFFECTS));
+                LOGGER.debug("Come on, this is gonna be fun! Restored {} effects from NBT for {}", effects.getEffects().size(), loggedInPlayer.getGameProfile().getName());
+            }
         }
 
         if (persistentData.contains(TwilightConstants.NBT_MODEL_VARIANT, CompoundTag.TAG_COMPOUND)) {
             IModelVariant modelVariant = loggedInPlayer.getData(ModAttachments.MODEL_VARIANT);
-            modelVariant.deserialize(persistentData.getCompound(TwilightConstants.NBT_MODEL_VARIANT));
-            LOGGER.debug("Shape-shifting! Restored model variant from NBT for {}", loggedInPlayer.getGameProfile().getName());
+            if (modelVariant != null) {
+                modelVariant.deserialize(persistentData.getCompound(TwilightConstants.NBT_MODEL_VARIANT));
+                LOGGER.debug("Come on, this is gonna be fun! Restored model variant from NBT for {}", loggedInPlayer.getGameProfile().getName());
+            }
         }
 
         // Ensure supporter data is loaded before checking (waits if fetch is in progress)
@@ -211,14 +221,14 @@ public class TwilightLib {
 
             // Auto-grant trails (tier unlocks + manual overrides)
             ITrails trails = loggedInPlayer.getData(ModAttachments.TRAILS);
-            // Sync owned trails with current supporter status (preserves persistent active state)
-            Set<String> currentOwnedTrails = new java.util.HashSet<>(trails.getTrails());
 
             // Type-safe cast to access implementation-specific methods
             if (trails == null || !(trails instanceof mc.sayda.twilight_lib.capabilities.TrailsData)) {
-                LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected trails capability implementation: {}", trails == null ? "null" : trails.getClass());
+                LOGGER.error("Is this the best physical representation you can manifest? Unexpected trails capability implementation: {}", trails == null ? "null" : trails.getClass());
             } else {
                 mc.sayda.twilight_lib.capabilities.TrailsData trailsData = (mc.sayda.twilight_lib.capabilities.TrailsData) trails;
+                // Sync owned trails with current supporter status (preserves persistent active state)
+                Set<String> currentOwnedTrails = new java.util.HashSet<>(trails.getTrails());
 
                 // Remove trails no longer granted (ownership only - doesn't affect persistent active)
                 for (String trail : currentOwnedTrails) {
@@ -239,14 +249,14 @@ public class TwilightLib {
 
             // Auto-grant addons (tier unlocks + manual overrides)
             IAddons addons = loggedInPlayer.getData(ModAttachments.ADDONS);
-            // Sync owned addons with current supporter status (preserves persistent active state)
-            Set<String> currentOwnedAddons = new java.util.HashSet<>(addons.getAddons());
 
             // Type-safe cast to access implementation-specific methods
             if (addons == null || !(addons instanceof AddonsData)) {
-                LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected addons capability implementation: {}", addons == null ? "null" : addons.getClass());
+                LOGGER.error("Is this the best physical representation you can manifest? Unexpected addons capability implementation: {}", addons == null ? "null" : addons.getClass());
             } else {
                 AddonsData addonsData = (AddonsData) addons;
+                // Sync owned addons with current supporter status (preserves persistent active state)
+                Set<String> currentOwnedAddons = new java.util.HashSet<>(addons.getAddons());
 
                 // Remove addons no longer granted (ownership only - doesn't affect persistent active)
                 for (String addon : currentOwnedAddons) {
@@ -267,14 +277,14 @@ public class TwilightLib {
 
             // Auto-grant effects (tier unlocks + manual overrides)
             IEffects effects = loggedInPlayer.getData(ModAttachments.EFFECTS);
-            // Sync owned effects with current supporter status (preserves persistent active state)
-            Set<String> currentOwnedEffects = new java.util.HashSet<>(effects.getEffects());
 
             // Type-safe cast to access implementation-specific methods
             if (effects == null || !(effects instanceof EffectsData)) {
-                LOGGER.error("Is this the best physical representation you can manifest? It completely lacks zazz! Unexpected effects capability implementation: {}", effects == null ? "null" : effects.getClass());
+                LOGGER.error("Is this the best physical representation you can manifest? Unexpected effects capability implementation: {}", effects == null ? "null" : effects.getClass());
             } else {
                 EffectsData effectsData = (EffectsData) effects;
+                // Sync owned effects with current supporter status (preserves persistent active state)
+                Set<String> currentOwnedEffects = new java.util.HashSet<>(effects.getEffects());
 
                 // Remove effects no longer granted (ownership only - doesn't affect persistent active)
                 for (String effect : currentOwnedEffects) {
@@ -304,33 +314,43 @@ public class TwilightLib {
 
         // Send this player's morph to everyone else
         IMorph morph = loggedInPlayer.getData(ModAttachments.MORPH);
-        morph.getEntityType().ifPresent(rl -> {
-            NetworkHandler.sendMorphToAll(SyncMorphPacket.of(loggedInPlayer.getUUID(), rl));
-            // Force dimension refresh to apply morph hitbox immediately
-            loggedInPlayer.refreshDimensions();
-            // Persist morph state to NBT to prevent data loss on logout
-            loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
-            LOGGER.info("I wanna have fun and chat with someone besides myself! Player {} logged in with morph: {}", loggedInPlayer.getGameProfile().getName(), rl);
-        });
+        if (morph != null) {
+            morph.getEntityType().ifPresent(rl -> {
+                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(loggedInPlayer.getUUID(), Optional.of(rl), morph.isNametagHidden()));
+                // Force dimension refresh to apply morph hitbox immediately
+                loggedInPlayer.refreshDimensions();
+                // Persist morph state to NBT to prevent data loss on logout
+                loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
+                LOGGER.info("We're gonna be best friends! Player {} logged in with morph: {}", loggedInPlayer.getGameProfile().getName(), rl);
+            });
+        }
 
         // Send this player's active addons to everyone else
         IAddons loginAddons = loggedInPlayer.getData(ModAttachments.ADDONS);
-        if (!loginAddons.getActiveAddons().isEmpty()) {
+        if (loginAddons != null && !loginAddons.getActiveAddons().isEmpty()) {
             NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(loggedInPlayer.getUUID(), loginAddons.getActiveAddons()));
             LOGGER.info("We're gonna be best friends! Player {} logged in with {} active addons", loggedInPlayer.getGameProfile().getName(), loginAddons.getActiveAddons().size());
         }
 
         // Send this player's active trails to everyone else
         ITrails loginTrails = loggedInPlayer.getData(ModAttachments.TRAILS);
-        if (!loginTrails.getActiveTrails().isEmpty()) {
+        if (loginTrails != null && !loginTrails.getActiveTrails().isEmpty()) {
             NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(loggedInPlayer.getUUID(), loginTrails.getActiveTrails()));
-            LOGGER.info("Sparkles everywhere! Player {} logged in with {} active trails", loggedInPlayer.getGameProfile().getName(), loginTrails.getActiveTrails().size());
+            LOGGER.info("We're gonna be best friends! Player {} logged in with {} active trails", loggedInPlayer.getGameProfile().getName(), loginTrails.getActiveTrails().size());
         }
 
         // Send this player's effects to everyone else (trigger spawn effect on login)
         IEffects loginEffects = loggedInPlayer.getData(ModAttachments.EFFECTS);
-        if (!loginEffects.getActiveEffects().isEmpty()) {
+        if (loginEffects != null && !loginEffects.getActiveEffects().isEmpty()) {
             NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(loggedInPlayer.getUUID(), loginEffects.getActiveEffects(), true));
+        }
+
+        // Send this player's model variant to everyone else
+        IModelVariant loginModelVariant = loggedInPlayer.getData(ModAttachments.MODEL_VARIANT);
+        if (loginModelVariant != null) {
+            NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(loggedInPlayer.getUUID(), loginModelVariant));
+            LOGGER.info("We're gonna be best friends! Player {} logged in as {} model variant",
+                loggedInPlayer.getGameProfile().getName(), loginModelVariant.getModelVariant());
         }
     }
 
@@ -346,45 +366,55 @@ public class TwilightLib {
         if (oldData.contains(TwilightConstants.NBT_MORPH, CompoundTag.TAG_COMPOUND)) {
             CompoundTag morphData = oldData.getCompound(TwilightConstants.NBT_MORPH);
             IMorph newMorph = evt.getEntity().getData(ModAttachments.MORPH);
-            newMorph.deserialize(morphData);
-            LOGGER.debug("This will be fine! Things break all the time. Restoring morph from death.");
-            evt.getEntity().getPersistentData().put(TwilightConstants.NBT_MORPH, morphData);
+            if (newMorph != null) {
+                newMorph.deserialize(morphData);
+                LOGGER.debug("This will be fine! Things break all the time. Restoring morph from death.");
+                evt.getEntity().getPersistentData().put(TwilightConstants.NBT_MORPH, morphData);
+            }
         }
 
         // Restore addons (attachment is already copied via copyOnDeath())
         if (oldData.contains(TwilightConstants.NBT_ADDONS, CompoundTag.TAG_COMPOUND)) {
             CompoundTag addonsData = oldData.getCompound(TwilightConstants.NBT_ADDONS);
             IAddons newAddons = evt.getEntity().getData(ModAttachments.ADDONS);
-            newAddons.deserialize(addonsData);
-            LOGGER.debug("Here you go! Restoring addons from death.");
-            evt.getEntity().getPersistentData().put(TwilightConstants.NBT_ADDONS, addonsData);
+            if (newAddons != null) {
+                newAddons.deserialize(addonsData);
+                LOGGER.debug("This will be fine! Things break all the time. Restoring addons from death.");
+                evt.getEntity().getPersistentData().put(TwilightConstants.NBT_ADDONS, addonsData);
+            }
         }
 
         // Restore trails (attachment is already copied via copyOnDeath())
         if (oldData.contains(TwilightConstants.NBT_TRAILS, CompoundTag.TAG_COMPOUND)) {
             CompoundTag trailsData = oldData.getCompound(TwilightConstants.NBT_TRAILS);
             ITrails newTrails = evt.getEntity().getData(ModAttachments.TRAILS);
-            newTrails.deserialize(trailsData);
-            LOGGER.debug("More sparkles, now! Restoring trails from death.");
-            evt.getEntity().getPersistentData().put(TwilightConstants.NBT_TRAILS, trailsData);
+            if (newTrails != null) {
+                newTrails.deserialize(trailsData);
+                LOGGER.debug("This will be fine! Things break all the time. Restoring trails from death.");
+                evt.getEntity().getPersistentData().put(TwilightConstants.NBT_TRAILS, trailsData);
+            }
         }
 
         // Restore effects (attachment is already copied via copyOnDeath())
         if (oldData.contains(TwilightConstants.NBT_EFFECTS, CompoundTag.TAG_COMPOUND)) {
             CompoundTag effectsData = oldData.getCompound(TwilightConstants.NBT_EFFECTS);
             IEffects newEffects = evt.getEntity().getData(ModAttachments.EFFECTS);
-            newEffects.deserialize(effectsData);
-            LOGGER.debug("Yes, more magic! Restoring effects from death.");
-            evt.getEntity().getPersistentData().put(TwilightConstants.NBT_EFFECTS, effectsData);
+            if (newEffects != null) {
+                newEffects.deserialize(effectsData);
+                LOGGER.debug("This will be fine! Things break all the time. Restoring effects from death.");
+                evt.getEntity().getPersistentData().put(TwilightConstants.NBT_EFFECTS, effectsData);
+            }
         }
 
         // Restore model variant (attachment is already copied via copyOnDeath())
         if (oldData.contains(TwilightConstants.NBT_MODEL_VARIANT, CompoundTag.TAG_COMPOUND)) {
             CompoundTag modelVariantData = oldData.getCompound(TwilightConstants.NBT_MODEL_VARIANT);
             IModelVariant newModelVariant = evt.getEntity().getData(ModAttachments.MODEL_VARIANT);
-            newModelVariant.deserialize(modelVariantData);
-            LOGGER.debug("Changing forms! Restoring model variant from death.");
-            evt.getEntity().getPersistentData().put(TwilightConstants.NBT_MODEL_VARIANT, modelVariantData);
+            if (newModelVariant != null) {
+                newModelVariant.deserialize(modelVariantData);
+                LOGGER.debug("This will be fine! Things break all the time. Restoring model variant from death.");
+                evt.getEntity().getPersistentData().put(TwilightConstants.NBT_MODEL_VARIANT, modelVariantData);
+            }
         }
     }
 
@@ -394,39 +424,43 @@ public class TwilightLib {
 
         // Sync morph to client after respawn (when client-side player entity exists)
         IMorph morph = player.getData(ModAttachments.MORPH);
-        morph.getEntityType().ifPresent(rl -> {
-            NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), rl));
-            player.refreshDimensions();
-            // Persist morph state to NBT to prevent data loss
-            player.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
-            LOGGER.debug("The wheel turns, day becomes night... Player {} respawned as {}", player.getGameProfile().getName(), rl);
-        });
+        if (morph != null) {
+            morph.getEntityType().ifPresent(rl -> {
+                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), Optional.of(rl), morph.isNametagHidden()));
+                player.refreshDimensions();
+                // Persist morph state to NBT to prevent data loss
+                player.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
+                LOGGER.debug("The wheel turns, day becomes night... Player {} respawned as {}", player.getGameProfile().getName(), rl);
+            });
+        }
 
         // Sync active addons to client after respawn
         IAddons respawnAddons = player.getData(ModAttachments.ADDONS);
-        if (!respawnAddons.getActiveAddons().isEmpty()) {
+        if (respawnAddons != null && !respawnAddons.getActiveAddons().isEmpty()) {
             NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), respawnAddons.getActiveAddons()));
             LOGGER.debug("Aaand a skip-skip and a jump-jump! Player {} respawned with {} active addons", player.getGameProfile().getName(), respawnAddons.getActiveAddons().size());
         }
 
         // Sync active trails to client after respawn
         ITrails respawnTrails = player.getData(ModAttachments.TRAILS);
-        if (!respawnTrails.getActiveTrails().isEmpty()) {
+        if (respawnTrails != null && !respawnTrails.getActiveTrails().isEmpty()) {
             NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), respawnTrails.getActiveTrails()));
             LOGGER.debug("Something good is going to happen. With sparkles! Player {} respawned with {} active trails", player.getGameProfile().getName(), respawnTrails.getActiveTrails().size());
         }
 
         // Sync effects to client after respawn (trigger spawn effect on respawn)
         IEffects respawnEffects = player.getData(ModAttachments.EFFECTS);
-        if (!respawnEffects.getActiveEffects().isEmpty()) {
+        if (respawnEffects != null && !respawnEffects.getActiveEffects().isEmpty()) {
             NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), respawnEffects.getActiveEffects(), true));
             LOGGER.debug("Aw, this spell is neat! Player {} respawned with {} active effects", player.getGameProfile().getName(), respawnEffects.getActiveEffects().size());
         }
 
         // Sync model variant to client after respawn
         IModelVariant modelVariant = player.getData(ModAttachments.MODEL_VARIANT);
-        NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
-        LOGGER.debug("Shifting shapes! Player {} respawned as {} model", player.getGameProfile().getName(), modelVariant.getModelVariant());
+        if (modelVariant != null) {
+            NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
+            LOGGER.debug("Shifting shapes! Player {} respawned as {} model", player.getGameProfile().getName(), modelVariant.getModelVariant());
+        }
     }
 
     private void onPlayerStartTracking(final PlayerEvent.StartTracking evt) {
@@ -437,37 +471,41 @@ public class TwilightLib {
 
         // Send the tracked player's cosmetics to the tracking player
         IMorph morph = trackedPlayer.getData(ModAttachments.MORPH);
-        morph.getEntityType().ifPresent(rl -> {
-            NetworkHandler.sendToPlayer(trackingPlayer, SyncMorphPacket.of(trackedPlayer.getUUID(), rl));
-            LOGGER.debug("Peek-a-boo! Sent morph {} for {} to tracking player {}",
-                rl, trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
-        });
+        if (morph != null) {
+            morph.getEntityType().ifPresent(rl -> {
+                NetworkHandler.sendToPlayer(trackingPlayer, SyncMorphPacket.of(trackedPlayer.getUUID(), Optional.of(rl), morph.isNametagHidden()));
+                LOGGER.debug("Peek-a-boo! Sent morph {} for {} to tracking player {}",
+                    rl, trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
+            });
+        }
 
         IAddons addons = trackedPlayer.getData(ModAttachments.ADDONS);
-        if (!addons.getActiveAddons().isEmpty()) {
+        if (addons != null && !addons.getActiveAddons().isEmpty()) {
             NetworkHandler.sendAddonsToPlayer(trackingPlayer, new SyncAddonsPacket(trackedPlayer.getUUID(), addons.getActiveAddons()));
             LOGGER.debug("More friends! Sent {} addons for {} to tracking player {}",
                 addons.getActiveAddons().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
         }
 
         ITrails trails = trackedPlayer.getData(ModAttachments.TRAILS);
-        if (!trails.getActiveTrails().isEmpty()) {
+        if (trails != null && !trails.getActiveTrails().isEmpty()) {
             NetworkHandler.sendTrailsToPlayer(trackingPlayer, new SyncTrailsPacket(trackedPlayer.getUUID(), trails.getActiveTrails()));
             LOGGER.debug("Look at all the pretty trails! Sent {} trails for {} to tracking player {}",
                 trails.getActiveTrails().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
         }
 
         IEffects effects = trackedPlayer.getData(ModAttachments.EFFECTS);
-        if (!effects.getActiveEffects().isEmpty()) {
+        if (effects != null && !effects.getActiveEffects().isEmpty()) {
             NetworkHandler.sendEffectsToPlayer(trackingPlayer, new SyncEffectsPacket(trackedPlayer.getUUID(), effects.getActiveEffects(), false));
             LOGGER.debug("Magic everywhere! Sent {} effects for {} to tracking player {}",
                 effects.getActiveEffects().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
         }
 
         IModelVariant modelVariant = trackedPlayer.getData(ModAttachments.MODEL_VARIANT);
-        NetworkHandler.sendModelVariantToPlayer(trackingPlayer, SyncModelVariantPacket.of(trackedPlayer.getUUID(), modelVariant));
-        LOGGER.debug("See the different forms! Sent model variant {} for {} to tracking player {}",
-            modelVariant.getModelVariant(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
+        if (modelVariant != null) {
+            NetworkHandler.sendModelVariantToPlayer(trackingPlayer, SyncModelVariantPacket.of(trackedPlayer.getUUID(), modelVariant));
+            LOGGER.debug("See the different forms! Sent model variant {} for {} to tracking player {}",
+                modelVariant.getModelVariant(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
+        }
     }
 
     private static void onServerTick(final ServerTickEvent.Post evt) {
@@ -492,7 +530,7 @@ public class TwilightLib {
                     NetworkHandler.sendAllTrailsToPlayer(player);
                     NetworkHandler.sendAllEffectsToPlayer(player);
                     NetworkHandler.sendAllModelVariantsToPlayer(player);
-                    LOGGER.debug("Time passes differently here. Delayed cosmetics sync complete for {}", player.getGameProfile().getName());
+                    LOGGER.debug("While I wait, I will stay happy! Delayed cosmetics sync complete for {}", player.getGameProfile().getName());
                 } else {
                     LOGGER.debug("Player left before delayed sync could complete");
                 }

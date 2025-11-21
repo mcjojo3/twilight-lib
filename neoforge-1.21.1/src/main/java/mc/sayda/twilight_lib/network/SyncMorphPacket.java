@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import java.util.Optional;
 import java.util.UUID;
 
-public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity) implements CustomPacketPayload {
+public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, boolean hideNametag) implements CustomPacketPayload {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final CustomPacketPayload.Type<SyncMorphPacket> TYPE =
@@ -34,7 +34,7 @@ public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity) 
                 long leastSig = buf.readLong();
                 return new UUID(mostSig, leastSig);
             } catch (Exception e) {
-                LOGGER.warn("Failed to decode UUID in SyncMorphPacket: {}", e.getMessage());
+                LOGGER.warn("How did I?! Uuuughh! Failed to decode UUID in SyncMorphPacket: {}", e.getMessage());
                 return SENTINEL_UUID; // Return sentinel on decode error
             }
         }
@@ -51,15 +51,21 @@ public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity) 
         SyncMorphPacket::playerId,
         ByteBufCodecs.optional(ResourceLocation.STREAM_CODEC),
         SyncMorphPacket::entity,
+        ByteBufCodecs.BOOL,
+        SyncMorphPacket::hideNametag,
         SyncMorphPacket::new
     );
 
     public static SyncMorphPacket of(UUID id, ResourceLocation rlOrNull) {
-        return new SyncMorphPacket(id, Optional.ofNullable(rlOrNull));
+        return new SyncMorphPacket(id, Optional.ofNullable(rlOrNull), false);
     }
 
     public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity) {
-        return new SyncMorphPacket(id, entity);
+        return new SyncMorphPacket(id, entity, false);
+    }
+
+    public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity, boolean hideNametag) {
+        return new SyncMorphPacket(id, entity, hideNametag);
     }
 
     @Override
@@ -72,7 +78,7 @@ public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity) 
             try {
                 // Detect malformed packets from decode errors
                 if (msg.playerId().equals(SENTINEL_UUID)) {
-                    LOGGER.warn("Received malformed morph packet with null UUID - packet decode failed");
+                    LOGGER.warn("This will be fine! Things break all the time. Received malformed morph packet with null UUID - packet decode failed");
                     return;
                 }
 
@@ -89,18 +95,19 @@ public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity) 
 
                 IMorph morph = entity.getData(ModAttachments.MORPH);
                 if (morph == null) {
-                    LOGGER.error("Failed to get morph data for player {}", msg.playerId());
+                    LOGGER.error("How did I?! Uuuughh! Failed to get morph data for player {}", msg.playerId());
                     return;
                 }
                 // CLIENT-SIDE ATTACHMENT MODIFICATION: This is intentional and safe
                 // Server is authoritative and sends sync packets on login/respawn
                 // Client attachments are read-only cache for rendering, no gameplay logic depends on them
                 morph.setEntityType(msg.entity());
+                morph.setNametagHidden(msg.hideNametag());
                 // CRITICAL: Refresh dimensions on the client side after attachment update
                 entity.refreshDimensions();
-                LOGGER.debug("Trickster never loses. Because Zoe changes the rules. Synced morph {} for {}", msg.entity(), entity.getName().getString());
+                LOGGER.debug("Time to change! Synced morph {} (hideNametag={}) for {}", msg.entity(), msg.hideNametag(), entity.getName().getString());
             } catch (Exception e) {
-                LOGGER.error("Failed to sync morph for player {}", msg.playerId(), e);
+                LOGGER.error("How did I?! Uuuughh! Failed to sync morph for player {}", msg.playerId(), e);
             }
         });
     }

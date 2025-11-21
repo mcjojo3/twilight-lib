@@ -51,7 +51,7 @@ public class SyncAddonsPacket {
             }
             return new SyncAddonsPacket(id, addons);
         } catch (Exception e) {
-            LOGGER.error("Or, what. Failed to decode SyncAddonsPacket: {}", e.getMessage());
+            LOGGER.error("How did I?! Uuuughh! Failed to decode SyncAddonsPacket: {}", e.getMessage());
             // Return empty packet to prevent crash
             return new SyncAddonsPacket(new UUID(0, 0), new HashSet<>());
         }
@@ -61,7 +61,7 @@ public class SyncAddonsPacket {
         ctx.get().enqueueWork(() -> {
             // Detect malformed packets from decode errors
             if (msg.playerId.equals(new UUID(0, 0))) {
-                LOGGER.error("Or, what. Received malformed SyncAddonsPacket with invalid UUID - packet decode failed");
+                LOGGER.error("This will be fine! Things break all the time. Received malformed SyncAddonsPacket with invalid UUID - packet decode failed");
                 return;
             }
 
@@ -79,7 +79,7 @@ public class SyncAddonsPacket {
             entity.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
                 // Type-safe cast with validation to prevent crashes in heavily modded environments
                 if (!(addons instanceof AddonsData)) {
-                    LOGGER.error("Incompatible addons capability implementation for player {}. Expected AddonsData but got {}. " +
+                    LOGGER.error("What's with all the negative waves? Incompatible addons capability implementation for player {}. Expected AddonsData but got {}. " +
                                  "This may be caused by another mod replacing the capability.",
                                  entity.getName().getString(), addons.getClass().getName());
                     return; // Gracefully skip instead of crashing
@@ -87,7 +87,7 @@ public class SyncAddonsPacket {
 
                 // Directly sync equipped addons from server (bypasses ownership validation)
                 ((AddonsData) addons).syncEquippedFromPacket(msg.addons);
-                LOGGER.debug("Isn't this cool? Synced {} active addons for {}",
+                LOGGER.debug("Time to change! Synced {} active addons for {}",
                     msg.addons.size(), entity.getName().getString());
             });
         });

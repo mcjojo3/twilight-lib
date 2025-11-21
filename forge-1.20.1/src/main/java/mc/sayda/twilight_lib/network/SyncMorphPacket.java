@@ -18,30 +18,38 @@ public class SyncMorphPacket {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final UUID playerId;
     private final Optional<ResourceLocation> entity;
+    private final boolean hideNametag;
 
-    public SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity) {
+    public SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, boolean hideNametag) {
         this.playerId = playerId;
         this.entity = entity;
+        this.hideNametag = hideNametag;
     }
 
     public static SyncMorphPacket of(UUID id, ResourceLocation rlOrNull) {
-        return new SyncMorphPacket(id, Optional.ofNullable(rlOrNull));
+        return new SyncMorphPacket(id, Optional.ofNullable(rlOrNull), false);
     }
 
     public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity) {
-        return new SyncMorphPacket(id, entity);
+        return new SyncMorphPacket(id, entity, false);
+    }
+
+    public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity, boolean hideNametag) {
+        return new SyncMorphPacket(id, entity, hideNametag);
     }
 
     public static void encode(SyncMorphPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.playerId);
         buf.writeBoolean(msg.entity.isPresent());
         msg.entity.ifPresent(buf::writeResourceLocation);
+        buf.writeBoolean(msg.hideNametag);
     }
 
     public static SyncMorphPacket decode(FriendlyByteBuf buf) {
         UUID id = buf.readUUID();
         Optional<ResourceLocation> rl = buf.readBoolean() ? Optional.of(buf.readResourceLocation()) : Optional.empty();
-        return new SyncMorphPacket(id, rl);
+        boolean hideNametag = buf.readBoolean();
+        return new SyncMorphPacket(id, rl, hideNametag);
     }
 
     public static void handle(SyncMorphPacket msg, Supplier<NetworkEvent.Context> ctx) {
@@ -67,9 +75,13 @@ public class SyncMorphPacket {
                 // Server is authoritative and sends sync packets on login/respawn
                 // Client capabilities are read-only cache for rendering, no gameplay logic depends on them
                 m.setEntityType(msg.entity);
+                m.setNametagHidden(msg.hideNametag);
                 // CRITICAL: Refresh dimensions on the client side after capability update
-                entity.refreshDimensions();
-                LOGGER.debug("Trickster never loses. Because Zoe changes the rules. Synced morph {} for {}", msg.entity, entity.getName().getString());
+                // Safety check: Ensure entity is still valid before refreshing dimensions
+                if (entity != null && !entity.isRemoved()) {
+                    entity.refreshDimensions();
+                }
+                LOGGER.debug("Time to change! Synced morph {} (hideNametag={}) for {}", msg.entity, msg.hideNametag, entity.getName().getString());
             });
         });
         ctx.get().setPacketHandled(true);

@@ -47,7 +47,7 @@ import java.util.Optional;
  * <p><b>Thread Safety</b>: All methods are called from server tick thread.
  * Packet sending is thread-safe via Forge's network system.
  *
- * @author Sayda (MrJojo)
+ * @author SaydaGames (mc_jojo3)
  * @version 1.0
  */
 public class NetworkHandler {

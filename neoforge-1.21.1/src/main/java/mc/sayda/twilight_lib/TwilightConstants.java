@@ -16,7 +16,7 @@ package mc.sayda.twilight_lib;
  * (e.g., {@link Animation}, {@link SpawnEffect}, {@link Trail}).
  * This provides namespace organization without creating separate files.
  *
- * @author Sayda (MrJojo)
+ * @author SaydaGames (mc_jojo3)
  * @version 1.0
  */
 public class TwilightConstants {

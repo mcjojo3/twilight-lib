@@ -43,7 +43,7 @@ import java.util.Set;
  *
  * @see mc.sayda.twilight_lib.supporter.SupporterData for supporter tier data structure
  * @see mc.sayda.twilight_lib.supporter.SupporterService for supporter data fetching
- * @author Sayda (MrJojo)
+ * @author SaydaGames (mc_jojo3)
  * @version 1.0
  */
 public class SupporterRegistry {

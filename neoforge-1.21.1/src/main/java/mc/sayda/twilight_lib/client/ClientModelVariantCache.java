@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p><b>Memory Management</b>: Cache is automatically cleared on world unload to prevent
  * memory leaks when switching worlds/servers.
  *
- * @author Sayda (MrJojo)
+ * @author SaydaGames (mc_jojo3)
  * @version 1.0
  */
 public class ClientModelVariantCache {

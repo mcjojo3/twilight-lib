@@ -29,7 +29,7 @@ import java.util.UUID;
  * <p><b>Injection Point</b>: Injects at RETURN to override the return value after vanilla logic runs.
  * This ensures we don't break any vanilla behavior that depends on the original skin data.
  *
- * @author Sayda (MrJojo)
+ * @author SaydaGames (mc_jojo3)
  * @version 2.0
  */
 @Mixin(value = PlayerInfo.class, remap = false)

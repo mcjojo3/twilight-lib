@@ -63,7 +63,7 @@ import java.util.function.Supplier;
  *
  * @see AddonModelInfo for detailed addon configuration options
  * @see IAddonModel for addon model interface requirements
- * @author Sayda (MrJojo)
+ * @author SaydaGames (mc_jojo3)
  * @version 1.0
  */
 public class AddonRegistry {

@@ -71,7 +71,7 @@ import java.util.Set;
  *   <li>Reload command is executed</li>
  * </ul>
  *
- * @author Sayda (MrJojo)
+ * @author SaydaGames (mc_jojo3)
  * @version 1.0
  */
 public class TwilightLibCommands {

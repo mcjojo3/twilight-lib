@@ -73,7 +73,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * The {@link #pendingTasks} map is thread-safe via {@link ConcurrentHashMap}.
  * The {@link #serverTicks} counter uses {@link AtomicLong} for atomic increments during server ticks.
  *
- * @author Sayda (MrJojo)
+ * @author SaydaGames (mc_jojo3)
  * @version 1.0
  */
 @Mod(TwilightLib.MODID)

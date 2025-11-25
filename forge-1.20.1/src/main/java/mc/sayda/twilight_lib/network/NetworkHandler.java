@@ -150,7 +150,7 @@ public class NetworkHandler {
      */
     public static void sendAllMorphsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("Want to see something neat? Syncing all morphs to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("Here you go! Syncing all morphs to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             LazyOptional<IMorph> cap = p.getCapability(MorphProvider.MORPH_CAP);
@@ -182,7 +182,7 @@ public class NetworkHandler {
 
     public static void sendAllAddonsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("Every day, every season... ends. And begin something new! Syncing all addons to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("Here you go! Syncing all addons to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             p.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
@@ -215,7 +215,7 @@ public class NetworkHandler {
 
     public static void sendAllTrailsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("I wanna wanna, go to some place, place place! Syncing all trails to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("Here you go! Syncing all trails to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             p.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
@@ -248,7 +248,7 @@ public class NetworkHandler {
 
     public static void sendAllEffectsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("Aw, this spell is neat! Syncing all effects to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("Here you go! Syncing all effects to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             p.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
@@ -281,7 +281,7 @@ public class NetworkHandler {
 
     public static void sendAllModelVariantsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("Let's see all the different forms! Syncing all model variants to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("Here you go! Syncing all model variants to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             p.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {

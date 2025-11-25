@@ -67,7 +67,7 @@ public class SupporterService {
 
             // Try primary URL first
             try {
-                LOGGER.info("I wonder who's around. Fetching supporter list from primary URL...");
+                LOGGER.info("Here you go! Fetching supporter list from primary URL...");
                 if (fetchFromUrl(SUPPORTERS_URL)) {
                     primarySuccess = true;
                     lastFetchTime = System.currentTimeMillis();
@@ -190,19 +190,19 @@ public class SupporterService {
 
             // Validate root object exists
             if (root == null) {
-                LOGGER.error("Really?! JSON parsing returned null root object");
+                LOGGER.error("Is this the best physical representation you can manifest? JSON parsing returned null root object");
                 return;
             }
 
             // Validate supporters array exists
             if (!root.has("supporters")) {
-                LOGGER.error("Oh, dung beetles! JSON missing 'supporters' array");
+                LOGGER.error("Is this the best physical representation you can manifest? JSON missing 'supporters' array");
                 return;
             }
 
             JsonArray supporters = root.getAsJsonArray("supporters");
             if (supporters == null) {
-                LOGGER.error("Shoot! 'supporters' array is null");
+                LOGGER.error("Is this the best physical representation you can manifest? 'supporters' array is null");
                 return;
             }
 

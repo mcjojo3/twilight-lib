@@ -76,7 +76,7 @@ public class NetworkHandler {
 
     public static void sendAllMorphsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("Want to see something neat? Syncing all morphs to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("Here you go! Syncing all morphs to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             IMorph morph = p.getData(ModAttachments.MORPH);
@@ -112,7 +112,7 @@ public class NetworkHandler {
 
     public static void sendAllAddonsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("Every day, every season... ends. And begin something new! Syncing all addons to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("Here you go! Syncing all addons to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             var addons = p.getData(ModAttachments.ADDONS);
@@ -148,7 +148,7 @@ public class NetworkHandler {
 
     public static void sendAllTrailsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("I wanna wanna, go to some place, place place! Syncing all trails to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("Here you go! Syncing all trails to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             var trails = p.getData(ModAttachments.TRAILS);
@@ -184,7 +184,7 @@ public class NetworkHandler {
 
     public static void sendAllEffectsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("Aw, this spell is neat! Syncing all effects to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("Here you go! Syncing all effects to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             var effects = p.getData(ModAttachments.EFFECTS);
@@ -220,7 +220,7 @@ public class NetworkHandler {
 
     public static void sendAllModelVariantsToPlayer(Player recipient) {
         if (recipient.level() == null) return;
-        LOGGER.debug("Let's see all the different forms! Syncing all model variants to {}", recipient.getGameProfile().getName());
+        LOGGER.debug("Here you go! Syncing all model variants to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             var modelVariant = p.getData(ModAttachments.MODEL_VARIANT);

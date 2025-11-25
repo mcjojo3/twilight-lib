@@ -88,7 +88,7 @@ public class PlayerInfoMixin {
                         originalSkin.secure()
                     );
                     cir.setReturnValue(newSkin);
-                    LOGGER.debug("Overriding local player model to: {}", newModel);
+                    LOGGER.debug("Time to change! Overriding player model to: {}", newModel);
                 }
                 return;
             }
@@ -108,10 +108,10 @@ public class PlayerInfoMixin {
                     originalSkin.secure()
                 );
                 cir.setReturnValue(newSkin);
-                LOGGER.debug("Overriding player {} model to: {}", playerUUID, newModel);
+                LOGGER.debug("Time to change! Overriding player model to: {}", newModel);
             }
         } catch (Exception e) {
-            LOGGER.error("Failed to override player skin model", e);
+            LOGGER.error("How did I?! Uuuughh! Failed to override player skin model", e);
         }
     }
 }

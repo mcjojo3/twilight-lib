@@ -288,7 +288,7 @@ public class MorphRenderHandler {
         }
 
         if (removed > 0) {
-            LOGGER.debug("Sparkles! Periodic cleanup removed {} stale morph cache entries", removed);
+            LOGGER.debug("While I wait, I will stay happy! Periodic cleanup removed {} stale morph cache entries", removed);
         }
     }
 
@@ -308,7 +308,7 @@ public class MorphRenderHandler {
 
             EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(rl);
             if (type == null) {
-                LOGGER.warn("Unknown entity type: {}", rl);
+                LOGGER.warn("I wonder who's around. Unknown entity type: {}", rl);
                 return cached; // Keep old entity if type doesn't exist
             }
 

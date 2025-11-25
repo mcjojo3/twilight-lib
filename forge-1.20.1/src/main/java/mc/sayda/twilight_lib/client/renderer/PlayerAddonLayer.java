@@ -105,7 +105,7 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     // Setup animations (runs AFTER sync so custom animations can use player movement)
                     // Validate type before unchecked cast
                     if (!(addonModel instanceof EntityModel<?>)) {
-                        LOGGER.error("Addon model {} is not an EntityModel: {}", addonId, addonModel.getClass());
+                        LOGGER.error("Is this the best physical representation you can manifest? Addon model {} is not an EntityModel: {}", addonId, addonModel.getClass());
                         return;
                     }
                     @SuppressWarnings("unchecked")
@@ -198,7 +198,7 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                             // Setup animations
                             // Validate type before unchecked cast
                             if (!(chestArmorModel instanceof EntityModel<?>)) {
-                                LOGGER.error("Chest armor model is not an EntityModel: {}", chestArmorModel.getClass());
+                                LOGGER.error("Is this the best physical representation you can manifest? Chest armor model is not an EntityModel: {}", chestArmorModel.getClass());
                                 return;
                             }
                             @SuppressWarnings("unchecked")

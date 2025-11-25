@@ -40,7 +40,7 @@ public class PlayerInfoMixin {
                         String variant = modelVariant.getModelVariant();
                         String modelName = variant.equals("alex") ? "slim" : "default";
                         cir.setReturnValue(modelName);
-                        LOGGER.debug("Overriding local player model to: {}", modelName);
+                        LOGGER.debug("Time to change! Overriding player model to: {}", modelName);
                     }
                 });
                 return;
@@ -51,10 +51,10 @@ public class PlayerInfoMixin {
             if (cachedVariant != null) {
                 String modelName = cachedVariant.equals("alex") ? "slim" : "default";
                 cir.setReturnValue(modelName);
-                LOGGER.debug("Overriding player {} model to: {}", playerUUID, modelName);
+                LOGGER.debug("Time to change! Overriding player model to: {}", modelName);
             }
         } catch (Exception e) {
-            LOGGER.error("Failed to override player model type", e);
+            LOGGER.error("How did I?! Uuuughh! Failed to override player model type", e);
         }
     }
 }

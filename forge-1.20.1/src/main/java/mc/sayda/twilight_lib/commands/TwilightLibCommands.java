@@ -1003,7 +1003,7 @@ public class TwilightLibCommands {
                 // Sync to all clients
                 NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(target.getUUID(), modelVariant));
 
-                LOGGER.debug("Shape-shifter! {} changed model variant to {}", target.getGameProfile().getName(), normalized);
+                LOGGER.debug("Time to change! {} changed model variant to {}", target.getGameProfile().getName(), normalized);
             } catch (IllegalArgumentException e) {
                 source.sendFailure(Component.literal("Error setting model variant: " + e.getMessage()));
                 LOGGER.error("Oh no! Failed to set model variant for {}: {}", target.getGameProfile().getName(), e.getMessage());
@@ -1028,7 +1028,7 @@ public class TwilightLibCommands {
             // Sync to all clients
             NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(target.getUUID(), modelVariant));
 
-            LOGGER.debug("Back to normal! {} cleared custom model variant", target.getGameProfile().getName());
+            LOGGER.debug("Time to change! {} cleared custom model variant", target.getGameProfile().getName());
         });
 
         // Send feedback only to admin/console (not when player targets self)

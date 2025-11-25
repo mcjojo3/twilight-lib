@@ -123,6 +123,7 @@ public class TwilightLib {
         NeoForge.EVENT_BUS.addListener(this::onPlayerLogin);
         NeoForge.EVENT_BUS.addListener(this::onPlayerClone);
         NeoForge.EVENT_BUS.addListener(this::onPlayerRespawn);
+        NeoForge.EVENT_BUS.addListener(this::onPlayerChangedDimension);
         NeoForge.EVENT_BUS.addListener(this::onPlayerStartTracking);
         NeoForge.EVENT_BUS.addListener(TwilightLib::onServerTick);
 
@@ -356,8 +357,8 @@ public class TwilightLib {
 
     private void onPlayerClone(final PlayerEvent.Clone evt) {
         if (evt.getEntity().level().isClientSide) return;
-        if (!evt.isWasDeath()) return; // Only handle death, not dimension change
 
+        // Handle both death and dimension changes
         // In NeoForge, attachments with copyOnDeath() are automatically copied.
         // However, we still need to preserve persistent NBT data for consistency.
         CompoundTag oldData = evt.getOriginal().getPersistentData();
@@ -430,7 +431,7 @@ public class TwilightLib {
                 player.refreshDimensions();
                 // Persist morph state to NBT to prevent data loss
                 player.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
-                LOGGER.debug("The wheel turns, day becomes night... Player {} respawned as {}", player.getGameProfile().getName(), rl);
+                LOGGER.debug("Time to change! Player {} respawned as {}", player.getGameProfile().getName(), rl);
             });
         }
 
@@ -438,28 +439,97 @@ public class TwilightLib {
         IAddons respawnAddons = player.getData(ModAttachments.ADDONS);
         if (respawnAddons != null && !respawnAddons.getActiveAddons().isEmpty()) {
             NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), respawnAddons.getActiveAddons()));
-            LOGGER.debug("Aaand a skip-skip and a jump-jump! Player {} respawned with {} active addons", player.getGameProfile().getName(), respawnAddons.getActiveAddons().size());
+            LOGGER.debug("Time to change! Player {} respawned with {} active addons", player.getGameProfile().getName(), respawnAddons.getActiveAddons().size());
         }
 
         // Sync active trails to client after respawn
         ITrails respawnTrails = player.getData(ModAttachments.TRAILS);
         if (respawnTrails != null && !respawnTrails.getActiveTrails().isEmpty()) {
             NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), respawnTrails.getActiveTrails()));
-            LOGGER.debug("Something good is going to happen. With sparkles! Player {} respawned with {} active trails", player.getGameProfile().getName(), respawnTrails.getActiveTrails().size());
+            LOGGER.debug("Time to change! Player {} respawned with {} active trails", player.getGameProfile().getName(), respawnTrails.getActiveTrails().size());
         }
 
         // Sync effects to client after respawn (trigger spawn effect on respawn)
         IEffects respawnEffects = player.getData(ModAttachments.EFFECTS);
         if (respawnEffects != null && !respawnEffects.getActiveEffects().isEmpty()) {
             NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), respawnEffects.getActiveEffects(), true));
-            LOGGER.debug("Aw, this spell is neat! Player {} respawned with {} active effects", player.getGameProfile().getName(), respawnEffects.getActiveEffects().size());
+            LOGGER.debug("Time to change! Player {} respawned with {} active effects", player.getGameProfile().getName(), respawnEffects.getActiveEffects().size());
         }
 
         // Sync model variant to client after respawn
         IModelVariant modelVariant = player.getData(ModAttachments.MODEL_VARIANT);
         if (modelVariant != null) {
             NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
-            LOGGER.debug("Shifting shapes! Player {} respawned as {} model", player.getGameProfile().getName(), modelVariant.getModelVariant());
+            LOGGER.debug("Time to change! Player {} respawned as {} model", player.getGameProfile().getName(), modelVariant.getModelVariant());
+        }
+    }
+
+    /**
+     * Handles player dimension change - syncs cosmetics to clients after traveling to a new dimension.
+     *
+     * <p><b>Why this handler?</b> When a player changes dimensions (e.g., Overworld → Nether),
+     * the client needs to be re-synced with all cosmetic data. The {@link #onPlayerClone} event
+     * restores data from NBT, but doesn't broadcast to clients. This handler ensures:
+     * <ul>
+     *   <li>The player's cosmetics are visible in the new dimension</li>
+     *   <li>Other players in the new dimension can see the arriving player's cosmetics</li>
+     *   <li>Spawn effects trigger on dimension entry</li>
+     * </ul>
+     *
+     * <p><b>Why similar to respawn?</b> Dimension changes and respawns have similar sync requirements:
+     * both involve a player entity being recreated/repositioned, requiring full cosmetic re-sync.
+     *
+     * @param evt The PlayerChangedDimensionEvent containing the player and dimension info
+     */
+    private void onPlayerChangedDimension(final PlayerEvent.PlayerChangedDimensionEvent evt) {
+        Player player = evt.getEntity();
+        if (player.level().isClientSide) return;
+
+        LOGGER.debug("Time to change! Player {} changed dimensions from {} to {}",
+            player.getGameProfile().getName(), evt.getFrom(), evt.getTo());
+
+        // Sync morph to client after dimension change
+        IMorph morph = player.getData(ModAttachments.MORPH);
+        if (morph != null) {
+            morph.getEntityType().ifPresent(rl -> {
+                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), Optional.of(rl), morph.isNametagHidden()));
+                player.refreshDimensions();
+                // Persist morph state to NBT to prevent data loss
+                player.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
+                LOGGER.debug("Time to change! Player {} entered {} as {}", player.getGameProfile().getName(), evt.getTo().location(), rl);
+            });
+        }
+
+        // Sync active addons to client after dimension change
+        IAddons addons = player.getData(ModAttachments.ADDONS);
+        if (addons != null && !addons.getActiveAddons().isEmpty()) {
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
+            LOGGER.debug("Time to change! Player {} entered {} with {} active addons",
+                player.getGameProfile().getName(), evt.getTo().location(), addons.getActiveAddons().size());
+        }
+
+        // Sync active trails to client after dimension change
+        ITrails trails = player.getData(ModAttachments.TRAILS);
+        if (trails != null && !trails.getActiveTrails().isEmpty()) {
+            NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.getActiveTrails()));
+            LOGGER.debug("Time to change! Player {} entered {} with {} active trails",
+                player.getGameProfile().getName(), evt.getTo().location(), trails.getActiveTrails().size());
+        }
+
+        // Sync effects to client after dimension change (trigger spawn effect on dimension entry)
+        IEffects effects = player.getData(ModAttachments.EFFECTS);
+        if (effects != null && !effects.getActiveEffects().isEmpty()) {
+            NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects(), true));
+            LOGGER.debug("Time to change! Player {} entered {} with {} active effects",
+                player.getGameProfile().getName(), evt.getTo().location(), effects.getActiveEffects().size());
+        }
+
+        // Sync model variant to client after dimension change
+        IModelVariant modelVariant = player.getData(ModAttachments.MODEL_VARIANT);
+        if (modelVariant != null) {
+            NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
+            LOGGER.debug("Time to change! Player {} entered {} as {} model",
+                player.getGameProfile().getName(), evt.getTo().location(), modelVariant.getModelVariant());
         }
     }
 
@@ -474,7 +544,7 @@ public class TwilightLib {
         if (morph != null) {
             morph.getEntityType().ifPresent(rl -> {
                 NetworkHandler.sendToPlayer(trackingPlayer, SyncMorphPacket.of(trackedPlayer.getUUID(), Optional.of(rl), morph.isNametagHidden()));
-                LOGGER.debug("Peek-a-boo! Sent morph {} for {} to tracking player {}",
+                LOGGER.debug("Here you go! Sent morph {} for {} to tracking player {}",
                     rl, trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
             });
         }
@@ -482,28 +552,28 @@ public class TwilightLib {
         IAddons addons = trackedPlayer.getData(ModAttachments.ADDONS);
         if (addons != null && !addons.getActiveAddons().isEmpty()) {
             NetworkHandler.sendAddonsToPlayer(trackingPlayer, new SyncAddonsPacket(trackedPlayer.getUUID(), addons.getActiveAddons()));
-            LOGGER.debug("More friends! Sent {} addons for {} to tracking player {}",
+            LOGGER.debug("Here you go! Sent {} addons for {} to tracking player {}",
                 addons.getActiveAddons().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
         }
 
         ITrails trails = trackedPlayer.getData(ModAttachments.TRAILS);
         if (trails != null && !trails.getActiveTrails().isEmpty()) {
             NetworkHandler.sendTrailsToPlayer(trackingPlayer, new SyncTrailsPacket(trackedPlayer.getUUID(), trails.getActiveTrails()));
-            LOGGER.debug("Look at all the pretty trails! Sent {} trails for {} to tracking player {}",
+            LOGGER.debug("Here you go! Sent {} trails for {} to tracking player {}",
                 trails.getActiveTrails().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
         }
 
         IEffects effects = trackedPlayer.getData(ModAttachments.EFFECTS);
         if (effects != null && !effects.getActiveEffects().isEmpty()) {
             NetworkHandler.sendEffectsToPlayer(trackingPlayer, new SyncEffectsPacket(trackedPlayer.getUUID(), effects.getActiveEffects(), false));
-            LOGGER.debug("Magic everywhere! Sent {} effects for {} to tracking player {}",
+            LOGGER.debug("Here you go! Sent {} effects for {} to tracking player {}",
                 effects.getActiveEffects().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
         }
 
         IModelVariant modelVariant = trackedPlayer.getData(ModAttachments.MODEL_VARIANT);
         if (modelVariant != null) {
             NetworkHandler.sendModelVariantToPlayer(trackingPlayer, SyncModelVariantPacket.of(trackedPlayer.getUUID(), modelVariant));
-            LOGGER.debug("See the different forms! Sent model variant {} for {} to tracking player {}",
+            LOGGER.debug("Here you go! Sent model variant {} for {} to tracking player {}",
                 modelVariant.getModelVariant(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
         }
     }

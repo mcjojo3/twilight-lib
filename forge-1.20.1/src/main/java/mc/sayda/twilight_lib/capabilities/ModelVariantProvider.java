@@ -18,10 +18,16 @@ public class ModelVariantProvider implements ICapabilityProvider, INBTSerializab
     public static final Capability<IModelVariant> MODEL_VARIANT_CAP = CapabilityManager.get(new CapabilityToken<>() {});
 
     private final IModelVariant modelVariant = new ModelVariantData();
-    private final LazyOptional<IModelVariant> optional = LazyOptional.of(() -> modelVariant);
+    private LazyOptional<IModelVariant> optional = LazyOptional.of(() -> modelVariant);
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == MODEL_VARIANT_CAP) {
+            // Recreate LazyOptional if it was invalidated (dimension change bug workaround)
+            if (!optional.isPresent()) {
+                optional = LazyOptional.of(() -> modelVariant);
+            }
+        }
         return MODEL_VARIANT_CAP.orEmpty(cap, optional);
     }
 

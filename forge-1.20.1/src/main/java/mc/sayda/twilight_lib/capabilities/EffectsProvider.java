@@ -15,12 +15,19 @@ public class EffectsProvider implements ICapabilitySerializable<CompoundTag> {
     public static final Capability<IEffects> EFFECTS_CAP = CapabilityManager.get(new CapabilityToken<>(){});
 
     private final EffectsData effects = new EffectsData();
-    private final LazyOptional<IEffects> optionalEffects = LazyOptional.of(() -> effects);
+    private LazyOptional<IEffects> optionalEffects = LazyOptional.of(() -> effects);
 
     @Nonnull
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-        return cap == EFFECTS_CAP ? optionalEffects.cast() : LazyOptional.empty();
+        if (cap == EFFECTS_CAP) {
+            // Recreate LazyOptional if it was invalidated (dimension change bug workaround)
+            if (!optionalEffects.isPresent()) {
+                optionalEffects = LazyOptional.of(() -> effects);
+            }
+            return optionalEffects.cast();
+        }
+        return LazyOptional.empty();
     }
 
     public void invalidate() {

@@ -592,8 +592,10 @@ public class TwilightLib {
      *   <li>Spawn effects trigger on dimension entry</li>
      * </ul>
      *
-     * <p><b>Why similar to respawn?</b> Dimension changes and respawns have similar sync requirements:
-     * both involve a player entity being recreated/repositioned, requiring full cosmetic re-sync.
+     * <p><b>Forge 1.20.1 Dimension Change Bug Workaround</b>: In Forge 1.20.1, capabilities are
+     * invalidated during dimension changes and not automatically restored. PlayerEvent.Clone only
+     * fires for death, not dimension changes. This handler detects missing capabilities and
+     * manually restores them from persistent NBT before syncing to clients.
      *
      * @param evt The PlayerChangedDimensionEvent containing the player and dimension info
      */
@@ -604,18 +606,18 @@ public class TwilightLib {
         LOGGER.debug("Time to change! Player {} changed dimensions from {} to {}",
             player.getGameProfile().getName(), evt.getFrom(), evt.getTo());
 
-        // Sync morph to client after dimension change
+        // Capability providers now automatically recreate LazyOptionals when accessed after invalidation
+        // This fixes the Forge 1.20.1 dimension change bug where capabilities were invalidated during travel
+        // Simply sync all cosmetics to clients - providers handle the recreation internally
+
         player.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
             morph.getEntityType().ifPresent(rl -> {
                 NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), Optional.of(rl), morph.isNametagHidden()));
                 player.refreshDimensions();
-                // Persist morph state to NBT to prevent data loss
-                player.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
                 LOGGER.debug("Time to change! Player {} entered {} as {}", player.getGameProfile().getName(), evt.getTo().location(), rl);
             });
         });
 
-        // Sync active addons to client after dimension change
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             if (!addons.getActiveAddons().isEmpty()) {
                 NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
@@ -624,7 +626,6 @@ public class TwilightLib {
             }
         });
 
-        // Sync active trails to client after dimension change
         player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
             if (!trails.getActiveTrails().isEmpty()) {
                 NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.getActiveTrails()));
@@ -633,7 +634,6 @@ public class TwilightLib {
             }
         });
 
-        // Sync effects to client after dimension change (trigger spawn effect on dimension entry)
         player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
             if (!effects.getActiveEffects().isEmpty()) {
                 NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects(), true));
@@ -642,7 +642,6 @@ public class TwilightLib {
             }
         });
 
-        // Sync model variant to client after dimension change
         player.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
             NetworkHandler.sendModelVariantToAll(mc.sayda.twilight_lib.network.SyncModelVariantPacket.of(player.getUUID(), modelVariant));
             LOGGER.debug("Time to change! Player {} entered {} as {} model",

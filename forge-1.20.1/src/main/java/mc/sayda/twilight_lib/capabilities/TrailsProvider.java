@@ -15,12 +15,19 @@ public class TrailsProvider implements ICapabilitySerializable<CompoundTag> {
     public static final Capability<ITrails> TRAILS_CAP = CapabilityManager.get(new CapabilityToken<>() {});
 
     private final ITrails trails = new TrailsData();
-    private final LazyOptional<ITrails> optionalTrails = LazyOptional.of(() -> trails);
+    private LazyOptional<ITrails> optionalTrails = LazyOptional.of(() -> trails);
 
     @Nonnull
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-        return cap == TRAILS_CAP ? optionalTrails.cast() : LazyOptional.empty();
+        if (cap == TRAILS_CAP) {
+            // Recreate LazyOptional if it was invalidated (dimension change bug workaround)
+            if (!optionalTrails.isPresent()) {
+                optionalTrails = LazyOptional.of(() -> trails);
+            }
+            return optionalTrails.cast();
+        }
+        return LazyOptional.empty();
     }
 
     public void invalidate() {

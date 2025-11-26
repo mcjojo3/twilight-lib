@@ -18,12 +18,19 @@ public class MorphProvider implements ICapabilitySerializable<CompoundTag> {
     public static final Capability<IMorph> MORPH_CAP = CapabilityManager.get(new CapabilityToken<>(){});
 
     private final MorphData morph = new MorphData();
-    private final LazyOptional<IMorph> optionalMorph = LazyOptional.of(() -> morph);
+    private LazyOptional<IMorph> optionalMorph = LazyOptional.of(() -> morph);
 
     @Nonnull
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-        return cap == MORPH_CAP ? optionalMorph.cast() : LazyOptional.empty();
+        if (cap == MORPH_CAP) {
+            // Recreate LazyOptional if it was invalidated (dimension change bug workaround)
+            if (!optionalMorph.isPresent()) {
+                optionalMorph = LazyOptional.of(() -> morph);
+            }
+            return optionalMorph.cast();
+        }
+        return LazyOptional.empty();
     }
 
     public void invalidate() {

@@ -15,12 +15,19 @@ public class AddonsProvider implements ICapabilitySerializable<CompoundTag> {
     public static final Capability<IAddons> ADDONS_CAP = CapabilityManager.get(new CapabilityToken<>(){});
 
     private final AddonsData addons = new AddonsData();
-    private final LazyOptional<IAddons> optionalAddons = LazyOptional.of(() -> addons);
+    private LazyOptional<IAddons> optionalAddons = LazyOptional.of(() -> addons);
 
     @Nonnull
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-        return cap == ADDONS_CAP ? optionalAddons.cast() : LazyOptional.empty();
+        if (cap == ADDONS_CAP) {
+            // Recreate LazyOptional if it was invalidated (dimension change bug workaround)
+            if (!optionalAddons.isPresent()) {
+                optionalAddons = LazyOptional.of(() -> addons);
+            }
+            return optionalAddons.cast();
+        }
+        return LazyOptional.empty();
     }
 
     public void invalidate() {

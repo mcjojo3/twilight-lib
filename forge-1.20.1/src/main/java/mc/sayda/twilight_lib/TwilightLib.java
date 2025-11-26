@@ -286,7 +286,7 @@ public class TwilightLib {
         try {
             SupporterService.fetchSupporters().get(10, java.util.concurrent.TimeUnit.SECONDS);
         } catch (java.util.concurrent.TimeoutException e) {
-            LOGGER.warn("Oh no! Supporter data fetch timed out after 10 seconds. Proceeding without supporter sync.");
+            LOGGER.warn("How did I?! Uuuughh! Supporter data fetch timed out after 10 seconds. Proceeding without supporter sync.");
         } catch (Exception e) {
             LOGGER.warn("Shoot! Error waiting for supporter data: {}", e.getMessage());
         }
@@ -307,7 +307,7 @@ public class TwilightLib {
             if (data.isActiveSupporter()) {
                 LOGGER.info("Delightful little world you have... I like it! {} is a {} tier supporter",
                     loggedInPlayer.getGameProfile().getName(), data.getTier());
-                LOGGER.debug("Tier '{}' grants trails: {}", data.getTier(), allTrails);
+                LOGGER.debug("I have a gift for you! Tier '{}' grants trails: {}", data.getTier(), allTrails);
             } else {
                 LOGGER.info("I have a gift for you! {} has manual cosmetic grants (expired/gift supporter)",
                     loggedInPlayer.getGameProfile().getName());
@@ -417,7 +417,7 @@ public class TwilightLib {
                 loggedInPlayer.refreshDimensions();
                 // Persist morph state to NBT to prevent data loss on logout
                 loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
-                LOGGER.info("We're gonna be best friends! Player {} logged in with morph: {}", loggedInPlayer.getGameProfile().getName(), rl);
+                LOGGER.info("We are going to be best friends! Player {} logged in with morph: {}", loggedInPlayer.getGameProfile().getName(), rl);
             });
         });
 
@@ -447,7 +447,7 @@ public class TwilightLib {
         // Send this player's model variant to everyone else
         loggedInPlayer.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
             NetworkHandler.sendModelVariantToAll(mc.sayda.twilight_lib.network.SyncModelVariantPacket.of(loggedInPlayer.getUUID(), modelVariant));
-            LOGGER.info("We're gonna be best friends! Player {} logged in as {} model variant",
+            LOGGER.info("We are going to be best friends! Player {} logged in as {} model variant",
                 loggedInPlayer.getGameProfile().getName(), modelVariant.getModelVariant());
         });
     }
@@ -753,7 +753,7 @@ public class TwilightLib {
                     NetworkHandler.sendAllModelVariantsToPlayer(player);
                     LOGGER.debug("While I wait, I will stay happy! Delayed cosmetics sync complete for {}", player.getGameProfile().getName());
                 } else {
-                    LOGGER.debug("Player left before delayed sync could complete");
+                    LOGGER.debug("Goodbye, my new friend! Player left before delayed sync could complete");
                 }
 
                 // Remove completed task

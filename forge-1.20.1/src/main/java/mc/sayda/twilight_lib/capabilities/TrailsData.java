@@ -206,7 +206,7 @@ public class TrailsData implements ITrails {
             if (trails.contains(trail)) {
                 equippedTrails.add(trail);
             } else {
-                LOGGER.warn("Oh no! Player selection '{}' could not be re-equipped (lost ownership - supporter status may have expired)", trail);
+                LOGGER.warn("Really?! Player selection '{}' could not be re-equipped (lost ownership - supporter status may have expired)", trail);
             }
         }
 

@@ -322,7 +322,7 @@ public class MorphRenderHandler {
             }
 
             if (!(e instanceof LivingEntity le)) {
-                LOGGER.warn("Entity {} is not a LivingEntity (actual type: {}). Player: {}. " +
+                LOGGER.warn("Or, what. Entity {} is not a LivingEntity (actual type: {}). Player: {}. " +
                             "Morphing requires LivingEntity subclasses.",
                             rl, e.getClass().getName(), uuid);
                 e.discard(); // Discard failed entity
@@ -344,7 +344,7 @@ public class MorphRenderHandler {
             le.setCustomNameVisible(false);
 
             // Log successful morph creation (debug level for production)
-            LOGGER.debug("Created new morph proxy: {} for player {}", rl, uuid);
+            LOGGER.debug("Want to see something neat? Created new morph proxy: {} for player {}", rl, uuid);
 
             return le;
         });

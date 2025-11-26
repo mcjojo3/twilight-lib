@@ -95,7 +95,7 @@ public record SyncEffectsPacket(UUID playerId, Set<String> effects, boolean trig
 
                 // Type-safe cast with validation to prevent crashes in heavily modded environments
                 if (!(effects instanceof EffectsData)) {
-                    LOGGER.error("Incompatible effects attachment implementation for player {}. Expected EffectsData but got {}. " +
+                    LOGGER.error("Is this the best physical representation you can manifest? Incompatible effects attachment implementation for player {}. Expected EffectsData but got {}. " +
                                  "This may be caused by another mod replacing the attachment.",
                                  entity.getName().getString(), effects.getClass().getName());
                     return; // Gracefully skip instead of crashing

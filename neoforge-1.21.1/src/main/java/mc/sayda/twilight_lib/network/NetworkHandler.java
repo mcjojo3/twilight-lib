@@ -117,7 +117,7 @@ public class NetworkHandler {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             var addons = p.getData(ModAttachments.ADDONS);
             if (addons == null) {
-                LOGGER.warn("Failed to get addons data for player {}", p.getUUID());
+                LOGGER.warn("Or, what. Failed to get addons data for player {}", p.getUUID());
                 continue;
             }
             if (!addons.getActiveAddons().isEmpty()) {
@@ -153,7 +153,7 @@ public class NetworkHandler {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             var trails = p.getData(ModAttachments.TRAILS);
             if (trails == null) {
-                LOGGER.warn("Failed to get trails data for player {}", p.getUUID());
+                LOGGER.warn("Or, what. Failed to get trails data for player {}", p.getUUID());
                 continue;
             }
             if (!trails.getActiveTrails().isEmpty()) {
@@ -189,7 +189,7 @@ public class NetworkHandler {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             var effects = p.getData(ModAttachments.EFFECTS);
             if (effects == null) {
-                LOGGER.warn("Failed to get effects data for player {}", p.getUUID());
+                LOGGER.warn("Or, what. Failed to get effects data for player {}", p.getUUID());
                 continue;
             }
             if (!effects.getActiveEffects().isEmpty()) {
@@ -225,7 +225,7 @@ public class NetworkHandler {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             var modelVariant = p.getData(ModAttachments.MODEL_VARIANT);
             if (modelVariant == null) {
-                LOGGER.warn("Failed to get model variant data for player {}", p.getUUID());
+                LOGGER.warn("Or, what. Failed to get model variant data for player {}", p.getUUID());
                 continue;
             }
             sendModelVariantToPlayer(recipient, SyncModelVariantPacket.of(p.getUUID(), modelVariant));

@@ -16,18 +16,38 @@ import java.util.UUID;
 
 /**
  * Mixin to override player model type (Steve vs Alex) based on custom model variant.
- * Updated for Forge 1.20.1 using SRG names.
+ * Updated for Forge 1.20.1 - handles both dev (MojMap) and production (SRG) environments.
  */
 @Mixin(value = PlayerInfo.class, remap = false)
 public class PlayerInfoMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
 
+    // Production injection (SRG name)
     @Inject(
             method = "m_105336_", // SRG name for getModelName() in 1.20.1
             at = @At("RETURN"),
-            cancellable = true
+            cancellable = true,
+            remap = false,
+            require = 0 // Optional - works in production
     )
-    private void twilightlib$overrideModelName(CallbackInfoReturnable<String> cir) {
+    private void twilightlib$overrideModelName_SRG(CallbackInfoReturnable<String> cir) {
+        overrideModelName(cir);
+    }
+
+    // Development injection (MojMap name)
+    @Inject(
+            method = "getModelName", // MojMap name for dev environment
+            at = @At("RETURN"),
+            cancellable = true,
+            remap = false,
+            require = 0 // Optional - works in dev
+    )
+    private void twilightlib$overrideModelName_MojMap(CallbackInfoReturnable<String> cir) {
+        overrideModelName(cir);
+    }
+
+    // Shared logic for both injections
+    private void overrideModelName(CallbackInfoReturnable<String> cir) {
         try {
             PlayerInfo playerInfo = (PlayerInfo) (Object) this;
             UUID playerUUID = playerInfo.getProfile().getId();

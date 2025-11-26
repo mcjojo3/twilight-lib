@@ -93,11 +93,11 @@ public class SupporterService {
                         lastFetchTime = System.currentTimeMillis();
                         LOGGER.info("We are going to be best friends! Successfully fetched {} supporters from backup URL", supporterCache.get().size());
                     } else {
-                        LOGGER.warn("Oh no! Both primary and backup URLs failed. Skipping supporter sync.");
+                        LOGGER.warn("How did I?! Uuuughh! Both primary and backup URLs failed. Skipping supporter sync.");
                     }
                 } catch (Exception e) {
                     LOGGER.error("How did I?! Uuuughh! Backup URL also failed: {}", e.getMessage());
-                    LOGGER.warn("Really?! Both primary and backup URLs failed. Skipping supporter sync.");
+                    LOGGER.warn("How did I?! Uuuughh! Both primary and backup URLs failed. Skipping supporter sync.");
                 }
             }
 
@@ -144,7 +144,7 @@ public class SupporterService {
                         // Config not loaded yet, use default
                     }
                     if (maxSizeMB <= 0 || maxSizeMB > 100) { // Reasonable max: 100MB for JSON
-                        LOGGER.error("Invalid max JSON size: {}MB (must be between 1-100). Using default 10MB", maxSizeMB);
+                        LOGGER.error("Or, what. Invalid max JSON size: {}MB (must be between 1-100). Using default 10MB", maxSizeMB);
                         maxSizeMB = 10;
                     }
                     long maxSizeBytes = (long) maxSizeMB * 1024L * 1024L;  // Convert MB to bytes (force long arithmetic)
@@ -152,7 +152,7 @@ public class SupporterService {
                     while ((line = in.readLine()) != null) {
                         // Check size limit BEFORE appending to prevent OOM attacks
                         if (content.length() + line.length() + 1 > maxSizeBytes) {
-                            LOGGER.error("Oh no! Supporter JSON exceeds size limit of {}MB", maxSizeMB);
+                            LOGGER.error("How did I?! Uuuughh! Supporter JSON exceeds size limit of {}MB", maxSizeMB);
                             return false;  // Don't update cache
                         }
                         content.append(line).append('\n');
@@ -216,7 +216,7 @@ public class SupporterService {
                         // Config not loaded yet, use default
                     }
                     if (newCache.size() >= maxSupporters) {
-                        LOGGER.error("Supporter list exceeds maximum size of {}. Truncating remaining entries to prevent memory exhaustion.", maxSupporters);
+                        LOGGER.error("Or, what. Supporter list exceeds maximum size of {}. Truncating remaining entries to prevent memory exhaustion.", maxSupporters);
                         break; // Stop parsing, use what we have
                     }
 

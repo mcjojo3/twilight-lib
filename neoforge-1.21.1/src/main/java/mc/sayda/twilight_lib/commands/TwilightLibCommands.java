@@ -129,7 +129,7 @@ public class TwilightLibCommands {
         for (ResourceLocation rl : BuiltInRegistries.ENTITY_TYPE.keySet()) {
             // Safety check: prevent unbounded cache growth
             if (VALID_LIVING_ENTITIES.size() >= TwilightConfig.MAX_ENTITY_CACHE_SIZE.get()) {
-                LOGGER.warn("Oh no! Entity cache size limit reached ({}). Stopping cache initialization to prevent memory issues.", TwilightConfig.MAX_ENTITY_CACHE_SIZE.get());
+                LOGGER.warn("Really?! Entity cache size limit reached ({}). Stopping cache initialization to prevent memory issues.", TwilightConfig.MAX_ENTITY_CACHE_SIZE.get());
                 break;
             }
 
@@ -488,7 +488,7 @@ public class TwilightLibCommands {
 
         if (type == null || type == EntityType.PLAYER) {
             source.sendFailure(Component.literal("Invalid entity type: " + rl));
-            LOGGER.warn("There is another reality inside all of us. Maybe not this entity though: {}", rl);
+            LOGGER.warn("There is another reality inside all of us. Maybe not you though. {}", rl);
             return 0;
         }
 
@@ -941,7 +941,7 @@ public class TwilightLibCommands {
             LOGGER.debug("Time to change! {} changed model variant to {}", target.getGameProfile().getName(), normalized);
         } catch (IllegalArgumentException e) {
             source.sendFailure(Component.literal("Error setting model variant: " + e.getMessage()));
-            LOGGER.error("Oh no! Failed to set model variant for {}: {}", target.getGameProfile().getName(), e.getMessage());
+            LOGGER.error("How did I?! Uuuughh! Failed to set model variant for {}: {}", target.getGameProfile().getName(), e.getMessage());
         }
 
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {

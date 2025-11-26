@@ -206,7 +206,7 @@ public class AddonsData implements IAddons {
             if (addons.contains(addon)) {
                 equippedAddons.add(addon);
             } else {
-                LOGGER.warn("Oh no! Player selection '{}' could not be re-equipped (lost ownership - supporter status may have expired)", addon);
+                LOGGER.warn("Really?! Player selection '{}' could not be re-equipped (lost ownership - supporter status may have expired)", addon);
             }
         }
 

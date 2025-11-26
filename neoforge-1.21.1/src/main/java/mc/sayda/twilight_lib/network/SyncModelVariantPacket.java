@@ -102,7 +102,7 @@ public record SyncModelVariantPacket(UUID playerId, String modelVariant, boolean
 
                 IModelVariant modelVariant = entity.getData(ModAttachments.MODEL_VARIANT);
                 if (modelVariant == null) {
-                    LOGGER.error("Failed to get model variant data for player {}", msg.playerId());
+                    LOGGER.error("Or, what. Failed to get model variant data for player {}", msg.playerId());
                     return;
                 }
                 // CLIENT-SIDE ATTACHMENT MODIFICATION: This is intentional and safe
@@ -115,7 +115,7 @@ public record SyncModelVariantPacket(UUID playerId, String modelVariant, boolean
                 }
                 LOGGER.debug("Time to change! Synced model variant {} for {}", msg.modelVariant(), entity.getName().getString());
             } catch (Exception e) {
-                LOGGER.error("Failed to sync model variant for player {}", msg.playerId(), e);
+                LOGGER.error("How did I?! Uuuughh! Failed to sync model variant for player {}", msg.playerId(), e);
             }
         });
     }

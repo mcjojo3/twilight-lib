@@ -86,7 +86,7 @@ public record SyncTrailsPacket(UUID playerId, Set<String> trails) implements Cus
 
                 // Type-safe cast with validation to prevent crashes in heavily modded environments
                 if (!(trails instanceof TrailsData)) {
-                    LOGGER.error("Incompatible trails attachment implementation for player {}. Expected TrailsData but got {}. " +
+                    LOGGER.error("Is this the best physical representation you can manifest? Incompatible trails attachment implementation for player {}. Expected TrailsData but got {}. " +
                                  "This may be caused by another mod replacing the attachment.",
                                  entity.getName().getString(), trails.getClass().getName());
                     return; // Gracefully skip instead of crashing

@@ -496,7 +496,7 @@ public class TwilightLibCommands {
         var testEntity = type.create(target.serverLevel());
         if (testEntity == null) {
             source.sendFailure(Component.literal("Failed to create entity: " + rl));
-            LOGGER.error("Oh, dung beetles! Critical failure creating test entity for type: {}", rl);
+            LOGGER.error("How did I?! Uuuughh! Critical failure creating test entity for type: {}", rl);
             return 0;
         }
 
@@ -513,7 +513,7 @@ public class TwilightLibCommands {
             try {
                 testEntity.discard();
             } catch (Exception e) {
-                LOGGER.error("Oh, dung beetles! Failed to discard test entity for {}: {}", rl, e.getMessage());
+                LOGGER.error("How did I?! Uuuughh! Failed to discard test entity for {}: {}", rl, e.getMessage());
             }
         }
 

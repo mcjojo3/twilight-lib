@@ -547,7 +547,7 @@ public class TwilightLibCommands {
         var testEntity = type.create(target.serverLevel());
         if (testEntity == null) {
             source.sendFailure(Component.literal("Failed to create entity: " + rl));
-            LOGGER.error("Oh, dung beetles! Critical failure creating test entity for type: {}", rl);
+            LOGGER.error("How did I?! Uuuughh! Critical failure creating test entity for type: {}", rl);
             return 0;
         }
 

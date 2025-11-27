@@ -94,6 +94,14 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     // Get or bake the model
                     var addonModel = getOrBakeModel(addonId, addonInfo);
 
+                    // Special handling for chest addons - optionally hide when wearing armor
+                    if (addonModel instanceof ChestModel<?>) {
+                        ItemStack chestArmor = player.getItemBySlot(EquipmentSlot.CHEST);
+                        if (!chestArmor.isEmpty() && TwilightConfig.HIDE_CHEST_IN_ARMOR.get()) {
+                            return; // Skip chest addon - config set to hide when wearing armor
+                        }
+                    }
+
                     // Sync model parts to player model (only if they exist)
                     addonModel.getHead().ifPresent(part -> copyModelPart(playerModel.head, part));
                     addonModel.getBody().ifPresent(part -> copyModelPart(playerModel.body, part));
@@ -189,27 +197,53 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     if (addonModel instanceof ChestModel<?>) {
                         ItemStack chestArmor = player.getItemBySlot(EquipmentSlot.CHEST);
                         if (!chestArmor.isEmpty() && chestArmor.getItem() instanceof ArmorItem armorItem) {
-                            // Bake the chest armor model
-                            ChestArmorModel<?> chestArmorModel = getOrBakeChestArmorModel();
+                            try {
+                                // Bake the chest armor model
+                                ChestArmorModel<?> chestArmorModel = getOrBakeChestArmorModel();
 
-                            // Sync it to the player model
-                            chestArmorModel.getBody().ifPresent(part -> copyModelPart(playerModel.body, part));
+                                // Sync it to the player model
+                                chestArmorModel.getBody().ifPresent(part -> copyModelPart(playerModel.body, part));
 
-                            // Setup animations
-                            // Validate type before unchecked cast
-                            if (!(chestArmorModel instanceof EntityModel<?>)) {
-                                LOGGER.error("Is this the best physical representation you can manifest? Chest armor model is not an EntityModel: {}", chestArmorModel.getClass());
-                                return;
+                                // Setup animations
+                                // Validate type before unchecked cast
+                                if (!(chestArmorModel instanceof EntityModel<?>)) {
+                                    LOGGER.error("Is this the best physical representation you can manifest? Chest armor model is not an EntityModel: {}", chestArmorModel.getClass());
+                                    return;
+                                }
+                                @SuppressWarnings("unchecked")
+                                EntityModel<Entity> armorEntityModel = (EntityModel<Entity>) chestArmorModel;
+                                armorEntityModel.setupAnim((Entity) player, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+
+                                // Render with armor texture - check if armor has custom texture via Forge extension
+                                String customTexture = armorItem.getArmorTexture(chestArmor, player, EquipmentSlot.CHEST, null);
+                                ResourceLocation armorTexture;
+
+                                if (customTexture != null) {
+                                    // Modded armor with custom texture path - it should already be a valid ResourceLocation string
+                                    armorTexture = new ResourceLocation(customTexture);
+                                } else {
+                                    // Construct texture path from material name
+                                    // Material name format: "namespace:name" (e.g., "minecraft:iron" or "magistuarmory:kastenbrust")
+                                    String materialName = armorItem.getMaterial().getName();
+                                    if (materialName.contains(":")) {
+                                        // Modded material with namespace - parse it
+                                        String[] parts = materialName.split(":", 2);
+                                        String namespace = parts[0];
+                                        String name = parts[1];
+                                        armorTexture = new ResourceLocation(namespace, "textures/models/armor/" + name + "_layer_1.png");
+                                    } else {
+                                        // Vanilla material without namespace
+                                        armorTexture = new ResourceLocation("minecraft:textures/models/armor/" + materialName + "_layer_1.png");
+                                    }
+                                }
+
+                                RenderType armorRenderType = RenderType.entityCutoutNoCull(armorTexture);
+                                VertexConsumer armorVertexConsumer = buffer.getBuffer(armorRenderType);
+                                armorEntityModel.renderToBuffer(poseStack, armorVertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+                            } catch (Exception e) {
+                                // If armor rendering fails for any reason, just skip it - the chest addon will still render
+                                LOGGER.warn("How did I?! Uuuughh! Failed to render armor overlay for {}, skipping", chestArmor.getItem(), e);
                             }
-                            @SuppressWarnings("unchecked")
-                            EntityModel<Entity> armorEntityModel = (EntityModel<Entity>) chestArmorModel;
-                            armorEntityModel.setupAnim((Entity) player, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
-
-                            // Render with armor texture
-                            ResourceLocation armorTexture = getArmorTexture(armorItem, false);
-                            RenderType armorRenderType = RenderType.entityCutoutNoCull(armorTexture);
-                            VertexConsumer armorVertexConsumer = buffer.getBuffer(armorRenderType);
-                            armorEntityModel.renderToBuffer(poseStack, armorVertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
                         }
                     }
                 });
@@ -244,9 +278,4 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
         to.z = from.z;
     }
 
-    private ResourceLocation getArmorTexture(ArmorItem armorItem, boolean isLeggings) {
-        String armorMaterial = armorItem.getMaterial().getName();
-        String layer = isLeggings ? "layer_2" : "layer_1";
-        return new ResourceLocation("minecraft", "textures/models/armor/" + armorMaterial + "_" + layer + ".png");
-    }
 }

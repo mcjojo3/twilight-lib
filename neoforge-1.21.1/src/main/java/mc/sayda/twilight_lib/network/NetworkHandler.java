@@ -81,7 +81,7 @@ public class NetworkHandler {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             IMorph morph = p.getData(ModAttachments.MORPH);
             if (morph == null) {
-                LOGGER.warn("How did I?! Uuuughh! Failed to get morph data for player {}", p.getUUID());
+                LOGGER.warn("Or, what. Failed to get morph data for player {}", p.getUUID());
                 continue;
             }
             morph.getEntityType().ifPresent(rl ->

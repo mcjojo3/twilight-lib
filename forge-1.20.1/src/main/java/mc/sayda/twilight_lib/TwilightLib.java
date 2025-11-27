@@ -425,7 +425,7 @@ public class TwilightLib {
         loggedInPlayer.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(loginAddons -> {
             if (!loginAddons.getActiveAddons().isEmpty()) {
                 NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(loggedInPlayer.getUUID(), loginAddons.getActiveAddons()));
-                LOGGER.info("We're gonna be best friends! Player {} logged in with {} active addons", loggedInPlayer.getGameProfile().getName(), loginAddons.getActiveAddons().size());
+                LOGGER.info("We are going to be best friends! Player {} logged in with {} active addons", loggedInPlayer.getGameProfile().getName(), loginAddons.getActiveAddons().size());
             }
         });
 
@@ -433,7 +433,7 @@ public class TwilightLib {
         loggedInPlayer.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(loginTrails -> {
             if (!loginTrails.getActiveTrails().isEmpty()) {
                 NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(loggedInPlayer.getUUID(), loginTrails.getActiveTrails()));
-                LOGGER.info("We're gonna be best friends! Player {} logged in with {} active trails", loggedInPlayer.getGameProfile().getName(), loginTrails.getActiveTrails().size());
+                LOGGER.info("We are going to be best friends! Player {} logged in with {} active trails", loggedInPlayer.getGameProfile().getName(), loginTrails.getActiveTrails().size());
             }
         });
 

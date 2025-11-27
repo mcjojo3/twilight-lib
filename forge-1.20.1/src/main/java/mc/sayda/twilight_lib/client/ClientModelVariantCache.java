@@ -1,6 +1,10 @@
 package mc.sayda.twilight_lib.client;
 
 import com.mojang.logging.LogUtils;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -31,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author SaydaGames (mc_jojo3)
  * @version 1.0
  */
+@Mod.EventBusSubscriber(value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ClientModelVariantCache {
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -105,5 +110,25 @@ public class ClientModelVariantCache {
      */
     public static int getCacheSize() {
         return MODEL_VARIANTS.size();
+    }
+
+    /**
+     * Event handler: Clears cache when client disconnects from server.
+     * Prevents stale data from persisting across server/world changes.
+     */
+    @SubscribeEvent
+    public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut evt) {
+        clear();
+        LOGGER.debug("Goodbye, my new friend! Cleared model variant cache on disconnect.");
+    }
+
+    /**
+     * Event handler: Clears cache when level unloads.
+     * Prevents memory leaks when switching worlds.
+     */
+    @SubscribeEvent
+    public static void onLevelUnload(net.minecraftforge.event.level.LevelEvent.Unload evt) {
+        clear();
+        LOGGER.debug("I hope this world survives... Cleared model variant cache on level unload.");
     }
 }

@@ -95,6 +95,14 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     // Get or bake the model
                     var addonModel = getOrBakeModel(addonId, addonInfo);
 
+                    // Special handling for chest addons - optionally hide when wearing armor
+                    if (addonModel instanceof ChestModel<?>) {
+                        ItemStack chestArmor = player.getItemBySlot(EquipmentSlot.CHEST);
+                        if (!chestArmor.isEmpty() && TwilightConfig.HIDE_CHEST_IN_ARMOR.get()) {
+                            return; // Skip chest addon - config set to hide when wearing armor
+                        }
+                    }
+
                     // Sync model parts to player model (only if they exist)
                     addonModel.getHead().ifPresent(part -> copyModelPart(playerModel.head, part));
                     addonModel.getBody().ifPresent(part -> copyModelPart(playerModel.body, part));
@@ -176,27 +184,38 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     if (addonModel instanceof ChestModel<?>) {
                         ItemStack chestArmor = player.getItemBySlot(EquipmentSlot.CHEST);
                         if (!chestArmor.isEmpty() && chestArmor.getItem() instanceof ArmorItem armorItem) {
-                            // Bake the chest armor model
-                            ChestArmorModel<?> chestArmorModel = getOrBakeChestArmorModel();
+                            try {
+                                // Bake the chest armor model
+                                ChestArmorModel<?> chestArmorModel = getOrBakeChestArmorModel();
 
-                            // Sync it to the player model
-                            chestArmorModel.getBody().ifPresent(part -> copyModelPart(playerModel.body, part));
+                                // Sync it to the player model
+                                chestArmorModel.getBody().ifPresent(part -> copyModelPart(playerModel.body, part));
 
-                            // Setup animations
-                            // Validate type before unchecked cast
-                            if (!(chestArmorModel instanceof EntityModel<?>)) {
-                                LOGGER.error("Is this the best physical representation you can manifest? Chest armor model is not an EntityModel: {}", chestArmorModel.getClass());
-                                return;
+                                // Setup animations
+                                // Validate type before unchecked cast
+                                if (!(chestArmorModel instanceof EntityModel<?>)) {
+                                    LOGGER.error("Is this the best physical representation you can manifest? Chest armor model is not an EntityModel: {}", chestArmorModel.getClass());
+                                    return;
+                                }
+                                @SuppressWarnings("unchecked")
+                                EntityModel<Entity> armorEntityModel = (EntityModel<Entity>) chestArmorModel;
+                                armorEntityModel.setupAnim((Entity) player, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+
+                                // Render with armor texture - use NeoForge's data-driven layer system
+                                var layers = armorItem.getMaterial().value().layers();
+                                if (!layers.isEmpty()) {
+                                    // Get first layer's texture (chest armor layer)
+                                    var layer = layers.get(0);
+                                    ResourceLocation armorTexture = layer.texture(false); // false = not dying overlay
+
+                                    RenderType armorRenderType = RenderType.entityCutoutNoCull(armorTexture);
+                                    VertexConsumer armorVertexConsumer = buffer.getBuffer(armorRenderType);
+                                    armorEntityModel.renderToBuffer(poseStack, armorVertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, color);
+                                }
+                            } catch (Exception e) {
+                                // If armor rendering fails for any reason, just skip it - the chest addon will still render
+                                LOGGER.warn("How did I?! Uuuughh! Failed to render armor overlay for {}, skipping", chestArmor.getItem(), e);
                             }
-                            @SuppressWarnings("unchecked")
-                            EntityModel<Entity> armorEntityModel = (EntityModel<Entity>) chestArmorModel;
-                            armorEntityModel.setupAnim((Entity) player, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
-
-                            // Render with armor texture
-                            ResourceLocation armorTexture = getArmorTexture(armorItem, false);
-                            RenderType armorRenderType = RenderType.entityCutoutNoCull(armorTexture);
-                            VertexConsumer armorVertexConsumer = buffer.getBuffer(armorRenderType);
-                            armorEntityModel.renderToBuffer(poseStack, armorVertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, color);
                         }
                     }
                 });
@@ -230,17 +249,4 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
         to.z = from.z;
     }
 
-    private ResourceLocation getArmorTexture(ArmorItem armorItem, boolean isLeggings) {
-        // Get the armor material layers map and extract the key for the appropriate layer
-        var layers = armorItem.getMaterial().value().layers();
-        if (layers.isEmpty()) {
-            return ResourceLocation.withDefaultNamespace("textures/models/armor/leather_layer_1.png");
-        }
-
-        // Get the first layer's ID (for chest armor, we want layer 1)
-        var layer = layers.get(isLeggings ? 1 : 0);
-        ResourceLocation layerId = layer.texture(false); // false = not dying overlay
-
-        return layerId;
-    }
 }

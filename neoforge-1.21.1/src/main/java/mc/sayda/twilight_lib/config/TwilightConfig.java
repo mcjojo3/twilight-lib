@@ -10,6 +10,7 @@ public class TwilightConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_ADDONS;
     public static final ModConfigSpec.BooleanValue ENABLE_EFFECTS;
     public static final ModConfigSpec.BooleanValue ENABLE_MORPHS;
+    public static final ModConfigSpec.BooleanValue HIDE_CHEST_IN_ARMOR;
 
     // Performance
     public static final ModConfigSpec.IntValue MAX_CACHED_ADDON_MODELS;
@@ -62,6 +63,9 @@ public class TwilightConfig {
         ENABLE_MORPHS = builder
                 .comment("Enable player morphing system")
                 .define("enable_morphs", true);
+        HIDE_CHEST_IN_ARMOR = builder
+                .comment("Hide chest addon when wearing chest armor (prevents clipping with custom armor models)")
+                .define("hide_chest_in_armor", false);
 
         builder.pop();
 

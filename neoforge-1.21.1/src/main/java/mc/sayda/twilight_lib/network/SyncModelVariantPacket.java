@@ -53,7 +53,7 @@ public record SyncModelVariantPacket(UUID playerId, String modelVariant, boolean
     public static final StreamCodec<ByteBuf, SyncModelVariantPacket> STREAM_CODEC = StreamCodec.composite(
         UUID_CODEC,
         SyncModelVariantPacket::playerId,
-        ByteBufCodecs.STRING_UTF8,
+        ByteBufCodecs.stringUtf8(16),
         SyncModelVariantPacket::modelVariant,
         ByteBufCodecs.BOOL,
         SyncModelVariantPacket::hasCustomVariant,

@@ -9,11 +9,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+/**
+ * Mixin to override player mining speed based on custom attributes.
+ * Removes vanilla mining penalties when mining_penalty attribute is 0.
+ */
 @Mixin(Player.class)
-public class PlayerMixin {
-
-    // Cache the aqua affinity holder to avoid registry lookup on every getDigSpeed call
-    private static volatile net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> AQUA_AFFINITY_CACHE = null;
+public class PlayerMiningMixin {
 
     /**
      * Inject into getDigSpeed to override mining slowdowns based on custom attribute.
@@ -33,25 +34,15 @@ public class PlayerMixin {
     private void twilightlib$onGetDigSpeed(BlockState state, BlockPos pos, CallbackInfoReturnable<Float> cir) {
         Player player = (Player) (Object) this;
 
-        double miningPenalty = player.getAttributeValue(ModAttributes.MINING_PENALTY);
+        double miningPenalty = player.getAttributeValue(ModAttributes.MINING_PENALTY.get());
 
         if (miningPenalty == 0.0) {
             float currentSpeed = cir.getReturnValue();
             double multiplier = 1.0;
 
             boolean inWater = player.isEyeInFluid(net.minecraft.tags.FluidTags.WATER);
+            boolean hasAquaAffinity = net.minecraft.world.item.enchantment.EnchantmentHelper.hasAquaAffinity(player);
             boolean onGround = player.onGround();
-
-            // Check for aqua affinity using proper 1.21.1 API with cached holder
-            // Lazy initialization of the enchantment holder on first use
-            if (AQUA_AFFINITY_CACHE == null) {
-                net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> enchantmentRegistry =
-                    player.level().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
-                AQUA_AFFINITY_CACHE = enchantmentRegistry.getHolderOrThrow(net.minecraft.world.item.enchantment.Enchantments.AQUA_AFFINITY);
-            }
-
-            // Check if player has aqua affinity on any equipment (typically helmet)
-            boolean hasAquaAffinity = net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantmentLevel(AQUA_AFFINITY_CACHE, player) > 0;
 
             // Check if underwater slowdown is active (in water, no aqua affinity)
             if (inWater && !hasAquaAffinity) {

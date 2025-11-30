@@ -34,9 +34,8 @@ public class BronzeHeartParticle extends TextureSheetParticle {
         this.setSize(0.2f, 0.2f);
         this.quadSize *= 0.8f;
         this.lifetime = 10;
-        this.gravity = -0.3f;
+        this.gravity = -0.2f;
         this.hasPhysics = true;
-        // Hearts float in place (no initial velocity)
         this.xd = 0;
         this.yd = 0;
         this.zd = 0;

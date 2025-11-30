@@ -18,6 +18,7 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -176,9 +177,11 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                         };
                     }
 
-                    // Render with default white color
-                    int color = FastColor.ARGB32.colorFromFloat(1.0F, 1.0F, 1.0F, 1.0F);
-                    entityModel.renderToBuffer(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, color);
+                    // Use vanilla's official overlay calculation for damage effects
+                    int overlay = LivingEntityRenderer.getOverlayCoords(player, 0.0F);
+
+                    // Render with vanilla damage overlay
+                    entityModel.renderToBuffer(poseStack, vertexConsumer, packedLight, overlay, FastColor.ARGB32.colorFromFloat(1.0F, 1.0F, 1.0F, 1.0F));
 
                     // If this is a chest addon and player is wearing chest armor, render the armor overlay
                     if (addonModel instanceof ChestModel<?>) {
@@ -210,7 +213,8 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
 
                                     RenderType armorRenderType = RenderType.entityCutoutNoCull(armorTexture);
                                     VertexConsumer armorVertexConsumer = buffer.getBuffer(armorRenderType);
-                                    armorEntityModel.renderToBuffer(poseStack, armorVertexConsumer, packedLight, OverlayTexture.NO_OVERLAY, color);
+                                    // Use the same vanilla overlay for armor as the addon
+                                    armorEntityModel.renderToBuffer(poseStack, armorVertexConsumer, packedLight, overlay, FastColor.ARGB32.colorFromFloat(1.0F, 1.0F, 1.0F, 1.0F));
                                 }
                             } catch (Exception e) {
                                 // If armor rendering fails for any reason, just skip it - the chest addon will still render

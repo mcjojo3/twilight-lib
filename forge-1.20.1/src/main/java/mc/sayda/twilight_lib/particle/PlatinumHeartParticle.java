@@ -36,7 +36,6 @@ public class PlatinumHeartParticle extends TextureSheetParticle {
         this.lifetime = 10;
         this.gravity = -0.3f;
         this.hasPhysics = true;
-        // Hearts float in place (no initial velocity)
         this.xd = 0;
         this.yd = 0;
         this.zd = 0;

@@ -32,8 +32,8 @@ public class GoldHeartParticle extends TextureSheetParticle {
     protected GoldHeartParticle(ClientLevel world, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
         super(world, x, y, z);
         this.setSize(0.2f, 0.2f);
-        this.quadSize *= 0.9f;
-        this.lifetime = 15;
+        this.quadSize *= 0.8f;
+        this.lifetime = 10;
         this.gravity = -0.3f;
         this.hasPhysics = true;
         this.xd = vx * 0;

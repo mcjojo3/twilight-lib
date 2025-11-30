@@ -15,11 +15,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.UUID;
 
 /**
- * Mixin to override player model type (Steve vs Alex) based on custom model variant.
+ * Mixin to override player model variant (Steve vs Alex / default vs slim arms).
+ * Allows custom model variant selection independent of UUID-based default.
  * Updated for Forge 1.20.1 - handles both dev (MojMap) and production (SRG) environments.
  */
 @Mixin(value = PlayerInfo.class, remap = false)
-public class PlayerInfoMixin {
+public class PlayerModelVariantMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     // Production injection (SRG name)

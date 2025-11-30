@@ -7,8 +7,10 @@
   "refmap": "twilight_lib.refmap.json",
   "mixins": [],
   "client": [
-    "PlayerMixin",
-    "PlayerInfoMixin"
+    "LivingEntityAccessor",
+    "PlayerMiningMixin",
+    "PlayerModelVariantMixin",
+    "PlayerMorphSoundMixin"
   ],
   "injectors": {
     "defaultRequire": 1

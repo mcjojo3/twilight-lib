@@ -16,7 +16,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.UUID;
 
 /**
- * Mixin to override player model type (Steve vs Alex) based on custom model variant.
+ * Mixin to override player model variant (Steve vs Alex / default vs slim arms).
+ * Allows custom model variant selection independent of UUID-based default.
  *
  * <p><b>Why this mixin?</b> In Minecraft 1.21.1, player model type (classic 4px arms vs slim 3px arms)
  * is determined by the {@link PlayerInfo#getSkin()} method, which returns a {@link PlayerSkin} object
@@ -33,7 +34,7 @@ import java.util.UUID;
  * @version 2.0
  */
 @Mixin(value = PlayerInfo.class, remap = false)
-public class PlayerInfoMixin {
+public class PlayerModelVariantMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     /**

@@ -108,8 +108,13 @@ public class ModRequirement {
      */
     public static boolean shouldLoad(Set<String> modTags) {
         // Config override: force load all addons regardless of mod requirements
-        if (mc.sayda.twilight_lib.config.TwilightConfig.FORCE_LOAD_ALL_ADDONS.get()) {
-            return true;
+        try {
+            if (mc.sayda.twilight_lib.config.TwilightConfig.FORCE_LOAD_ALL_ADDONS.get()) {
+                return true;
+            }
+        } catch (IllegalStateException e) {
+            // Config not loaded yet - default to false (don't force load)
+            // This can happen during early initialization when addons register before config loads
         }
 
         // Empty tags = always load (default Twilight Lib cosmetics)

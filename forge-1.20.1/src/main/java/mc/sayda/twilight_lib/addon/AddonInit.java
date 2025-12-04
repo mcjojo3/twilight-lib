@@ -168,8 +168,8 @@ public class AddonInit {
                 false,              // translucent
                 false,              // hidePlayerModel
                 false,              // forceAllTranslucent
-                Set.of(),           // modTags
-                Set.of(BodyPart.RIGHT_LEG, BodyPart.LEFT_LEG) // Hide normal player legs
+                Set.of("creraces"), // modTags
+                Set.of(BodyPart.RIGHT_LEG, BodyPart.LEFT_LEG, BodyPart.LEFT_PANTS, BodyPart.RIGHT_PANTS) // Hide normal player legs
         );
 
         // Register harpy thighs addon - upper leg thighs only
@@ -183,7 +183,7 @@ public class AddonInit {
                 false,              // translucent
                 false,              // hidePlayerModel
                 false,              // forceAllTranslucent
-                Set.of(),           // modTags
+                Set.of("creraces"), // modTags
                 Set.of()            // No body parts hidden
         );
 
@@ -198,7 +198,7 @@ public class AddonInit {
                 false,              // translucent
                 false,              // hidePlayerModel
                 false,              // forceAllTranslucent
-                Set.of(),           // modTags
+                Set.of("creraces"), // modTags
                 Set.of()            // No body parts hidden
         );
 

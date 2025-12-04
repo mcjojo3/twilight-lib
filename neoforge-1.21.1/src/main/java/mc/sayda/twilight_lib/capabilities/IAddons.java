@@ -18,7 +18,7 @@ import java.util.Set;
  * Supporter tiers grant addons additively (never removed on login).
  * Admin grants via /twilightlib persist independently of supporter status.
  */
-public interface IAddons extends ISerializableData {
+public interface IAddons {
     // Owned addons (what the player has access to)
     /**
      * Get all owned addons.
@@ -78,6 +78,28 @@ public interface IAddons extends ISerializableData {
      * Deactivate all addons without removing ownership.
      */
     void clearActiveAddons();
+
+    // Tint color methods
+    /**
+     * Get the RGB tint color for an addon.
+     * @param addonId The addon ID
+     * @return RGB color as packed int (0xRRGGBB), default 0xFFFFFF (white/no tint)
+     */
+    int getAddonTint(String addonId);
+
+    /**
+     * Set the RGB tint color for an addon.
+     * Color is stored per-player and persists across sessions.
+     * @param addonId The addon ID
+     * @param color RGB color as packed int (0xRRGGBB), 0xFFFFFF = white (no tint)
+     */
+    void setAddonTint(String addonId, int color);
+
+    /**
+     * Get all addon tint colors.
+     * @return Map of addon ID to RGB color (only non-default colors)
+     */
+    java.util.Map<String, Integer> getAllAddonTints();
 
     /**
      * Serialize addon data to NBT for persistence.

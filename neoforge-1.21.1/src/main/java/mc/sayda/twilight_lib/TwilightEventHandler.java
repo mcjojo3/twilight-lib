@@ -28,6 +28,20 @@ public class TwilightEventHandler {
         if (type == null) return;
 
         EntityDimensions morphDims = type.getDimensions();
+
+        // Apply scale limits to prevent exploits and rendering issues
+        float scale = morphDims.height() / PLAYER_HEIGHT;
+        float minScale = TwilightConfig.MIN_MORPH_SCALE.get().floatValue();
+        float maxScale = TwilightConfig.MAX_MORPH_SCALE.get().floatValue();
+        float clampedScale = Math.max(minScale, Math.min(scale, maxScale));
+
+        // If scale was clamped, recalculate morph dimensions
+        if (clampedScale != scale) {
+            float targetHeight = PLAYER_HEIGHT * clampedScale;
+            float widthRatio = morphDims.width() / morphDims.height();
+            morphDims = EntityDimensions.scalable(targetHeight * widthRatio, targetHeight);
+        }
+
         Pose pose = evt.getPose();
 
         if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING) {

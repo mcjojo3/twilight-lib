@@ -5,7 +5,9 @@
   "compatibilityLevel": "JAVA_21",
   "priority": 1000,
   "refmap": "twilight_lib.refmap.json",
-  "mixins": [],
+  "mixins": [
+    "ArmorEquipMixin"
+  ],
   "client": [
     "LivingEntityAccessor",
     "PlayerMiningMixin",

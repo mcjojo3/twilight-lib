@@ -138,63 +138,71 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                         RenderType.entityCutoutNoCull(textureToUse);
                     VertexConsumer vertexConsumer = buffer.getBuffer(renderType);
 
-                    // Apply transparency - wrap vertex consumer to modify alpha
-                    if (shouldBeTranslucent) {
-                        final float targetAlpha = 0.5F;
-                        VertexConsumer originalConsumer = vertexConsumer;
-                        vertexConsumer = new VertexConsumer() {
-                            @Override
-                            public VertexConsumer vertex(double x, double y, double z) {
-                                return originalConsumer.vertex(x, y, z);
-                            }
-
-                            @Override
-                            public VertexConsumer color(int red, int green, int blue, int alpha) {
-                                // Force alpha to 50% (127 out of 255)
-                                return originalConsumer.color(red, green, blue, (int)(targetAlpha * 255));
-                            }
-
-                            @Override
-                            public VertexConsumer uv(float u, float v) {
-                                return originalConsumer.uv(u, v);
-                            }
-
-                            @Override
-                            public VertexConsumer overlayCoords(int u, int v) {
-                                return originalConsumer.overlayCoords(u, v);
-                            }
-
-                            @Override
-                            public VertexConsumer uv2(int u, int v) {
-                                return originalConsumer.uv2(u, v);
-                            }
-
-                            @Override
-                            public VertexConsumer normal(float x, float y, float z) {
-                                return originalConsumer.normal(x, y, z);
-                            }
-
-                            @Override
-                            public void endVertex() {
-                                originalConsumer.endVertex();
-                            }
-
-                            @Override
-                            public void defaultColor(int r, int g, int b, int a) {
-                                originalConsumer.defaultColor(r, g, b, a);
-                            }
-
-                            @Override
-                            public void unsetDefaultColor() {
-                                originalConsumer.unsetDefaultColor();
-                            }
-                        };
-                    }
-
                     // Use vanilla's official overlay calculation for damage effects
                     int overlay = LivingEntityRenderer.getOverlayCoords(player, 0.0F);
 
-                    // Render with vanilla damage overlay
+                    // Get tint color for this addon (stored as 0xRRGGBB)
+                    int tintColor = addons.getAddonTint(addonId);
+                    final float tintRed = ((tintColor >> 16) & 0xFF) / 255.0F;
+                    final float tintGreen = ((tintColor >> 8) & 0xFF) / 255.0F;
+                    final float tintBlue = (tintColor & 0xFF) / 255.0F;
+
+                    // Wrap vertex consumer to apply tint color AND transparency
+                    final float targetAlpha = shouldBeTranslucent ? TwilightConfig.TRANSLUCENT_ADDON_ALPHA.get().floatValue() : 1.0F;
+                    VertexConsumer originalConsumer = vertexConsumer;
+                    vertexConsumer = new VertexConsumer() {
+                        @Override
+                        public VertexConsumer vertex(double x, double y, double z) {
+                            return originalConsumer.vertex(x, y, z);
+                        }
+
+                        @Override
+                        public VertexConsumer color(int red, int green, int blue, int alpha) {
+                            // Apply tint color multiplication
+                            int tintedRed = (int)(red * tintRed);
+                            int tintedGreen = (int)(green * tintGreen);
+                            int tintedBlue = (int)(blue * tintBlue);
+                            int finalAlpha = (int)(alpha * targetAlpha);
+                            return originalConsumer.color(tintedRed, tintedGreen, tintedBlue, finalAlpha);
+                        }
+
+                        @Override
+                        public VertexConsumer uv(float u, float v) {
+                            return originalConsumer.uv(u, v);
+                        }
+
+                        @Override
+                        public VertexConsumer overlayCoords(int u, int v) {
+                            return originalConsumer.overlayCoords(u, v);
+                        }
+
+                        @Override
+                        public VertexConsumer uv2(int u, int v) {
+                            return originalConsumer.uv2(u, v);
+                        }
+
+                        @Override
+                        public VertexConsumer normal(float x, float y, float z) {
+                            return originalConsumer.normal(x, y, z);
+                        }
+
+                        @Override
+                        public void endVertex() {
+                            originalConsumer.endVertex();
+                        }
+
+                        @Override
+                        public void defaultColor(int r, int g, int b, int a) {
+                            originalConsumer.defaultColor(r, g, b, a);
+                        }
+
+                        @Override
+                        public void unsetDefaultColor() {
+                            originalConsumer.unsetDefaultColor();
+                        }
+                    };
+
+                    // Render with wrapped vertex consumer (white color since tint is applied in wrapper)
                     entityModel.renderToBuffer(poseStack, vertexConsumer, packedLight, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
 
                     // If this is a chest addon and player is wearing chest armor, render the armor overlay

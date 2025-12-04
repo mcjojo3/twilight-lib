@@ -8,7 +8,9 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 import org.slf4j.Logger;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -17,10 +19,12 @@ public class SyncAddonsPacket {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final UUID playerId;
     private final Set<String> addons;
+    private final Map<String, Integer> tints;
 
-    public SyncAddonsPacket(UUID playerId, Set<String> addons) {
+    public SyncAddonsPacket(UUID playerId, Set<String> addons, Map<String, Integer> tints) {
         this.playerId = playerId;
         this.addons = addons;
+        this.tints = tints;
     }
 
     public static void encode(SyncAddonsPacket msg, FriendlyByteBuf buf) {
@@ -28,6 +32,12 @@ public class SyncAddonsPacket {
         buf.writeInt(msg.addons.size());
         for (String addonId : msg.addons) {
             buf.writeUtf(addonId);
+        }
+        // Encode tint colors
+        buf.writeInt(msg.tints.size());
+        for (Map.Entry<String, Integer> entry : msg.tints.entrySet()) {
+            buf.writeUtf(entry.getKey());
+            buf.writeInt(entry.getValue());
         }
     }
 
@@ -49,11 +59,27 @@ public class SyncAddonsPacket {
                     addons.add(addonId);
                 }
             }
-            return new SyncAddonsPacket(id, addons);
+
+            // Decode tint colors
+            int tintsSize = buf.readInt();
+            if (tintsSize < 0 || tintsSize > 1000) {
+                throw new IllegalArgumentException("Invalid tints packet size: " + tintsSize + " (max 1000)");
+            }
+
+            Map<String, Integer> tints = new HashMap<>();
+            for (int i = 0; i < tintsSize; i++) {
+                String addonId = buf.readUtf();
+                int color = buf.readInt();
+                if (addonId != null && !addonId.isEmpty()) {
+                    tints.put(addonId, color);
+                }
+            }
+
+            return new SyncAddonsPacket(id, addons, tints);
         } catch (Exception e) {
             LOGGER.error("How did I?! Uuuughh! Failed to decode SyncAddonsPacket: {}", e.getMessage());
             // Return empty packet to prevent crash
-            return new SyncAddonsPacket(new UUID(0, 0), new HashSet<>());
+            return new SyncAddonsPacket(new UUID(0, 0), new HashSet<>(), new HashMap<>());
         }
     }
 
@@ -85,10 +111,11 @@ public class SyncAddonsPacket {
                     return; // Gracefully skip instead of crashing
                 }
 
-                // Directly sync equipped addons from server (bypasses ownership validation)
+                // Directly sync equipped addons and tints from server (bypasses ownership validation)
                 ((AddonsData) addons).syncEquippedFromPacket(msg.addons);
-                LOGGER.debug("Time to change! Synced {} active addons for {}",
-                    msg.addons.size(), entity.getName().getString());
+                ((AddonsData) addons).syncTintsFromPacket(msg.tints);
+                LOGGER.debug("Time to change! Synced {} active addons and {} tints for {}",
+                    msg.addons.size(), msg.tints.size(), entity.getName().getString());
             });
         });
         ctx.get().setPacketHandled(true);

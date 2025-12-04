@@ -187,7 +187,7 @@ public class NetworkHandler {
             if (p.level() == null) continue; // Skip players with null level (mid-disconnect)
             p.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
                 if (!addons.getActiveAddons().isEmpty()) {
-                    sendAddonsToPlayer(recipient, new SyncAddonsPacket(p.getUUID(), addons.getActiveAddons()));
+                    sendAddonsToPlayer(recipient, new SyncAddonsPacket(p.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
                 }
             });
         }

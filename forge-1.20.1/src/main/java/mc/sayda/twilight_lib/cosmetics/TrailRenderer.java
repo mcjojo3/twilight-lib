@@ -76,6 +76,16 @@ public class TrailRenderer {
             return;
         }
 
+        // Check render distance limit (0 = unlimited)
+        Minecraft mc = Minecraft.getInstance();
+        int maxDistance = TwilightConfig.TRAIL_RENDER_DISTANCE.get();
+        if (maxDistance > 0 && mc.player != null && !player.equals(mc.player)) {
+            double distanceSq = mc.player.distanceToSqr(player);
+            if (distanceSq > maxDistance * maxDistance) {
+                return;
+            }
+        }
+
         player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
             // Get all active trails and render each one
             for (String activeTrailId : trails.getActiveTrails()) {
@@ -89,6 +99,14 @@ public class TrailRenderer {
 
     private static void renderSingleTrail(AbstractClientPlayer player, TrailType trailType) {
             TrailSpawnMode spawnMode = trailType.getSpawnMode();
+
+            // Check if this trail type is enabled
+            if (spawnMode == TrailSpawnMode.FOOTPRINT && !TwilightConfig.ENABLE_FOOTPRINT_TRAILS.get()) {
+                return;
+            }
+            if (spawnMode != TrailSpawnMode.FOOTPRINT && !TwilightConfig.ENABLE_PARTICLE_TRAILS.get()) {
+                return;
+            }
 
             // Don't render trails too frequently (configurable)
             // Exception: Footprint trails spawn more frequently for consistent footstep spacing

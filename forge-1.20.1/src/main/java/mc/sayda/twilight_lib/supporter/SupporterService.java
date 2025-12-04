@@ -65,10 +65,10 @@ public class SupporterService {
         return CompletableFuture.runAsync(() -> {
             boolean primarySuccess = false;
 
-            // Try primary URL first
+            // Try primary URL first with retries
             try {
                 LOGGER.info("Here you go! Fetching supporter list from primary URL...");
-                if (fetchFromUrl(SUPPORTERS_URL)) {
+                if (fetchFromUrlWithRetries(SUPPORTERS_URL)) {
                     primarySuccess = true;
                     lastFetchTime = System.currentTimeMillis();
                     LOGGER.info("We are going to be best friends! Successfully fetched {} supporters from primary URL", supporterCache.get().size());
@@ -89,7 +89,7 @@ public class SupporterService {
                     }
 
                     LOGGER.info("Is this the best physical representation you can manifest? Trying backup URL...");
-                    if (fetchFromUrl(backupUrl)) {
+                    if (fetchFromUrlWithRetries(backupUrl)) {
                         lastFetchTime = System.currentTimeMillis();
                         LOGGER.info("We are going to be best friends! Successfully fetched {} supporters from backup URL", supporterCache.get().size());
                     } else {
@@ -103,6 +103,44 @@ public class SupporterService {
 
             fetchInProgress.set(false);
         });
+    }
+
+    /**
+     * Fetch supporters from a specific URL with retry logic
+     * @param urlString The URL to fetch from
+     * @return true if successful, false otherwise
+     */
+    private static boolean fetchFromUrlWithRetries(String urlString) {
+        int maxRetries = TwilightConstants.Supporter.DEFAULT_MAX_RETRIES;
+        int retryDelay = TwilightConstants.Supporter.DEFAULT_RETRY_DELAY_MS;
+        try {
+            maxRetries = TwilightConfig.SUPPORTER_FETCH_MAX_RETRIES.get();
+            retryDelay = TwilightConfig.SUPPORTER_FETCH_RETRY_DELAY_MS.get();
+        } catch (IllegalStateException e) {
+            // Config not loaded yet, use defaults
+        }
+
+        for (int attempt = 0; attempt <= maxRetries; attempt++) {
+            if (attempt > 0) {
+                LOGGER.info("Aaand a skip-skip and a jump-jump! Retry attempt {}/{} for {}", attempt, maxRetries, urlString);
+                try {
+                    Thread.sleep(retryDelay);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+            }
+
+            if (fetchFromUrl(urlString)) {
+                if (attempt > 0) {
+                    LOGGER.info("We are going to be best friends! Retry successful on attempt {}", attempt + 1);
+                }
+                return true;
+            }
+        }
+
+        LOGGER.warn("How did I?! Uuuughh! All {} retry attempts failed for {}", maxRetries + 1, urlString);
+        return false;
     }
 
     /**

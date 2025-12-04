@@ -121,7 +121,7 @@ public class NetworkHandler {
                 continue;
             }
             if (!addons.getActiveAddons().isEmpty()) {
-                sendAddonsToPlayer(recipient, new SyncAddonsPacket(p.getUUID(), addons.getActiveAddons()));
+                sendAddonsToPlayer(recipient, new SyncAddonsPacket(p.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
             }
         }
     }

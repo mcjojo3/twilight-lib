@@ -4,12 +4,16 @@ import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.client.model.addon.BeanieModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestModel;
+import mc.sayda.twilight_lib.client.model.addon.HarpyLegsModel;
+import mc.sayda.twilight_lib.client.model.addon.HarpyThighsModel;
+import mc.sayda.twilight_lib.client.model.addon.HarpyWingsModel;
 import mc.sayda.twilight_lib.client.model.addon.OpaqueModel;
 import mc.sayda.twilight_lib.client.model.addon.NymphModel;
 import mc.sayda.twilight_lib.client.model.addon.HatModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneEarsModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneSnoutModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneTailsVariantModel;
+import mc.sayda.twilight_lib.client.model.addon.ShortTorsoModel;
 import mc.sayda.twilight_lib.client.model.addon.SuccubusWingsModel;
 import mc.sayda.twilight_lib.client.model.addon.TeemoHatModel;
 import mc.sayda.twilight_lib.client.model.addon.TiaraModel;
@@ -60,7 +64,13 @@ public class AddonInit {
                 NymphModel.LAYER_LOCATION,
                 NymphModel::createBodyLayer,
                 NymphModel::new,
-                new ResourceLocation(TwilightLib.MODID, "textures/addon/dryad_body.png")
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/dryad_body.png"),
+                false,              // usePlayerSkin
+                false,              // translucent
+                false,              // hidePlayerModel
+                false,              // forceAllTranslucent
+                Set.of("creraces"),  // modTags - CreRaces required
+                Set.of()                // hiddenBodyParts
         );
 
         AddonRegistry.registerAddon(
@@ -68,7 +78,13 @@ public class AddonInit {
                 NymphModel.LAYER_LOCATION,
                 NymphModel::createBodyLayer,
                 NymphModel::new,
-                new ResourceLocation(TwilightLib.MODID, "textures/addon/oread_body.png")
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/oread_body.png"),
+                false,                  // usePlayerSkin
+                false,                  // translucent
+                false,                  // hidePlayerModel
+                false,                  // forceAllTranslucent
+                Set.of("creraces"),     // modTags
+                Set.of()                // hiddenBodyParts
         );
 
         AddonRegistry.registerAddon(
@@ -77,8 +93,12 @@ public class AddonInit {
                 NymphModel::createBodyLayer,
                 NymphModel::new,
                 new ResourceLocation(TwilightLib.MODID, "textures/addon/naiad_body.png"),
-                false, // Don't use player skin
-                true   // Translucent
+                false,                  // Don't use player skin
+                true,                   // Translucent
+                false,                  // hidePlayerModel
+                false,                  // forceAllTranslucent
+                Set.of("creraces"),     // modTags
+                Set.of()                // hiddenBodyParts
         );
 
         AddonRegistry.registerAddon(
@@ -87,8 +107,12 @@ public class AddonInit {
                 NymphModel::createBodyLayer,
                 NymphModel::new,
                 new ResourceLocation(TwilightLib.MODID, "textures/addon/aurai_body.png"),
-                false, // Don't use player skin
-                true   // Translucent
+                false,                  // Don't use player skin
+                true,                   // Translucent
+                false,                  // hidePlayerModel
+                false,                  // forceAllTranslucent
+                Set.of("creraces"),     // modTags
+                Set.of()                // hiddenBodyParts
         );
 
         AddonRegistry.registerAddon(
@@ -133,6 +157,66 @@ public class AddonInit {
                 true // Use player skin texture
         );
 
+        // Register harpy legs addon - digitigrade bird legs (lower portion without thighs)
+        AddonRegistry.registerAddon(
+                "harpy_legs",
+                HarpyLegsModel.LAYER_LOCATION,
+                HarpyLegsModel::createBodyLayer,
+                HarpyLegsModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/harpy_legs.png"),
+                false,              // usePlayerSkin
+                false,              // translucent
+                false,              // hidePlayerModel
+                false,              // forceAllTranslucent
+                Set.of(),           // modTags
+                Set.of(BodyPart.RIGHT_LEG, BodyPart.LEFT_LEG) // Hide normal player legs
+        );
+
+        // Register harpy thighs addon - upper leg thighs only
+        AddonRegistry.registerAddon(
+                "harpy_thighs",
+                HarpyThighsModel.LAYER_LOCATION,
+                HarpyThighsModel::createBodyLayer,
+                HarpyThighsModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/harpy_legs.png"),
+                false,              // usePlayerSkin
+                false,              // translucent
+                false,              // hidePlayerModel
+                false,              // forceAllTranslucent
+                Set.of(),           // modTags
+                Set.of()            // No body parts hidden
+        );
+
+        // Register harpy wings addon - feathered wings attached to arms with chest feathers
+        AddonRegistry.registerAddon(
+                "harpy_wings",
+                HarpyWingsModel.LAYER_LOCATION,
+                HarpyWingsModel::createBodyLayer,
+                HarpyWingsModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/harpy_wings.png"),
+                false,              // usePlayerSkin
+                false,              // translucent
+                false,              // hidePlayerModel
+                false,              // forceAllTranslucent
+                Set.of(),           // modTags
+                Set.of()            // No body parts hidden
+        );
+
+        // Register short torso addon - 10 pixel tall body using player skin
+        AddonRegistry.registerAddon(
+                "short_torso",
+                ShortTorsoModel.LAYER_LOCATION,
+                ShortTorsoModel::createBodyLayer,
+                ShortTorsoModel::new,
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/short_torso.png"), // Placeholder (not used)
+                true,               // usePlayerSkin
+                false,              // translucent
+                false,              // hidePlayerModel
+                false,              // forceAllTranslucent
+                Set.of(),           // modTags
+                Set.of(BodyPart.BODY, BodyPart.JACKET) // Hide normal player body and jacket
+        );
+
         // Register opaque body addon - uses player skin and hides the base player model
         AddonRegistry.registerAddon(
                 "opaque_body",
@@ -153,9 +237,12 @@ public class AddonInit {
                 NymphModel::createBodyLayer,
                 NymphModel::new,
                 new ResourceLocation(TwilightLib.MODID, "textures/addon/slime_body.png"), // Placeholder texture (not used)
-                false, // Use player skin texture
-                true, // Translucent (50% transparency)
-                false  // Hide player model
+                false,                  // Use player skin texture
+                true,                   // Translucent (50% transparency)
+                false,                  // Hide player model
+                false,                  // forceAllTranslucent
+                Set.of("creraces"),     // modTags
+                Set.of()                // hiddenBodyParts
         );
 
 
@@ -167,9 +254,13 @@ public class AddonInit {
 
     /**
      * Register all color variants of kitsune parts (ears, snout, and tail variants)
+     * All kitsune cosmetics require the CreRaces mod to be loaded.
      */
     private static void registerKitsuneVariants() {
         String[] colors = {"white", "black", "blue", "yellow", "orange", "purple", "red"};
+
+        // Kitsune addons require CreRaces mod
+        Set<String> kitsuneModTags = Set.of("creraces");
 
         // Define which tails are visible for each variant
         // Standard variants (swapped with alt for 3-5):
@@ -231,33 +322,39 @@ public class AddonInit {
         int totalAddons = 0;
 
         for (String color : colors) {
-            // Register ears (standard variant)
+            // Register ears (standard variant) - CreRaces only
             AddonRegistry.registerAddon(
                 "kitsune_ears_" + color,
                 KitsuneEarsModel.LAYER_LOCATION,
                 KitsuneEarsModel::createBodyLayer,
                 KitsuneEarsModel::new,
-                new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_ears_" + color + ".png")
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_ears_" + color + ".png"),
+                false, false, false, false,
+                kitsuneModTags
             );
             totalAddons++;
 
-            // Register ears (alt variant - same texture)
+            // Register ears (alt variant - same texture) - CreRaces only
             AddonRegistry.registerAddon(
                 "kitsune_ears_" + color + "_alt",
                 KitsuneEarsModel.LAYER_LOCATION_ALT,
                 KitsuneEarsModel::createBodyLayerAlt,
                 KitsuneEarsModel::new,
-                new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_ears_" + color + ".png")
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_ears_" + color + ".png"),
+                false, false, false, false,
+                kitsuneModTags
             );
             totalAddons++;
 
-            // Register snout
+            // Register snout - CreRaces only
             AddonRegistry.registerAddon(
                 "kitsune_snout_" + color,
                 KitsuneSnoutModel.LAYER_LOCATION,
                 KitsuneSnoutModel::createBodyLayer,
                 KitsuneSnoutModel::new,
-                new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_snout_" + color + ".png")
+                new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_snout_" + color + ".png"),
+                false, false, false, false,
+                kitsuneModTags
             );
             totalAddons++;
 
@@ -268,17 +365,19 @@ public class AddonInit {
                 Set<Integer> visibleTailsAlt = tailVariantsAlt.get(count);
                 ModelLayerLocation layerLocation = layerLocations.get(count);
 
-                // Register standard variant
+                // Register standard variant - CreRaces only
                 AddonRegistry.registerAddon(
                     "kitsune_tails_" + count + "_" + color,
                     layerLocation,
                     KitsuneTailsVariantModel::createBodyLayer,
                     root -> new KitsuneTailsVariantModel<>(root, visibleTails),
-                    new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_tail_" + color + ".png")
+                    new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_tail_" + color + ".png"),
+                    false, false, false, false,
+                    kitsuneModTags
                 );
                 totalAddons++;
 
-                // Register alt variant only if it's different from standard
+                // Register alt variant only if it's different from standard - CreRaces only
                 // Alt variants that differ: 3, 4, 5
                 if (count >= 3 && count <= 5) {
                     AddonRegistry.registerAddon(
@@ -286,7 +385,9 @@ public class AddonInit {
                         layerLocation,
                         KitsuneTailsVariantModel::createBodyLayer,
                         root -> new KitsuneTailsVariantModel<>(root, visibleTailsAlt),
-                        new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_tail_" + color + ".png")
+                        new ResourceLocation(TwilightLib.MODID, "textures/addon/kitsune_tail_" + color + ".png"),
+                        false, false, false, false,
+                        kitsuneModTags
                     );
                     totalAddons++;
                 }

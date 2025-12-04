@@ -111,6 +111,9 @@ public class TwilightLib {
         // Register config
         modContainer.registerConfig(ModConfig.Type.COMMON, TwilightConfig.COMMON_CONFIG);
 
+        // Detect loaded mods BEFORE registering cosmetics (critical order!)
+        mc.sayda.twilight_lib.cosmetics.ModRequirement.detectMods();
+
         ModEntities.register(modBus);
         ModParticles.register(modBus);
         ModAttributes.register(modBus);
@@ -137,7 +140,11 @@ public class TwilightLib {
         // Add custom attributes to all living entities (especially players)
         evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.MINING_PENALTY);
         evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.FOV_MODIFIER);
-        LOGGER.debug("Come on, this is gonna be fun! Added MINING_PENALTY and FOV_MODIFIER attributes to players.");
+        evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_HELMET);
+        evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_CHESTPLATE);
+        evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_LEGGINGS);
+        evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_BOOTS);
+        LOGGER.debug("Come on, this is gonna be fun! Added custom attributes to players.");
     }
 
     private void onPlayerLogin(final PlayerEvent.PlayerLoggedInEvent evt) {
@@ -329,7 +336,7 @@ public class TwilightLib {
         // Send this player's active addons to everyone else
         IAddons loginAddons = loggedInPlayer.getData(ModAttachments.ADDONS);
         if (loginAddons != null && !loginAddons.getActiveAddons().isEmpty()) {
-            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(loggedInPlayer.getUUID(), loginAddons.getActiveAddons()));
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(loggedInPlayer.getUUID(), loginAddons.getActiveAddons(), loginAddons.getAllAddonTints()));
             LOGGER.info("We are going to be best friends! Player {} logged in with {} active addons", loggedInPlayer.getGameProfile().getName(), loginAddons.getActiveAddons().size());
         }
 
@@ -438,7 +445,7 @@ public class TwilightLib {
         // Sync active addons to client after respawn
         IAddons respawnAddons = player.getData(ModAttachments.ADDONS);
         if (respawnAddons != null && !respawnAddons.getActiveAddons().isEmpty()) {
-            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), respawnAddons.getActiveAddons()));
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), respawnAddons.getActiveAddons(), respawnAddons.getAllAddonTints()));
             LOGGER.debug("Time to change! Player {} respawned with {} active addons", player.getGameProfile().getName(), respawnAddons.getActiveAddons().size());
         }
 
@@ -503,7 +510,7 @@ public class TwilightLib {
         // Sync active addons to client after dimension change
         IAddons addons = player.getData(ModAttachments.ADDONS);
         if (addons != null && !addons.getActiveAddons().isEmpty()) {
-            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
             LOGGER.debug("Time to change! Player {} entered {} with {} active addons",
                 player.getGameProfile().getName(), evt.getTo().location(), addons.getActiveAddons().size());
         }
@@ -551,7 +558,7 @@ public class TwilightLib {
 
         IAddons addons = trackedPlayer.getData(ModAttachments.ADDONS);
         if (addons != null && !addons.getActiveAddons().isEmpty()) {
-            NetworkHandler.sendAddonsToPlayer(trackingPlayer, new SyncAddonsPacket(trackedPlayer.getUUID(), addons.getActiveAddons()));
+            NetworkHandler.sendAddonsToPlayer(trackingPlayer, new SyncAddonsPacket(trackedPlayer.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
             LOGGER.debug("Here you go! Sent {} addons for {} to tracking player {}",
                 addons.getActiveAddons().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
         }

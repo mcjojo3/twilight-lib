@@ -432,6 +432,31 @@ public class TwilightLibCommands {
                                                     })
                                             )
                                     )
+                                    .then(Commands.literal("tint")
+                                            .then(Commands.argument("addonId", StringArgumentType.string())
+                                                    .suggests(ADDON_SUGGESTIONS)
+                                                    .then(Commands.argument("color", StringArgumentType.word())
+                                                            .executes(ctx -> {
+                                                                String addonId = ctx.getArgument("addonId", String.class);
+                                                                String colorHex = ctx.getArgument("color", String.class);
+                                                                ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
+                                                                if (target == null) {
+                                                                    ctx.getSource().sendFailure(Component.literal("This command can only be used by players or must specify a target."));
+                                                                    return 0;
+                                                                }
+                                                                return executeSetAddonTint(ctx.getSource(), target, addonId, colorHex);
+                                                            })
+                                                            .then(Commands.argument("target", EntityArgument.player())
+                                                                    .executes(ctx -> {
+                                                                        String addonId = ctx.getArgument("addonId", String.class);
+                                                                        String colorHex = ctx.getArgument("color", String.class);
+                                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                                        return executeSetAddonTint(ctx.getSource(), target, addonId, colorHex);
+                                                                    })
+                                                            )
+                                                    )
+                                            )
+                                    )
                             )
 
                             // model ...
@@ -815,7 +840,7 @@ public class TwilightLibCommands {
                 }
 
                 player.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
-                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
+                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
 
             // Sync effects
             var effects = player.getData(ModAttachments.EFFECTS);
@@ -872,7 +897,7 @@ public class TwilightLibCommands {
             ((AddonsData) addons).setActiveAddon(addonId, true, persistent);
             target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
             // Sync to all clients
-            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
             LOGGER.debug("Changed your mind about me yet? {} activated addon: {} (persistent: {})", target.getGameProfile().getName(), addonId, persistent);
 
         // Only send feedback if source is NOT the target player (admin, command block, console)
@@ -889,7 +914,7 @@ public class TwilightLibCommands {
             ((AddonsData) addons).forceUnequipAddon(addonId);
             target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
             // Sync to all clients
-            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
             LOGGER.debug("It's so random! {} deactivated addon: {}", target.getGameProfile().getName(), addonId);
 
         // Only send feedback if source is NOT the target player (admin, command block, console)
@@ -905,7 +930,7 @@ public class TwilightLibCommands {
             addons.clearActiveAddons();
             target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
             // Sync to all clients
-            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons()));
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
             LOGGER.debug("Dusk and dawn are the same. Cleared all active addons for {}", target.getGameProfile().getName());
 
         // Only send feedback if source is NOT the target player (admin, command block, console)
@@ -961,5 +986,57 @@ public class TwilightLibCommands {
             source.sendSuccess(() -> Component.literal("Model variant cleared for " + target.getGameProfile().getName()), true);
         }
         return 1;
+    }
+
+    private static int executeSetAddonTint(CommandSourceStack source, ServerPlayer target, String addonId, String colorHex) {
+        // Parse hex color (supports #RRGGBB or RRGGBB format)
+        String hexString = colorHex.startsWith("#") ? colorHex.substring(1) : colorHex;
+
+        // Validate hex format
+        if (!hexString.matches("[0-9A-Fa-f]{6}")) {
+            source.sendFailure(Component.literal("Invalid color format. Use hex format: #RRGGBB or RRGGBB (e.g., #FF5733 or FF5733)"));
+            return 0;
+        }
+
+        try {
+            int color = Integer.parseInt(hexString, 16);
+
+            var addons = target.getData(ModAttachments.ADDONS);
+
+            if (addonId.equalsIgnoreCase("all")) {
+                // Bulk set all active addons
+                java.util.Set<String> activeAddons = addons.getActiveAddons();
+                if (activeAddons.isEmpty()) {
+                    source.sendFailure(Component.literal("No active addons to tint."));
+                    return 0;
+                }
+
+                for (String activeAddon : activeAddons) {
+                    addons.setAddonTint(activeAddon, color);
+                }
+
+                target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
+                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                LOGGER.debug("Bulk tint set for {} active addons to #{}", activeAddons.size(), hexString.toUpperCase());
+
+                if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+                    source.sendSuccess(() -> Component.literal("Set tint #" + hexString.toUpperCase() + " for " + activeAddons.size() + " active addon(s) on " + target.getGameProfile().getName()), true);
+                }
+            } else {
+                // Single addon tint
+                addons.setAddonTint(addonId, color);
+                target.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
+                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                LOGGER.debug("Now this I like! {} set tint for addon '{}' to #{}", target.getGameProfile().getName(), addonId, hexString.toUpperCase());
+
+                if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+                    source.sendSuccess(() -> Component.literal("Tint color #" + hexString.toUpperCase() + " set for addon '" + addonId + "' on " + target.getGameProfile().getName()), true);
+                }
+            }
+            return 1;
+        } catch (NumberFormatException e) {
+            source.sendFailure(Component.literal("Invalid color format. Use hex format: #RRGGBB or RRGGBB (e.g., #FF5733 or FF5733)"));
+            return 0;
+        }
     }
 }

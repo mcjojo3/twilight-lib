@@ -167,6 +167,12 @@ public class TwilightConstants {
 
         /** Default maximum supporters in cache. Prevents unbounded memory growth. */
         public static final int DEFAULT_MAX_SUPPORTERS = 100000;
+
+        /** Default maximum retry attempts for supporter data fetch. */
+        public static final int DEFAULT_MAX_RETRIES = 3;
+
+        /** Default delay between retry attempts in milliseconds. */
+        public static final int DEFAULT_RETRY_DELAY_MS = 2000;
     }
 
     /**

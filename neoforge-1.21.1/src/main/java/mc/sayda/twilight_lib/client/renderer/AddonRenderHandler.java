@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.client.renderer;
 
 import mc.sayda.twilight_lib.addon.AddonRegistry;
+import mc.sayda.twilight_lib.addon.BodyPart;
 import mc.sayda.twilight_lib.capabilities.ModAttachments;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
@@ -8,8 +9,18 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
- * Handles player model visibility for addons that want to hide the base player model
+ * Handles player model visibility for addons that want to hide the base player model or specific body parts.
+ *
+ * <p><b>Hiding Strategy:</b>
+ * <ul>
+ *   <li><b>hidePlayerModel</b>: Legacy system - hides ALL parts (backward compatible)</li>
+ *   <li><b>hiddenBodyParts</b>: New system - hides specific parts (fine-grained control)</li>
+ *   <li><b>Stacking</b>: Multiple addons can hide the same part - it's simply hidden if ANY addon requests it</li>
+ * </ul>
  */
 @EventBusSubscriber(modid = mc.sayda.twilight_lib.TwilightLib.MODID, value = Dist.CLIENT)
 public class AddonRenderHandler {
@@ -25,19 +36,34 @@ public class AddonRenderHandler {
             return;
         }
 
-        // Check if any active addon wants to hide the player model
-        var addons = player.getData(ModAttachments.ADDONS);
-        if (addons == null) {
-            return; // Safe early exit if no addon data
-        }
-        boolean shouldHidePlayerModel = addons.getActiveAddons().stream()
-                .anyMatch(addonId -> AddonRegistry.getAddon(addonId)
-                        .map(info -> info.hidePlayerModel())
-                        .orElse(false));
+        var playerModel = evt.getRenderer().getModel();
 
-        if (shouldHidePlayerModel) {
-            // Hide all player model parts by making them invisible
-            var playerModel = evt.getRenderer().getModel();
+        // Collect all body parts that should be hidden from ALL active addons
+        Set<BodyPart> allHiddenParts = new HashSet<>();
+        boolean hideEntireModel = false;
+
+        var addons = player.getData(ModAttachments.ADDONS);
+        if (addons != null) {
+            for (String addonId : addons.getActiveAddons()) {
+                AddonRegistry.getAddon(addonId).ifPresent(info -> {
+                    // Legacy system: hidePlayerModel flag hides everything
+                    if (info.hidePlayerModel()) {
+                        // Will be handled separately (sets hideEntireModel flag)
+                    }
+                    // New system: collect specific hidden body parts
+                    allHiddenParts.addAll(info.hiddenBodyParts());
+                });
+            }
+
+            // Check if any addon wants to hide the entire player model (legacy system)
+            hideEntireModel = addons.getActiveAddons().stream()
+                    .anyMatch(addonId -> AddonRegistry.getAddon(addonId)
+                            .map(info -> info.hidePlayerModel())
+                            .orElse(false));
+        }
+
+        // Hide the entire model if requested (legacy system)
+        if (hideEntireModel) {
             playerModel.head.visible = false;
             playerModel.hat.visible = false;
             playerModel.body.visible = false;
@@ -50,6 +76,24 @@ public class AddonRenderHandler {
             playerModel.rightPants.visible = false;
             playerModel.leftPants.visible = false;
             playerModel.jacket.visible = false;
+        } else {
+            // Hide specific parts based on hiddenBodyParts (new system)
+            for (BodyPart part : allHiddenParts) {
+                switch (part) {
+                    case HEAD -> playerModel.head.visible = false;
+                    case HAT -> playerModel.hat.visible = false;
+                    case BODY -> playerModel.body.visible = false;
+                    case LEFT_ARM -> playerModel.leftArm.visible = false;
+                    case RIGHT_ARM -> playerModel.rightArm.visible = false;
+                    case LEFT_LEG -> playerModel.leftLeg.visible = false;
+                    case RIGHT_LEG -> playerModel.rightLeg.visible = false;
+                    case LEFT_SLEEVE -> playerModel.leftSleeve.visible = false;
+                    case RIGHT_SLEEVE -> playerModel.rightSleeve.visible = false;
+                    case LEFT_PANTS -> playerModel.leftPants.visible = false;
+                    case RIGHT_PANTS -> playerModel.rightPants.visible = false;
+                    case JACKET -> playerModel.jacket.visible = false;
+                }
+            }
         }
     }
 

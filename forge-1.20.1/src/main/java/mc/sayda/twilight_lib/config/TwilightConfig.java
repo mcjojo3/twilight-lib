@@ -11,6 +11,7 @@ public class TwilightConfig {
     public static final ForgeConfigSpec.BooleanValue ENABLE_EFFECTS;
     public static final ForgeConfigSpec.BooleanValue ENABLE_MORPHS;
     public static final ForgeConfigSpec.BooleanValue HIDE_CHEST_IN_ARMOR;
+    public static final ForgeConfigSpec.BooleanValue FORCE_LOAD_ALL_ADDONS;
 
     // Performance
     public static final ForgeConfigSpec.IntValue MAX_CACHED_ADDON_MODELS;
@@ -24,6 +25,8 @@ public class TwilightConfig {
     public static final ForgeConfigSpec.IntValue SUPPORTER_CONNECT_TIMEOUT_MS;
     public static final ForgeConfigSpec.IntValue SUPPORTER_READ_TIMEOUT_MS;
     public static final ForgeConfigSpec.IntValue SUPPORTER_CACHE_DURATION_MINUTES;
+    public static final ForgeConfigSpec.IntValue SUPPORTER_FETCH_MAX_RETRIES;
+    public static final ForgeConfigSpec.IntValue SUPPORTER_FETCH_RETRY_DELAY_MS;
     public static final ForgeConfigSpec.IntValue MORPH_CACHE_CLEANUP_INTERVAL_TICKS;
     public static final ForgeConfigSpec.IntValue LOGIN_SYNC_DELAY_TICKS;
 
@@ -32,16 +35,28 @@ public class TwilightConfig {
     public static final ForgeConfigSpec.IntValue FOOTPRINT_UPDATE_FREQUENCY;
     public static final ForgeConfigSpec.IntValue FOOTPRINT_LIFETIME_TICKS;
     public static final ForgeConfigSpec.IntValue SPAWN_EFFECT_DELAY_TICKS;
+    public static final ForgeConfigSpec.DoubleValue TRANSLUCENT_ADDON_ALPHA;
+    public static final ForgeConfigSpec.IntValue TRAIL_RENDER_DISTANCE;
+    public static final ForgeConfigSpec.IntValue MAX_EFFECT_PARTICLES_PER_PLAYER;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_FOOTPRINT_TRAILS;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_PARTICLE_TRAILS;
+    public static final ForgeConfigSpec.DoubleValue CUSTOM_PARTICLE_SIZE;
+    public static final ForgeConfigSpec.IntValue CUSTOM_PARTICLE_LIFETIME;
+    public static final ForgeConfigSpec.DoubleValue CUSTOM_PARTICLE_GRAVITY;
 
     // Gameplay & Balance
     public static final ForgeConfigSpec.DoubleValue MINING_WATER_SLOWDOWN_MULTIPLIER;
     public static final ForgeConfigSpec.DoubleValue MINING_FLIGHT_SLOWDOWN_MULTIPLIER;
 
+    // Debug
+    public static final ForgeConfigSpec.BooleanValue VERBOSE_LOGGING;
+    public static final ForgeConfigSpec.BooleanValue LOG_COSMETIC_LOADS;
+    public static final ForgeConfigSpec.BooleanValue LOG_SUPPORTER_FETCHES;
+
     // Morph Physics
-    public static final ForgeConfigSpec.DoubleValue BASE_STEP_HEIGHT;
-    public static final ForgeConfigSpec.DoubleValue MIN_STEP_SCALE;
-    public static final ForgeConfigSpec.DoubleValue MAX_STEP_SCALE;
     public static final ForgeConfigSpec.DoubleValue EYE_HEIGHT_MULTIPLIER;
+    public static final ForgeConfigSpec.DoubleValue MIN_MORPH_SCALE;
+    public static final ForgeConfigSpec.DoubleValue MAX_MORPH_SCALE;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
@@ -66,6 +81,9 @@ public class TwilightConfig {
         HIDE_CHEST_IN_ARMOR = builder
                 .comment("Hide chest addon when wearing chest armor (prevents clipping with custom armor models)")
                 .define("hide_chest_in_armor", false);
+        FORCE_LOAD_ALL_ADDONS = builder
+                .comment("Force load all addons regardless of mod requirements (useful for testing or forcing mod-specific cosmetics)")
+                .define("force_load_all_addons", false);
 
         builder.pop();
 
@@ -103,6 +121,12 @@ public class TwilightConfig {
         SUPPORTER_CACHE_DURATION_MINUTES = builder
                 .comment("How long to cache supporter data before refetching from GitHub")
                 .defineInRange("supporter_cache_duration_minutes", 60, 5, 1440);
+        SUPPORTER_FETCH_MAX_RETRIES = builder
+                .comment("Maximum retry attempts for supporter data fetch before using backup URL")
+                .defineInRange("supporter_fetch_max_retries", 3, 0, 10);
+        SUPPORTER_FETCH_RETRY_DELAY_MS = builder
+                .comment("Delay between retry attempts in milliseconds")
+                .defineInRange("supporter_fetch_retry_delay_ms", 2000, 500, 10000);
         MORPH_CACHE_CLEANUP_INTERVAL_TICKS = builder
                 .comment("How often to clean up stale morph entities from cache (prevents memory leaks)")
                 .defineInRange("morph_cache_cleanup_interval_ticks", 6000, 1200, 72000);
@@ -126,6 +150,30 @@ public class TwilightConfig {
         SPAWN_EFFECT_DELAY_TICKS = builder
                 .comment("Delay before playing spawn effects after respawn")
                 .defineInRange("spawn_effect_delay_ticks", 5, 0, 40);
+        TRANSLUCENT_ADDON_ALPHA = builder
+                .comment("Alpha transparency for translucent addons (0.0 = fully transparent, 1.0 = fully opaque)")
+                .defineInRange("translucent_addon_alpha", 0.5, 0.0, 1.0);
+        TRAIL_RENDER_DISTANCE = builder
+                .comment("Maximum distance in blocks to render other players' trails (0 = unlimited)")
+                .defineInRange("trail_render_distance", 0, 0, 512);
+        MAX_EFFECT_PARTICLES_PER_PLAYER = builder
+                .comment("Maximum particles spawned per player for spawn effects (0 = unlimited)")
+                .defineInRange("max_effect_particles_per_player", 0, 0, 1000);
+        ENABLE_FOOTPRINT_TRAILS = builder
+                .comment("Enable footprint trails (wolf prints, etc.)")
+                .define("enable_footprint_trails", true);
+        ENABLE_PARTICLE_TRAILS = builder
+                .comment("Enable particle trails (hearts, flames, etc.)")
+                .define("enable_particle_trails", true);
+        CUSTOM_PARTICLE_SIZE = builder
+                .comment("Size multiplier for custom particles (hearts, etc.) - affects all tier-based trail particles")
+                .defineInRange("custom_particle_size", 0.8, 0.1, 2.0);
+        CUSTOM_PARTICLE_LIFETIME = builder
+                .comment("Lifetime in ticks for custom particles (hearts, etc.) - affects all tier-based trail particles")
+                .defineInRange("custom_particle_lifetime", 10, 1, 100);
+        CUSTOM_PARTICLE_GRAVITY = builder
+                .comment("Gravity for custom particles (negative = float upward) - affects all tier-based trail particles")
+                .defineInRange("custom_particle_gravity", -0.2, -1.0, 1.0);
 
         builder.pop();
 
@@ -140,20 +188,31 @@ public class TwilightConfig {
 
         builder.pop();
 
+        builder.push("debug");
+        builder.comment("Debug and logging options");
+        VERBOSE_LOGGING = builder
+                .comment("Enable verbose logging for troubleshooting")
+                .define("verbose_logging", false);
+        LOG_COSMETIC_LOADS = builder
+                .comment("Log when cosmetics are loaded/equipped")
+                .define("log_cosmetic_loads", false);
+        LOG_SUPPORTER_FETCHES = builder
+                .comment("Log supporter data fetch attempts")
+                .define("log_supporter_fetches", false);
+
+        builder.pop();
+
         builder.push("morph_physics");
         builder.comment("Physics settings for morphed players");
-        BASE_STEP_HEIGHT = builder
-                .comment("Base step height for players")
-                .defineInRange("base_step_height", 0.6, 0.0, 2.0);
-        MIN_STEP_SCALE = builder
-                .comment("Minimum step height scaling based on morph size")
-                .defineInRange("min_step_scale", 0.3, 0.0, 1.0);
-        MAX_STEP_SCALE = builder
-                .comment("Maximum step height scaling based on morph size")
-                .defineInRange("max_step_scale", 2.0, 1.0, 5.0);
         EYE_HEIGHT_MULTIPLIER = builder
                 .comment("Eye height as percentage of morph height")
                 .defineInRange("eye_height_multiplier", 0.85, 0.0, 1.0);
+        MIN_MORPH_SCALE = builder
+                .comment("Minimum morph scale multiplier (prevents morphs from becoming too small)")
+                .defineInRange("min_morph_scale", 0.1, 0.01, 1.0);
+        MAX_MORPH_SCALE = builder
+                .comment("Maximum morph scale multiplier (prevents morphs from becoming too large)")
+                .defineInRange("max_morph_scale", 10.0, 1.0, 50.0);
 
         builder.pop();
 

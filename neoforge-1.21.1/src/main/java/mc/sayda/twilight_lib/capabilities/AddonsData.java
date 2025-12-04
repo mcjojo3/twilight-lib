@@ -10,17 +10,19 @@ import org.slf4j.Logger;
 import java.util.HashSet;
 import java.util.Set;
 
-public class AddonsData implements IAddons {
+public class AddonsData implements IAddons, ISerializableData {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String NBT_ADDONS = "Addons";
     private static final String NBT_EQUIPPED_ADDONS = "EquippedAddons";
     private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
     private static final String NBT_EXTERNAL_GRANTS = "ExternalGrants";
+    private static final String NBT_ADDON_TINTS = "AddonTints";
 
     private final Set<String> addons = new HashSet<>();  // Owned addons (from supporter status)
     private final Set<String> equippedAddons = new HashSet<>();  // Currently equipped addons
     private final Set<String> playerSelections = new HashSet<>();  // Player's choices via /tlcosmetics (re-equip if owned)
     private final Set<String> externalGrants = new HashSet<>();  // Admin/mod grants via /twilightlib (persist regardless of ownership)
+    private final java.util.Map<String, Integer> addonTints = new java.util.HashMap<>();  // Per-addon RGB tint colors (0xRRGGBB, default 0xFFFFFF)
 
     // Owned addons methods
     @Override
@@ -141,6 +143,36 @@ public class AddonsData implements IAddons {
         this.equippedAddons.addAll(equipped);
     }
 
+    // Tint color methods
+    @Override
+    public synchronized int getAddonTint(String addonId) {
+        return addonTints.getOrDefault(addonId, 0xFFFFFF);  // Default to white (no tint)
+    }
+
+    @Override
+    public synchronized void setAddonTint(String addonId, int color) {
+        if (color == 0xFFFFFF) {
+            // Remove white tints to save memory (white is default)
+            addonTints.remove(addonId);
+        } else {
+            addonTints.put(addonId, color);
+        }
+    }
+
+    @Override
+    public synchronized java.util.Map<String, Integer> getAllAddonTints() {
+        return new java.util.HashMap<>(addonTints);
+    }
+
+    /**
+     * Force-sync tint colors from network packet (bypasses all validation).
+     * Used by sync packet to apply server state directly on client.
+     */
+    public synchronized void syncTintsFromPacket(java.util.Map<String, Integer> tints) {
+        this.addonTints.clear();
+        this.addonTints.putAll(tints);
+    }
+
     @Override
     public synchronized CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
@@ -166,6 +198,13 @@ public class AddonsData implements IAddons {
         }
         tag.put(NBT_EXTERNAL_GRANTS, externalList);
 
+        // Serialize addon tint colors (only non-white colors to save space)
+        CompoundTag tintsTag = new CompoundTag();
+        for (java.util.Map.Entry<String, Integer> entry : addonTints.entrySet()) {
+            tintsTag.putInt(entry.getKey(), entry.getValue());
+        }
+        tag.put(NBT_ADDON_TINTS, tintsTag);
+
         return tag;
     }
 
@@ -175,6 +214,7 @@ public class AddonsData implements IAddons {
         equippedAddons.clear();
         playerSelections.clear();
         externalGrants.clear();
+        addonTints.clear();
 
         // Deserialize owned addons (will be synced from GitHub on login)
         if (tag.contains(NBT_ADDONS, Tag.TAG_LIST)) {
@@ -197,6 +237,14 @@ public class AddonsData implements IAddons {
             ListTag list = tag.getList(NBT_EXTERNAL_GRANTS, Tag.TAG_STRING);
             for (int i = 0; i < list.size(); i++) {
                 externalGrants.add(list.getString(i));
+            }
+        }
+
+        // Deserialize addon tint colors
+        if (tag.contains(NBT_ADDON_TINTS, Tag.TAG_COMPOUND)) {
+            CompoundTag tintsTag = tag.getCompound(NBT_ADDON_TINTS);
+            for (String key : tintsTag.getAllKeys()) {
+                addonTints.put(key, tintsTag.getInt(key));
             }
         }
 

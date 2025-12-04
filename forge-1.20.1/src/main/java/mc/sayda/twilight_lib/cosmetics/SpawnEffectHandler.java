@@ -41,6 +41,19 @@ public class SpawnEffectHandler {
     private static final Map<UUID, Integer> PENDING_EFFECTS = new ConcurrentHashMap<>();
 
     /**
+     * Get the effective particle count, clamped by config limit (if set).
+     * @param baseCount The default particle count from TwilightConstants
+     * @return The clamped particle count (0 = unlimited uses base count)
+     */
+    private static int getClampedParticleCount(int baseCount) {
+        int maxParticles = mc.sayda.twilight_lib.config.TwilightConfig.MAX_EFFECT_PARTICLES_PER_PLAYER.get();
+        if (maxParticles <= 0) {
+            return baseCount; // 0 = unlimited
+        }
+        return Math.min(baseCount, maxParticles);
+    }
+
+    /**
      * Called by the network handler when effects are synced on spawn.
      * Triggers on any spawn event: login, respawn after death, dimension change, etc.
      */
@@ -143,7 +156,7 @@ public class SpawnEffectHandler {
 
         // Spawn a beautiful ethereal burst
         // Purple and blue particles spiraling upward
-        for (int i = 0; i < TwilightConstants.SpawnEffect.PARTICLE_COUNT; i++) {
+        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT); i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double height = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
@@ -178,7 +191,7 @@ public class SpawnEffectHandler {
         }
 
         // Add soul particles at the center
-        for (int i = 0; i < TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT; i++) {
+        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT); i++) {
             double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
             double offsetY = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
@@ -213,7 +226,7 @@ public class SpawnEffectHandler {
         };
 
         // Create rainbow burst with colored dust particles
-        for (int i = 0; i < TwilightConstants.SpawnEffect.PARTICLE_COUNT; i++) {
+        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT); i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double height = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
@@ -246,7 +259,7 @@ public class SpawnEffectHandler {
         Vec3 pos = player.position();
 
         // End portal particles rising from below
-        for (int i = 0; i < TwilightConstants.SpawnEffect.PARTICLE_COUNT * 1.5; i++) {
+        for (int i = 0; i < (int)(getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT) * 1.5); i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS * 1.2;
 
@@ -266,7 +279,7 @@ public class SpawnEffectHandler {
         }
 
         // Add some dragon breath for extra mystique
-        for (int i = 0; i < TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT; i++) {
+        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT); i++) {
             double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
             double offsetY = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT * 0.5;
             double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
@@ -291,7 +304,7 @@ public class SpawnEffectHandler {
         Vec3 pos = player.position();
 
         // Snowflakes falling and floating around
-        for (int i = 0; i < TwilightConstants.SpawnEffect.PARTICLE_COUNT; i++) {
+        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT); i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double height = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
@@ -334,7 +347,7 @@ public class SpawnEffectHandler {
         Vec3 pos = player.position();
 
         // Soul fire burst
-        for (int i = 0; i < TwilightConstants.SpawnEffect.PARTICLE_COUNT; i++) {
+        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT); i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double height = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
@@ -369,7 +382,7 @@ public class SpawnEffectHandler {
         }
 
         // Smoke rising from the center
-        for (int i = 0; i < TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT; i++) {
+        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT); i++) {
             double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
             double offsetY = RANDOM.nextDouble();
             double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
@@ -394,7 +407,7 @@ public class SpawnEffectHandler {
         Vec3 pos = player.position();
 
         // Spore blossom particles floating around
-        for (int i = 0; i < TwilightConstants.SpawnEffect.PARTICLE_COUNT; i++) {
+        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT); i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double height = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
@@ -429,7 +442,7 @@ public class SpawnEffectHandler {
         }
 
         // Cherry leaves falling in the center
-        for (int i = 0; i < TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT; i++) {
+        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT); i++) {
             double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS * 2;
             double offsetY = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
             double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS * 2;

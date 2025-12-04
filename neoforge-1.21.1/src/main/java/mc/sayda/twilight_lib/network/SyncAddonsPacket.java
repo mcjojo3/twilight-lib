@@ -13,11 +13,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.slf4j.Logger;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public record SyncAddonsPacket(UUID playerId, Set<String> addons) implements CustomPacketPayload {
+public record SyncAddonsPacket(UUID playerId, Set<String> addons, Map<String, Integer> tints) implements CustomPacketPayload {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final CustomPacketPayload.Type<SyncAddonsPacket> TYPE =
@@ -50,6 +52,8 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons) implements Cus
         SyncAddonsPacket::playerId,
         ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8, 1000),
         SyncAddonsPacket::addons,
+        ByteBufCodecs.map(HashMap::new, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.VAR_INT, 1000),
+        SyncAddonsPacket::tints,
         SyncAddonsPacket::new
     );
 
@@ -92,10 +96,17 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons) implements Cus
                     return; // Gracefully skip instead of crashing
                 }
 
-                // Directly sync equipped addons from server (bypasses ownership validation)
+                // Directly sync equipped addons and tints from server (bypasses ownership validation)
                 ((AddonsData) addons).syncEquippedFromPacket(msg.addons());
-                LOGGER.debug("Time to change! Synced {} active addons for {}",
-                    msg.addons().size(), entity.getName().getString());
+
+                LOGGER.debug("Syncing tints from packet: {}", msg.tints());
+                ((AddonsData) addons).syncTintsFromPacket(msg.tints());
+
+                // Verify tints were applied
+                LOGGER.debug("After sync, getAllAddonTints returns: {}", addons.getAllAddonTints());
+
+                LOGGER.debug("Time to change! Synced {} active addons and {} tints for {}",
+                    msg.addons().size(), msg.tints().size(), entity.getName().getString());
             } catch (Exception e) {
                 LOGGER.error("How did I?! Uuuughh! Failed to sync addons for player {}", msg.playerId(), e);
             }

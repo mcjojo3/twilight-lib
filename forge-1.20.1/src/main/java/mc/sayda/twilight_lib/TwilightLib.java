@@ -176,7 +176,11 @@ public class TwilightLib {
         // Add custom attributes to all living entities (especially players)
         evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.MINING_PENALTY.get());
         evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.FOV_MODIFIER.get());
-        LOGGER.debug("Come on, this is gonna be fun! Added MINING_PENALTY and FOV_MODIFIER attributes to players.");
+        evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_HELMET.get());
+        evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_CHESTPLATE.get());
+        evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_LEGGINGS.get());
+        evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_BOOTS.get());
+        LOGGER.debug("Come on, this is gonna be fun! Added custom attributes to players.");
     }
 
     private void attachEntityCaps(final AttachCapabilitiesEvent<Entity> evt) {
@@ -424,7 +428,7 @@ public class TwilightLib {
         // Send this player's active addons to everyone else
         loggedInPlayer.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(loginAddons -> {
             if (!loginAddons.getActiveAddons().isEmpty()) {
-                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(loggedInPlayer.getUUID(), loginAddons.getActiveAddons()));
+                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(loggedInPlayer.getUUID(), loginAddons.getActiveAddons(), loginAddons.getAllAddonTints()));
                 LOGGER.info("We are going to be best friends! Player {} logged in with {} active addons", loggedInPlayer.getGameProfile().getName(), loginAddons.getActiveAddons().size());
             }
         });
@@ -552,7 +556,7 @@ public class TwilightLib {
         // Sync active addons to client after respawn
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             if (!addons.getActiveAddons().isEmpty()) {
-                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
+                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
                 LOGGER.debug("Time to change! Player {} respawned with {} active addons", player.getGameProfile().getName(), addons.getActiveAddons().size());
             }
         });
@@ -620,7 +624,7 @@ public class TwilightLib {
 
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             if (!addons.getActiveAddons().isEmpty()) {
-                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
+                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
                 LOGGER.debug("Time to change! Player {} entered {} with {} active addons",
                     player.getGameProfile().getName(), evt.getTo().location(), addons.getActiveAddons().size());
             }
@@ -666,7 +670,7 @@ public class TwilightLib {
 
         trackedPlayer.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             if (!addons.getActiveAddons().isEmpty()) {
-                NetworkHandler.sendAddonsToPlayer(trackingPlayer, new SyncAddonsPacket(trackedPlayer.getUUID(), addons.getActiveAddons()));
+                NetworkHandler.sendAddonsToPlayer(trackingPlayer, new SyncAddonsPacket(trackedPlayer.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
                 LOGGER.debug("Here you go! Sent {} addons for {} to tracking player {}",
                     addons.getActiveAddons().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
             }

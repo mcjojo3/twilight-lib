@@ -781,7 +781,7 @@ public class CosmeticsCommand {
             player.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
 
             // Sync to all clients
-            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
 
             player.sendSystemMessage(Component.literal("Addon '" + addonId + "' equipped")
                 .withStyle(ChatFormatting.GREEN));
@@ -824,7 +824,7 @@ public class CosmeticsCommand {
             player.getPersistentData().put(TwilightConstants.NBT_ADDONS, addons.serialize());
 
             // Sync to all clients
-            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons()));
+            NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
 
             player.sendSystemMessage(Component.literal("Addon '" + addonId + "' unequipped")
                 .withStyle(ChatFormatting.GREEN));

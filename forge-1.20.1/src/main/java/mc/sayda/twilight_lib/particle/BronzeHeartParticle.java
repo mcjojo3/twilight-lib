@@ -1,5 +1,6 @@
 package mc.sayda.twilight_lib.particle;
 
+import mc.sayda.twilight_lib.config.TwilightConfig;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
@@ -32,9 +33,9 @@ public class BronzeHeartParticle extends TextureSheetParticle {
     protected BronzeHeartParticle(ClientLevel world, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
         super(world, x, y, z);
         this.setSize(0.2f, 0.2f);
-        this.quadSize *= 0.8f;
-        this.lifetime = 10;
-        this.gravity = -0.2f;
+        this.quadSize *= TwilightConfig.CUSTOM_PARTICLE_SIZE.get().floatValue();
+        this.lifetime = TwilightConfig.CUSTOM_PARTICLE_LIFETIME.get();
+        this.gravity = TwilightConfig.CUSTOM_PARTICLE_GRAVITY.get().floatValue();
         this.hasPhysics = true;
         this.xd = 0;
         this.yd = 0;

@@ -40,6 +40,58 @@ public class ModAttributes {
             .setSyncable(true)
     );
 
+    /**
+     * Allow Helmet attribute controls whether player can equip helmet armor.
+     *
+     * 0 = cannot equip helmets
+     * 1 = can equip helmets (default vanilla behavior)
+     *
+     * Note: Used by addons to restrict armor when cosmetics would conflict.
+     */
+    public static final RegistryObject<Attribute> ALLOW_HELMET = ATTRIBUTES.register("allow_helmet",
+        () -> new RangedAttribute("attribute.name.twilight_lib.allow_helmet", 1.0, 0.0, 1.0)
+            .setSyncable(true)
+    );
+
+    /**
+     * Allow Chestplate attribute controls whether player can equip chestplate armor.
+     *
+     * 0 = cannot equip chestplates
+     * 1 = can equip chestplates (default vanilla behavior)
+     *
+     * Note: Used by addons to restrict armor when cosmetics would conflict.
+     */
+    public static final RegistryObject<Attribute> ALLOW_CHESTPLATE = ATTRIBUTES.register("allow_chestplate",
+        () -> new RangedAttribute("attribute.name.twilight_lib.allow_chestplate", 1.0, 0.0, 1.0)
+            .setSyncable(true)
+    );
+
+    /**
+     * Allow Leggings attribute controls whether player can equip leggings armor.
+     *
+     * 0 = cannot equip leggings
+     * 1 = can equip leggings (default vanilla behavior)
+     *
+     * Note: Used by addons to restrict armor when cosmetics would conflict.
+     */
+    public static final RegistryObject<Attribute> ALLOW_LEGGINGS = ATTRIBUTES.register("allow_leggings",
+        () -> new RangedAttribute("attribute.name.twilight_lib.allow_leggings", 1.0, 0.0, 1.0)
+            .setSyncable(true)
+    );
+
+    /**
+     * Allow Boots attribute controls whether player can equip boots armor.
+     *
+     * 0 = cannot equip boots
+     * 1 = can equip boots (default vanilla behavior)
+     *
+     * Note: Used by addons to restrict armor when cosmetics would conflict.
+     */
+    public static final RegistryObject<Attribute> ALLOW_BOOTS = ATTRIBUTES.register("allow_boots",
+        () -> new RangedAttribute("attribute.name.twilight_lib.allow_boots", 1.0, 0.0, 1.0)
+            .setSyncable(true)
+    );
+
     public static void register(IEventBus modBus) {
         ATTRIBUTES.register(modBus);
     }

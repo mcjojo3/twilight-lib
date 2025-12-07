@@ -25,14 +25,14 @@ public class HarpyLegsModel<T extends Entity> extends BaseAddonModel<T> {
         MeshDefinition meshdefinition = new MeshDefinition();
         PartDefinition partdefinition = meshdefinition.getRoot();
 
-        PartDefinition RightLeg = partdefinition.addOrReplaceChild("RightLeg", CubeListBuilder.create().texOffs(42, 0).addBox(-2.1F, 11.0F, -1.0F, 3.0F, 1.0F, 2.0F, new CubeDeformation(0.0F))
-        .texOffs(48, 9).addBox(-1.1F, 11.0F, 1.0F, 1.0F, 1.0F, 2.0F, new CubeDeformation(0.0F))
-        .texOffs(48, 6).addBox(-0.1F, 11.0F, -3.0F, 1.0F, 1.0F, 2.0F, new CubeDeformation(0.0F))
-        .texOffs(48, 3).addBox(-2.1F, 11.0F, -3.0F, 1.0F, 1.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(-1.9F, 8.0F, 0.0F));
+        PartDefinition RightLeg = partdefinition.addOrReplaceChild("RightLeg", CubeListBuilder.create().texOffs(42, 1).addBox(-2.1F, 11.0F, -1.0F, 3.0F, 1.0F, 2.0F, new CubeDeformation(0.0F))
+        .texOffs(48, 10).addBox(-1.1F, 11.0F, 1.0F, 1.0F, 1.0F, 2.0F, new CubeDeformation(0.0F))
+        .texOffs(48, 7).addBox(-0.1F, 11.0F, -3.0F, 1.0F, 1.0F, 2.0F, new CubeDeformation(0.0F))
+        .texOffs(48, 4).addBox(-2.1F, 11.0F, -3.0F, 1.0F, 1.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(-1.9F, 8.0F, 0.0F));
 
-        PartDefinition RightLeg_r1 = RightLeg.addOrReplaceChild("RightLeg_r1", CubeListBuilder.create().texOffs(42, 5).addBox(-1.0F, -1.5F, 0.0F, 2.0F, 6.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-0.6F, 7.5F, 2.25F, -0.6981F, 0.0F, 0.0F));
+        PartDefinition RightLeg_r1 = RightLeg.addOrReplaceChild("RightLeg_r1", CubeListBuilder.create().texOffs(42, 6).addBox(-1.0F, -1.5F, 0.0F, 2.0F, 6.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-0.6F, 7.5F, 2.25F, -0.6981F, 0.0F, 0.0F));
 
-        PartDefinition RightLeg_r2 = RightLeg.addOrReplaceChild("RightLeg_r2", CubeListBuilder.create().texOffs(16, 0).addBox(-1.5F, -1.0F, -4.0F, 3.0F, 2.0F, 10.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-0.6F, 2.9667F, -1.4677F, -0.6981F, 0.0F, 0.0F));
+        PartDefinition RightLeg_r2 = RightLeg.addOrReplaceChild("RightLeg_r2", CubeListBuilder.create().texOffs(16, 1).addBox(-1.5F, -1.0F, -4.0F, 3.0F, 2.0F, 10.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-0.6F, 2.9667F, -1.4677F, -0.6981F, 0.0F, 0.0F));
 
         PartDefinition LeftLeg = partdefinition.addOrReplaceChild("LeftLeg", CubeListBuilder.create().texOffs(42, 14).addBox(-0.9F, 11.0F, -1.0F, 3.0F, 1.0F, 2.0F, new CubeDeformation(0.0F))
         .texOffs(48, 23).addBox(0.1F, 11.0F, 1.0F, 1.0F, 1.0F, 2.0F, new CubeDeformation(0.0F))

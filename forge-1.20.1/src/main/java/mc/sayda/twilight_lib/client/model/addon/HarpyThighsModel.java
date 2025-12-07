@@ -20,6 +20,7 @@ public class HarpyThighsModel<T extends Entity> extends BaseAddonModel<T> {
     public HarpyThighsModel(ModelPart root) {
         this.rightLeg = getChildSafe(root, "RightLeg");
         this.leftLeg = getChildSafe(root, "LeftLeg");
+        this.body = getChildSafe(root, "Body");
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -36,6 +37,14 @@ public class HarpyThighsModel<T extends Entity> extends BaseAddonModel<T> {
 
         PartDefinition LeftThigh_r1 = LeftLeg.addOrReplaceChild("LeftThigh_r1", CubeListBuilder.create().texOffs(0, 26).addBox(-2.0F, -1.5F, 0.0F, 4.0F, 9.0F, 0.0F, new CubeDeformation(0.0F))
         .texOffs(0, 13).addBox(-6.0F, -1.5F, -2.0F, 4.0F, 9.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(4.6F, -2.75F, 0.25F, -0.6981F, 0.0F, 0.0F));
+
+        PartDefinition Body = partdefinition.addOrReplaceChild("Body", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
+
+        PartDefinition Body_r1 = Body.addOrReplaceChild("Body_r1", CubeListBuilder.create().texOffs(10, 37).addBox(-2.0F, 0.0F, -6.0F, 4.0F, 0.0F, 6.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-2.0F, 8.0F, 2.0F, 2.2516F, -0.7171F, 0.0915F));
+
+        PartDefinition Body_r2 = Body.addOrReplaceChild("Body_r2", CubeListBuilder.create().texOffs(2, 37).addBox(-2.0F, 0.0F, -6.0F, 4.0F, 0.0F, 6.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(2.0F, 8.0F, 2.0F, 2.2516F, 0.7171F, -0.0915F));
+
+        PartDefinition Body_r3 = Body.addOrReplaceChild("Body_r3", CubeListBuilder.create().texOffs(-6, 37).addBox(-2.0F, 0.0F, -6.0F, 4.0F, 0.0F, 6.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 8.0F, 2.0F, 2.7053F, 0.0F, 0.0F));
 
         return LayerDefinition.create(meshdefinition, 64, 64);
     }

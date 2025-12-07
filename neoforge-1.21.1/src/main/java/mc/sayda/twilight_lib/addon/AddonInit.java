@@ -5,7 +5,9 @@ import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.client.model.addon.BeanieModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestModel;
 import mc.sayda.twilight_lib.client.model.addon.HarpyLegsModel;
+import mc.sayda.twilight_lib.client.model.addon.HarpyLegsAltModel;
 import mc.sayda.twilight_lib.client.model.addon.HarpyThighsModel;
+import mc.sayda.twilight_lib.client.model.addon.HarpyThighsAltModel;
 import mc.sayda.twilight_lib.client.model.addon.HarpyWingsModel;
 import mc.sayda.twilight_lib.client.model.addon.OpaqueModel;
 import mc.sayda.twilight_lib.client.model.addon.NymphModel;
@@ -194,6 +196,36 @@ public class AddonInit {
                 HarpyWingsModel::createBodyLayer,
                 HarpyWingsModel::new,
                 ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/harpy_wings.png"),
+                false,              // usePlayerSkin
+                false,              // translucent
+                false,              // hidePlayerModel
+                false,              // forceAllTranslucent
+                Set.of("creraces"), // modTags
+                Set.of()            // No body parts hidden
+        );
+
+        // Register harpy legs alt addon - digitigrade bird legs alternate style (lower portion without thighs)
+        AddonRegistry.registerAddon(
+                "harpy_legs_alt",
+                HarpyLegsAltModel.LAYER_LOCATION,
+                HarpyLegsAltModel::createBodyLayer,
+                HarpyLegsAltModel::new,
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/harpy_legs.png"),
+                false,              // usePlayerSkin
+                false,              // translucent
+                false,              // hidePlayerModel
+                false,              // forceAllTranslucent
+                Set.of("creraces"), // modTags
+                Set.of(BodyPart.RIGHT_LEG, BodyPart.LEFT_LEG, BodyPart.LEFT_PANTS, BodyPart.RIGHT_PANTS) // Hide normal player legs
+        );
+
+        // Register harpy thighs alt addon - upper leg thighs alternate style
+        AddonRegistry.registerAddon(
+                "harpy_thighs_alt",
+                HarpyThighsAltModel.LAYER_LOCATION,
+                HarpyThighsAltModel::createBodyLayer,
+                HarpyThighsAltModel::new,
+                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/addon/harpy_legs.png"),
                 false,              // usePlayerSkin
                 false,              // translucent
                 false,              // hidePlayerModel

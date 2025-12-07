@@ -124,6 +124,7 @@ public class TwilightLib {
         NeoForge.EVENT_BUS.addListener(TwilightLibCommands::registerCommands);
         NeoForge.EVENT_BUS.addListener(CosmeticsCommand::registerCommands);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLogin);
+        NeoForge.EVENT_BUS.addListener(this::onPlayerLogout);
         NeoForge.EVENT_BUS.addListener(this::onPlayerClone);
         NeoForge.EVENT_BUS.addListener(this::onPlayerRespawn);
         NeoForge.EVENT_BUS.addListener(this::onPlayerChangedDimension);
@@ -360,6 +361,17 @@ public class TwilightLib {
             LOGGER.info("We are going to be best friends! Player {} logged in as {} model variant",
                 loggedInPlayer.getGameProfile().getName(), loginModelVariant.getModelVariant());
         }
+    }
+
+    private void onPlayerLogout(final PlayerEvent.PlayerLoggedOutEvent evt) {
+        Player player = evt.getEntity();
+        if (player.level().isClientSide) return;
+
+        // Clean up pending sync tasks for this player (prevent memory leak)
+        pendingTasks.remove(player.getUUID());
+
+        LOGGER.debug("Goodbye, my new friend! Cleaned up pending tasks for disconnecting player: {}",
+            player.getGameProfile().getName());
     }
 
     private void onPlayerClone(final PlayerEvent.Clone evt) {

@@ -474,9 +474,12 @@ public class TwilightLib {
         Player player = evt.getEntity();
         if (player.level().isClientSide) return;
 
+        // Clean up pending sync tasks for this player (prevent memory leak)
+        pendingTasks.remove(player.getUUID());
+
         // Force invalidate all capabilities to free LazyOptionals
         player.invalidateCaps();
-        LOGGER.debug("Goodbye, my new friend! Invalidated capabilities for disconnecting player: {}",
+        LOGGER.debug("Goodbye, my new friend! Cleaned up pending tasks and invalidated capabilities for disconnecting player: {}",
             player.getGameProfile().getName());
     }
 

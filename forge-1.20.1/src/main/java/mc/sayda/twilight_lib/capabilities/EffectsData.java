@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.capabilities;
 
 import com.mojang.logging.LogUtils;
+import mc.sayda.twilight_lib.cosmetics.EffectType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -16,6 +17,7 @@ public class EffectsData implements IEffects {
     private static final String NBT_EQUIPPED_EFFECTS = "EquippedEffects";
     private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
     private static final String NBT_EXTERNAL_GRANTS = "ExternalGrants";
+    private static final int MAX_NBT_LIST_SIZE = 1000;  // Same as network packet limit to prevent DoS
 
     private final Set<String> effects = new HashSet<>();  // Owned effects (from supporter status)
     private final Set<String> equippedEffects = new HashSet<>();  // Currently equipped effects
@@ -167,12 +169,19 @@ public class EffectsData implements IEffects {
     }
 
     /**
-     * Force-sync equipped effects from network packet (bypasses all validation).
+     * Force-sync equipped effects from network packet with registry validation.
      * Used by SyncEffectsPacket to apply server state directly on client.
+     * Invalid effect IDs are filtered out to prevent malicious packets.
      */
     public synchronized void syncEquippedFromPacket(Set<String> equipped) {
         this.equippedEffects.clear();
-        this.equippedEffects.addAll(equipped);
+        for (String effectId : equipped) {
+            if (EffectType.fromId(effectId) != null) {
+                this.equippedEffects.add(effectId);
+            } else {
+                LOGGER.warn("Filtered invalid effect ID from sync packet: {}", effectId);
+            }
+        }
     }
 
     @Override
@@ -213,6 +222,9 @@ public class EffectsData implements IEffects {
         // Deserialize owned effects (will be synced from GitHub on login)
         if (tag.contains(NBT_EFFECTS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_EFFECTS, Tag.TAG_STRING);
+            if (list.size() > MAX_NBT_LIST_SIZE) {
+                throw new IllegalArgumentException("NBT effects list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            }
             for (int i = 0; i < list.size(); i++) {
                 effects.add(list.getString(i));
             }
@@ -221,6 +233,9 @@ public class EffectsData implements IEffects {
         // Deserialize player selections
         if (tag.contains(NBT_PLAYER_SELECTIONS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_PLAYER_SELECTIONS, Tag.TAG_STRING);
+            if (list.size() > MAX_NBT_LIST_SIZE) {
+                throw new IllegalArgumentException("NBT player selections list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            }
             for (int i = 0; i < list.size(); i++) {
                 playerSelections.add(list.getString(i));
             }
@@ -229,6 +244,9 @@ public class EffectsData implements IEffects {
         // Deserialize external grants (always persist)
         if (tag.contains(NBT_EXTERNAL_GRANTS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_EXTERNAL_GRANTS, Tag.TAG_STRING);
+            if (list.size() > MAX_NBT_LIST_SIZE) {
+                throw new IllegalArgumentException("NBT external grants list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            }
             for (int i = 0; i < list.size(); i++) {
                 externalGrants.add(list.getString(i));
             }

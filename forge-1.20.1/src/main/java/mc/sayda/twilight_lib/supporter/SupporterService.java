@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class SupporterService {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String SUPPORTERS_URL = "https://raw.githubusercontent.com/mcjojo3/twilight-database/main/supporters.json";
+    private static final int MAX_JSON_STRING_LENGTH = 1000;  // Prevent memory exhaustion from malicious JSON
 
     private static final AtomicReference<Map<String, SupporterData>> supporterCache = new AtomicReference<>(new ConcurrentHashMap<>());
     private static volatile long lastFetchTime = 0;
@@ -266,11 +267,11 @@ public class SupporterService {
                         continue;
                     }
 
-                    String uuid = supporter.get("uuid").getAsString();
-                    String name = supporter.has("name") ? supporter.get("name").getAsString() : "Unknown";
+                    String uuid = validateJsonString(supporter.get("uuid").getAsString(), "uuid");
+                    String name = supporter.has("name") ? validateJsonString(supporter.get("name").getAsString(), "name") : "Unknown";
 
                     // Tier: null or "none" = not a supporter, but can still have manual cosmetics
-                    String tier = supporter.has("tier") ? supporter.get("tier").getAsString() : null;
+                    String tier = supporter.has("tier") ? validateJsonString(supporter.get("tier").getAsString(), "tier") : null;
 
                     // Parse manual cosmetic overrides (optional field)
                     Set<String> manualTrails = new HashSet<>();
@@ -312,13 +313,24 @@ public class SupporterService {
     }
 
     /**
+     * Validate and extract string from JSON with length check
+     */
+    private static String validateJsonString(String value, String fieldName) {
+        if (value != null && value.length() > MAX_JSON_STRING_LENGTH) {
+            throw new IllegalArgumentException("JSON field '" + fieldName + "' too long: " + value.length() + " (max " + MAX_JSON_STRING_LENGTH + ")");
+        }
+        return value;
+    }
+
+    /**
      * Helper to convert JsonArray to Set<String>
      */
     private static Set<String> jsonArrayToSet(JsonArray array) {
         Set<String> set = new HashSet<>();
         if (array != null) {
             for (JsonElement element : array) {
-                set.add(element.getAsString());
+                String value = element.getAsString();
+                set.add(validateJsonString(value, "array element"));
             }
         }
         return set;

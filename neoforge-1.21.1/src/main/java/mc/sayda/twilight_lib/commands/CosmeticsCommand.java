@@ -39,8 +39,10 @@ public class CosmeticsCommand {
     private static final SuggestionProvider<CommandSourceStack> PLAYER_TRAILS_SUGGESTIONS = (context, builder) -> {
         if (context.getSource().getEntity() instanceof ServerPlayer player) {
             var trails = player.getData(ModAttachments.TRAILS);
-        Set<String> playerTrails = trails.getTrails();
-            SharedSuggestionProvider.suggest(playerTrails.stream(), builder);
+            if (trails != null) {
+                Set<String> playerTrails = trails.getTrails();
+                SharedSuggestionProvider.suggest(playerTrails.stream(), builder);
+            }
         }
         return builder.buildFuture();
     };
@@ -49,8 +51,10 @@ public class CosmeticsCommand {
     private static final SuggestionProvider<CommandSourceStack> PLAYER_ADDONS_SUGGESTIONS = (context, builder) -> {
         if (context.getSource().getEntity() instanceof ServerPlayer player) {
             var addons = player.getData(ModAttachments.ADDONS);
-        Set<String> playerAddons = addons.getAddons();
-            SharedSuggestionProvider.suggest(playerAddons.stream(), builder);
+            if (addons != null) {
+                Set<String> playerAddons = addons.getAddons();
+                SharedSuggestionProvider.suggest(playerAddons.stream(), builder);
+            }
         }
         return builder.buildFuture();
     };
@@ -59,8 +63,10 @@ public class CosmeticsCommand {
     private static final SuggestionProvider<CommandSourceStack> PLAYER_EFFECTS_SUGGESTIONS = (context, builder) -> {
         if (context.getSource().getEntity() instanceof ServerPlayer player) {
             var effects = player.getData(ModAttachments.EFFECTS);
-        Set<String> playerEffects = effects.getEffects();
-            SharedSuggestionProvider.suggest(playerEffects.stream(), builder);
+            if (effects != null) {
+                Set<String> playerEffects = effects.getEffects();
+                SharedSuggestionProvider.suggest(playerEffects.stream(), builder);
+            }
         }
         return builder.buildFuture();
     };
@@ -136,6 +142,12 @@ public class CosmeticsCommand {
 
         String trailId = StringArgumentType.getString(ctx, "type");
         var trails = player.getData(ModAttachments.TRAILS);
+        if (trails == null) {
+            player.sendSystemMessage(Component.literal("❌ Trail data not initialized!")
+                .withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
             // Check ownership - players can only interact with trails they own
             if (!trails.hasTrail(trailId)) {
                 player.sendSystemMessage(Component.literal("❌ You don't have access to that trail!")
@@ -174,6 +186,12 @@ public class CosmeticsCommand {
 
         String trailId = StringArgumentType.getString(ctx, "type");
         var trails = player.getData(ModAttachments.TRAILS);
+        if (trails == null) {
+            player.sendSystemMessage(Component.literal("❌ Trail data not initialized!")
+                .withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
             // Check ownership - players can only interact with trails they own
             if (!trails.hasTrail(trailId)) {
                 player.sendSystemMessage(Component.literal("❌ You don't have access to that trail!")
@@ -209,6 +227,12 @@ public class CosmeticsCommand {
         }
 
         var trails = player.getData(ModAttachments.TRAILS);
+        if (trails == null) {
+            player.sendSystemMessage(Component.literal("❌ Trail data not initialized!")
+                .withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
         Set<String> playerTrails = trails.getTrails();
             Set<String> allSupporterTrails = SupporterRegistry.getAllSupporterTrails();
 
@@ -292,6 +316,12 @@ public class CosmeticsCommand {
         }
 
         var addons = player.getData(ModAttachments.ADDONS);
+        if (addons == null) {
+            player.sendSystemMessage(Component.literal("❌ Addon data not initialized!")
+                .withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
         Set<String> playerAddons = addons.getAddons();
             Set<String> activeAddons = addons.getActiveAddons();
 
@@ -373,6 +403,12 @@ public class CosmeticsCommand {
         }
 
         var effects = player.getData(ModAttachments.EFFECTS);
+        if (effects == null) {
+            player.sendSystemMessage(Component.literal("❌ Effect data not initialized!")
+                .withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
         Set<String> playerEffects = effects.getEffects();
             Set<String> activeEffects = effects.getActiveEffects();
 
@@ -455,6 +491,12 @@ public class CosmeticsCommand {
 
         String effectId = StringArgumentType.getString(ctx, "type");
         var effects = player.getData(ModAttachments.EFFECTS);
+        if (effects == null) {
+            player.sendSystemMessage(Component.literal("❌ Effect data not initialized!")
+                .withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
             // Check ownership - players can only interact with effects they own
             if (!effects.hasEffect(effectId)) {
                 player.sendSystemMessage(Component.literal("❌ You don't own '" + effectId + "'!")
@@ -489,6 +531,12 @@ public class CosmeticsCommand {
 
         String effectId = StringArgumentType.getString(ctx, "type");
         var effects = player.getData(ModAttachments.EFFECTS);
+        if (effects == null) {
+            player.sendSystemMessage(Component.literal("❌ Effect data not initialized!")
+                .withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
             // Check ownership - players can only interact with effects they own
             if (!effects.hasEffect(effectId)) {
                 player.sendSystemMessage(Component.literal("❌ You don't own '" + effectId + "'!")
@@ -570,19 +618,25 @@ public class CosmeticsCommand {
             final int[] effectEquippedCount = {0};
 
             var trails = player.getData(ModAttachments.TRAILS);
+            if (trails != null) {
                 // Count ALL owned/equipped trails (including manual grants not in registry)
                 trailCount[0] = trails.getTrails().size();
                 trailEquippedCount[0] = trails.getActiveTrails().size();
+            }
 
             var addons = player.getData(ModAttachments.ADDONS);
+            if (addons != null) {
                 // Count ALL owned/equipped addons (including manual grants not in registry)
                 addonCount[0] = addons.getAddons().size();
                 addonEquippedCount[0] = addons.getActiveAddons().size();
+            }
 
             var effects = player.getData(ModAttachments.EFFECTS);
+            if (effects != null) {
                 // Count ALL owned/equipped effects (including manual grants not in registry)
                 effectCount[0] = effects.getEffects().size();
                 effectEquippedCount[0] = effects.getActiveEffects().size();
+            }
 
             int totalCosmetics = trailCount[0] + addonCount[0] + effectCount[0];
 
@@ -605,17 +659,23 @@ public class CosmeticsCommand {
                 final Set<String>[] manualEffects = new Set[]{Collections.emptySet()};
 
                 // Reuse variables declared earlier in the method
-                manualTrails[0] = trails.getTrails().stream()
-                        .filter(SupporterRegistry::isTrailSupporterExclusive)
-                        .collect(Collectors.toSet());
+                if (trails != null) {
+                    manualTrails[0] = trails.getTrails().stream()
+                            .filter(SupporterRegistry::isTrailSupporterExclusive)
+                            .collect(Collectors.toSet());
+                }
 
-                manualAddons[0] = addons.getAddons().stream()
-                        .filter(SupporterRegistry::isAddonSupporterExclusive)
-                        .collect(Collectors.toSet());
+                if (addons != null) {
+                    manualAddons[0] = addons.getAddons().stream()
+                            .filter(SupporterRegistry::isAddonSupporterExclusive)
+                            .collect(Collectors.toSet());
+                }
 
-                manualEffects[0] = effects.getEffects().stream()
-                        .filter(SupporterRegistry::isEffectSupporterExclusive)
-                        .collect(Collectors.toSet());
+                if (effects != null) {
+                    manualEffects[0] = effects.getEffects().stream()
+                            .filter(SupporterRegistry::isEffectSupporterExclusive)
+                            .collect(Collectors.toSet());
+                }
 
                 if (!manualTrails[0].isEmpty() || !manualAddons[0].isEmpty() || !manualEffects[0].isEmpty()) {
                     player.sendSystemMessage(Component.literal(""));
@@ -675,6 +735,12 @@ public class CosmeticsCommand {
 
         String addonId = StringArgumentType.getString(ctx, "addon");
         var addons = player.getData(ModAttachments.ADDONS);
+        if (addons == null) {
+            player.sendSystemMessage(Component.literal("❌ Addon data not initialized!")
+                .withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
             // Check ownership - players can only interact with addons they own
             if (!addons.hasAddon(addonId)) {
                 player.sendSystemMessage(Component.literal("❌ You don't own '" + addonId + "'!")
@@ -709,6 +775,12 @@ public class CosmeticsCommand {
 
         String addonId = StringArgumentType.getString(ctx, "addon");
         var addons = player.getData(ModAttachments.ADDONS);
+        if (addons == null) {
+            player.sendSystemMessage(Component.literal("❌ Addon data not initialized!")
+                .withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
             // Check ownership - players can only interact with addons they own
             if (!addons.hasAddon(addonId)) {
                 player.sendSystemMessage(Component.literal("❌ You don't own '" + addonId + "'!")

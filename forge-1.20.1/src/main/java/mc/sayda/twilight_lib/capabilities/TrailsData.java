@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.capabilities;
 
 import com.mojang.logging.LogUtils;
+import mc.sayda.twilight_lib.cosmetics.TrailType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -16,6 +17,7 @@ public class TrailsData implements ITrails {
     private static final String NBT_EQUIPPED_TRAILS = "EquippedTrails";
     private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
     private static final String NBT_EXTERNAL_GRANTS = "ExternalGrants";
+    private static final int MAX_NBT_LIST_SIZE = 1000;  // Same as network packet limit to prevent DoS
 
     private final Set<String> trails = new HashSet<>();  // Owned trails (from supporter status)
     private final Set<String> equippedTrails = new HashSet<>();  // Currently equipped trails
@@ -133,12 +135,19 @@ public class TrailsData implements ITrails {
     }
 
     /**
-     * Force-sync equipped trails from network packet (bypasses all validation).
+     * Force-sync equipped trails from network packet with registry validation.
      * Used by SyncTrailsPacket to apply server state directly on client.
+     * Invalid trail IDs are filtered out to prevent malicious packets.
      */
     public synchronized void syncEquippedFromPacket(Set<String> equipped) {
         this.equippedTrails.clear();
-        this.equippedTrails.addAll(equipped);
+        for (String trailId : equipped) {
+            if (TrailType.fromId(trailId) != null) {
+                this.equippedTrails.add(trailId);
+            } else {
+                LOGGER.warn("Filtered invalid trail ID from sync packet: {}", trailId);
+            }
+        }
     }
 
     @Override
@@ -179,6 +188,9 @@ public class TrailsData implements ITrails {
         // Deserialize owned trails (will be synced from GitHub on login)
         if (tag.contains(NBT_TRAILS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_TRAILS, Tag.TAG_STRING);
+            if (list.size() > MAX_NBT_LIST_SIZE) {
+                throw new IllegalArgumentException("NBT trails list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            }
             for (int i = 0; i < list.size(); i++) {
                 trails.add(list.getString(i));
             }
@@ -187,6 +199,9 @@ public class TrailsData implements ITrails {
         // Deserialize player selections
         if (tag.contains(NBT_PLAYER_SELECTIONS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_PLAYER_SELECTIONS, Tag.TAG_STRING);
+            if (list.size() > MAX_NBT_LIST_SIZE) {
+                throw new IllegalArgumentException("NBT player selections list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            }
             for (int i = 0; i < list.size(); i++) {
                 playerSelections.add(list.getString(i));
             }
@@ -195,6 +210,9 @@ public class TrailsData implements ITrails {
         // Deserialize external grants (always persist)
         if (tag.contains(NBT_EXTERNAL_GRANTS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_EXTERNAL_GRANTS, Tag.TAG_STRING);
+            if (list.size() > MAX_NBT_LIST_SIZE) {
+                throw new IllegalArgumentException("NBT external grants list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            }
             for (int i = 0; i < list.size(); i++) {
                 externalGrants.add(list.getString(i));
             }

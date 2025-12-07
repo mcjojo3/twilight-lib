@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.capabilities;
 
 import com.mojang.logging.LogUtils;
+import mc.sayda.twilight_lib.addon.AddonRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -17,6 +18,7 @@ public class AddonsData implements IAddons {
     private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
     private static final String NBT_EXTERNAL_GRANTS = "ExternalGrants";
     private static final String NBT_ADDON_TINTS = "AddonTints";
+    private static final int MAX_NBT_LIST_SIZE = 1000;  // Same as network packet limit to prevent DoS
 
     private final Set<String> addons = new HashSet<>();  // Owned addons (from supporter status)
     private final Set<String> equippedAddons = new HashSet<>();  // Currently equipped addons
@@ -135,12 +137,19 @@ public class AddonsData implements IAddons {
     }
 
     /**
-     * Force-sync equipped addons from network packet (bypasses all validation).
+     * Force-sync equipped addons from network packet with registry validation.
      * Used by SyncAddonsPacket to apply server state directly on client.
+     * Invalid addon IDs are filtered out to prevent malicious packets.
      */
     public synchronized void syncEquippedFromPacket(Set<String> equipped) {
         this.equippedAddons.clear();
-        this.equippedAddons.addAll(equipped);
+        for (String addonId : equipped) {
+            if (AddonRegistry.hasAddon(addonId)) {
+                this.equippedAddons.add(addonId);
+            } else {
+                LOGGER.warn("Filtered invalid addon ID from sync packet: {}", addonId);
+            }
+        }
     }
 
     // Tint color methods
@@ -219,6 +228,9 @@ public class AddonsData implements IAddons {
         // Deserialize owned addons (will be synced from GitHub on login)
         if (tag.contains(NBT_ADDONS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_ADDONS, Tag.TAG_STRING);
+            if (list.size() > MAX_NBT_LIST_SIZE) {
+                throw new IllegalArgumentException("NBT addons list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            }
             for (int i = 0; i < list.size(); i++) {
                 addons.add(list.getString(i));
             }
@@ -227,6 +239,9 @@ public class AddonsData implements IAddons {
         // Deserialize player selections
         if (tag.contains(NBT_PLAYER_SELECTIONS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_PLAYER_SELECTIONS, Tag.TAG_STRING);
+            if (list.size() > MAX_NBT_LIST_SIZE) {
+                throw new IllegalArgumentException("NBT player selections list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            }
             for (int i = 0; i < list.size(); i++) {
                 playerSelections.add(list.getString(i));
             }
@@ -235,6 +250,9 @@ public class AddonsData implements IAddons {
         // Deserialize external grants (always persist)
         if (tag.contains(NBT_EXTERNAL_GRANTS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_EXTERNAL_GRANTS, Tag.TAG_STRING);
+            if (list.size() > MAX_NBT_LIST_SIZE) {
+                throw new IllegalArgumentException("NBT external grants list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            }
             for (int i = 0; i < list.size(); i++) {
                 externalGrants.add(list.getString(i));
             }
@@ -243,7 +261,11 @@ public class AddonsData implements IAddons {
         // Deserialize addon tint colors
         if (tag.contains(NBT_ADDON_TINTS, Tag.TAG_COMPOUND)) {
             CompoundTag tintsTag = tag.getCompound(NBT_ADDON_TINTS);
-            for (String key : tintsTag.getAllKeys()) {
+            Set<String> keys = tintsTag.getAllKeys();
+            if (keys.size() > MAX_NBT_LIST_SIZE) {
+                throw new IllegalArgumentException("NBT addon tints map too large: " + keys.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            }
+            for (String key : keys) {
                 addonTints.put(key, tintsTag.getInt(key));
             }
         }

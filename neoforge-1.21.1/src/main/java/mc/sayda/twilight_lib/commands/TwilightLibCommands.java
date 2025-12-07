@@ -1001,6 +1001,13 @@ public class TwilightLibCommands {
         try {
             int color = Integer.parseInt(hexString, 16);
 
+            // Validate addon ID (unless using "all" option)
+            if (!addonId.equalsIgnoreCase("all") && !AddonRegistry.hasAddon(addonId)) {
+                source.sendFailure(Component.literal("Unknown addon: " + addonId));
+                LOGGER.warn("Or, what. Unknown addon requested for tint: {}", addonId);
+                return 0;
+            }
+
             var addons = target.getData(ModAttachments.ADDONS);
 
             if (addonId.equalsIgnoreCase("all")) {

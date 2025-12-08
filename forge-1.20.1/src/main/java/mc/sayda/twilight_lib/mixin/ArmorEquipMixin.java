@@ -16,22 +16,45 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Mixin to prevent armor equipping based on custom attributes.
  * Allows addons to restrict specific armor slots when cosmetics would conflict.
  */
-@Mixin(value = Player.class, remap = false)
+@Mixin(Player.class)
 public class ArmorEquipMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     /**
      * Inject into setItemSlot to prevent armor equipping when restricted by attributes.
-     * Checks allow_helmet, allow_chestplate, allow_leggings, allow_boots attributes.
-     * If attribute is 0, prevents that armor type from being equipped.
+     * Production injection (SRG name).
+     */
+    @Inject(
+        method = "m_8061_", // SRG name for setItemSlot in 1.20.1
+        at = @At("HEAD"),
+        cancellable = true,
+        remap = false,
+        require = 0 // Optional - works in production
+    )
+    private void twilightlib$onSetItemSlot_SRG(EquipmentSlot slot, ItemStack stack, CallbackInfo ci) {
+        onSetItemSlot(slot, stack, ci);
+    }
+
+    /**
+     * Development injection (MojMap name).
      */
     @Inject(
         method = "setItemSlot",
         at = @At("HEAD"),
         cancellable = true,
-        remap = false
+        remap = false,
+        require = 0 // Optional - works in dev
     )
-    private void twilightlib$onSetItemSlot(EquipmentSlot slot, ItemStack stack, CallbackInfo ci) {
+    private void twilightlib$onSetItemSlot_MojMap(EquipmentSlot slot, ItemStack stack, CallbackInfo ci) {
+        onSetItemSlot(slot, stack, ci);
+    }
+
+    /**
+     * Shared logic for both setItemSlot injections.
+     * Checks allow_helmet, allow_chestplate, allow_leggings, allow_boots attributes.
+     * If attribute is 0, prevents that armor type from being equipped.
+     */
+    private void onSetItemSlot(EquipmentSlot slot, ItemStack stack, CallbackInfo ci) {
         Player player = (Player) (Object) this;
 
         // Only check armor slots

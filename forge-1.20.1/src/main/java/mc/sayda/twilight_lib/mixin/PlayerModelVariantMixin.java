@@ -74,7 +74,7 @@ public class PlayerModelVariantMixin {
                 cir.setReturnValue(modelName);
                 LOGGER.debug("Time to change! Overriding player model to: {}", modelName);
             }
-        } catch (Exception e) {
+        } catch (NullPointerException | IllegalStateException e) {
             LOGGER.error("How did I?! Uuuughh! Failed to override player model type", e);
         }
     }

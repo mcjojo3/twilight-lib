@@ -15,6 +15,9 @@ import mc.sayda.twilight_lib.addon.AddonRegistry;
 
 import mc.sayda.twilight_lib.capabilities.AddonsData;
 import mc.sayda.twilight_lib.capabilities.IModelVariant;
+import mc.sayda.twilight_lib.capabilities.IAddons;
+import mc.sayda.twilight_lib.capabilities.IEffects;
+import mc.sayda.twilight_lib.capabilities.ITrails;
 import mc.sayda.twilight_lib.commands.CommandUtils;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
 import mc.sayda.twilight_lib.cosmetics.EffectType;
@@ -63,12 +66,20 @@ public class TwilightLibCommands {
     private static final SuggestionProvider<CommandSourceStack> ENTITY_SUGGESTIONS = (context, builder) -> {
         // Initialize or refresh cache if registry changed (synchronized to prevent race condition)
         var level = context.getSource().getLevel();
+        // Null check: console/command block commands have no level context
+        if (level == null) {
+            LOGGER.debug("Or, what. Cannot provide entity suggestions - no world context (console/command block)");
+            return builder.buildFuture(); // Return empty suggestions
+        }
         synchronized (TwilightLibCommands.class) {
             if (!cacheInitialized || shouldRefreshCache(level)) {
                 initializeEntityCache(level);
             }
         }
-        return SharedSuggestionProvider.suggestResource(VALID_LIVING_ENTITIES.stream(), builder);
+        // Synchronize on the set itself for iteration (per Collections.synchronizedSet() contract)
+        synchronized (VALID_LIVING_ENTITIES) {
+            return SharedSuggestionProvider.suggestResource(VALID_LIVING_ENTITIES.stream(), builder);
+        }
     };
 
     // Suggestion provider for trail types
@@ -549,6 +560,11 @@ public class TwilightLibCommands {
 
     private static void setMorph(CommandSourceStack source, ServerPlayer target, Optional<ResourceLocation> morphType, boolean hideNametag) {
         IMorph morph = target.getData(ModAttachments.MORPH);
+        if (morph == null) {
+            source.sendFailure(Component.literal("Or, what. Player " + target.getName().getString() + " has no morph data!"));
+            LOGGER.error("Or, what. Cannot set morph for {} - morph data not present", target.getName().getString());
+            return;
+        }
 
         // Optimization: Skip if already morphed to this entity
         if (morph.getEntityType().equals(morphType)) {
@@ -583,6 +599,14 @@ public class TwilightLibCommands {
     }
 
     private static int executeEquipTrail(CommandSourceStack source, ServerPlayer target, String trailId, boolean persistent) {
+        // Validate trail ID length (DoS protection)
+        if (trailId == null || trailId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
+            source.sendFailure(Component.literal("Or, what. Trail ID too long (max " + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            LOGGER.warn("Or, what. Rejected oversized trail ID (length: {}, max: {})",
+                trailId == null ? 0 : trailId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
+            return 0;
+        }
+
         // Validate trail type
         TrailType trailType = TrailType.fromId(trailId);
         if (trailType == null) {
@@ -591,6 +615,11 @@ public class TwilightLibCommands {
         }
 
         var trails = target.getData(ModAttachments.TRAILS);
+        if (trails == null) {
+            source.sendFailure(Component.literal("Or, what. Player " + target.getName().getString() + " has no trails data!"));
+            LOGGER.error("Or, what. Cannot equip trail for {} - trails data not present", target.getName().getString());
+            return 0;
+        }
             // Optimization: Skip if trail is already active
             if (trails.isTrailActive(trailId)) {
                 LOGGER.debug("Yeah? Well... {} already has trail '{}' active, skipping unnecessary update",
@@ -636,7 +665,20 @@ public class TwilightLibCommands {
     }
 
     private static int executeUnequipTrail(CommandSourceStack source, ServerPlayer target, String trailId) {
+        // Validate trail ID length (DoS protection)
+        if (trailId == null || trailId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
+            source.sendFailure(Component.literal("Or, what. Trail ID too long (max " + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            LOGGER.warn("Or, what. Rejected oversized trail ID (length: {}, max: {})",
+                trailId == null ? 0 : trailId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
+            return 0;
+        }
+
         var trails = target.getData(ModAttachments.TRAILS);
+        if (trails == null) {
+            source.sendFailure(Component.literal("Or, what. Player " + target.getName().getString() + " has no trails data!"));
+            LOGGER.error("Or, what. Cannot unequip trail for {} - trails data not present", target.getName().getString());
+            return 0;
+        }
             // Admin command: Force unequip regardless of source (player selection or external grant)
             ((TrailsData) trails).forceUnequipTrail(trailId);
 
@@ -655,7 +697,28 @@ public class TwilightLibCommands {
     }
 
     private static int executeEquipEffect(CommandSourceStack source, ServerPlayer target, String effectId, boolean persistent) {
+        // Validate effect ID length (DoS protection)
+        if (effectId == null || effectId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
+            source.sendFailure(Component.literal("Or, what. Effect ID too long (max " + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            LOGGER.warn("Or, what. Rejected oversized effect ID (length: {}, max: {})",
+                effectId == null ? 0 : effectId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
+            return 0;
+        }
+
+        // Validate effect type
+        EffectType effectType = EffectType.fromId(effectId);
+        if (effectType == null) {
+            source.sendFailure(Component.literal("Invalid effect type: " + effectId));
+            LOGGER.warn("Or, what. Unknown effect type requested: {}", effectId);
+            return 0;
+        }
+
         var effects = target.getData(ModAttachments.EFFECTS);
+        if (effects == null) {
+            source.sendFailure(Component.literal("Or, what. Player " + target.getName().getString() + " has no effects data!"));
+            LOGGER.error("Or, what. Cannot equip effect for {} - effects data not present", target.getName().getString());
+            return 0;
+        }
             // Optimization: Skip if effect is already active
             if (effects.isEffectActive(effectId)) {
                 LOGGER.debug("Yeah? Well... {} already has effect '{}' active, skipping unnecessary update",
@@ -684,7 +747,20 @@ public class TwilightLibCommands {
     }
 
     private static int executeUnequipEffect(CommandSourceStack source, ServerPlayer target, String effectId) {
+        // Validate effect ID length (DoS protection)
+        if (effectId == null || effectId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
+            source.sendFailure(Component.literal("Or, what. Effect ID too long (max " + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            LOGGER.warn("Or, what. Rejected oversized effect ID (length: {}, max: {})",
+                effectId == null ? 0 : effectId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
+            return 0;
+        }
+
         var effects = target.getData(ModAttachments.EFFECTS);
+        if (effects == null) {
+            source.sendFailure(Component.literal("Or, what. Player " + target.getName().getString() + " has no effects data!"));
+            LOGGER.error("Or, what. Cannot unequip effect for {} - effects data not present", target.getName().getString());
+            return 0;
+        }
             // Admin command: Force unequip regardless of source (player selection or external grant)
             ((EffectsData) effects).forceUnequipEffect(effectId);
 
@@ -989,6 +1065,14 @@ public class TwilightLibCommands {
     }
 
     private static int executeSetAddonTint(CommandSourceStack source, ServerPlayer target, String addonId, String colorHex) {
+        // Validate hex color length (DoS protection)
+        if (colorHex == null || colorHex.length() > TwilightConfig.MAX_HEX_COLOR_LENGTH.get()) {
+            source.sendFailure(Component.literal("Or, what. Hex color string too long (max " + TwilightConfig.MAX_HEX_COLOR_LENGTH.get() + " characters)"));
+            LOGGER.warn("Or, what. Rejected oversized hex color string (length: {}, max: {})",
+                colorHex == null ? 0 : colorHex.length(), TwilightConfig.MAX_HEX_COLOR_LENGTH.get());
+            return 0;
+        }
+
         // Parse hex color (supports #RRGGBB or RRGGBB format)
         String hexString = colorHex.startsWith("#") ? colorHex.substring(1) : colorHex;
 

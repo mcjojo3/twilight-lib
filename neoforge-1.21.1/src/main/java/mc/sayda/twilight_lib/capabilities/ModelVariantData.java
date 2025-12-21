@@ -22,12 +22,17 @@ public class ModelVariantData implements IModelVariant {
             return;
         }
 
+        // Validate length before normalizing (prevent log injection and memory issues)
+        if (variant.length() > 32) {
+            throw new IllegalArgumentException("Model variant too long: " + variant.length() + " chars (max 32)");
+        }
+
         // Normalize to lowercase
         String normalized = variant.toLowerCase();
 
         // Validate - only accept "steve" or "alex"
         if (!normalized.equals("steve") && !normalized.equals("alex")) {
-            throw new IllegalArgumentException("Model variant must be 'steve' or 'alex', got: " + variant);
+            throw new IllegalArgumentException("Model variant must be 'steve' or 'alex', got: " + normalized);
         }
 
         this.modelVariant = normalized;

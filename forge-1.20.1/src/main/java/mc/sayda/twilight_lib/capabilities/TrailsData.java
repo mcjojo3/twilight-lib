@@ -2,6 +2,7 @@ package mc.sayda.twilight_lib.capabilities;
 
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
+import mc.sayda.twilight_lib.config.TwilightConfig;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -17,7 +18,7 @@ public class TrailsData implements ITrails {
     private static final String NBT_EQUIPPED_TRAILS = "EquippedTrails";
     private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
     private static final String NBT_EXTERNAL_GRANTS = "ExternalGrants";
-    private static final int MAX_NBT_LIST_SIZE = 1000;  // Same as network packet limit to prevent DoS
+    // TwilightConfig.MAX_NBT_LIST_SIZE.get() moved to TwilightConfig
 
     private final Set<String> trails = new HashSet<>();  // Owned trails (from supporter status)
     private final Set<String> equippedTrails = new HashSet<>();  // Currently equipped trails
@@ -141,7 +142,9 @@ public class TrailsData implements ITrails {
      */
     public synchronized void syncEquippedFromPacket(Set<String> equipped) {
         this.equippedTrails.clear();
-        for (String trailId : equipped) {
+        // Defensive copy to prevent ConcurrentModificationException
+        Set<String> equippedCopy = new java.util.HashSet<>(equipped);
+        for (String trailId : equippedCopy) {
             if (TrailType.fromId(trailId) != null) {
                 this.equippedTrails.add(trailId);
             } else {
@@ -154,21 +157,32 @@ public class TrailsData implements ITrails {
     public synchronized CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
 
-        // Serialize owned trails
+        int maxSize = TwilightConfig.MAX_NBT_LIST_SIZE.get();
+
+        // Serialize owned trails (with size limit check)
+        if (trails.size() > maxSize) {
+            throw new IllegalStateException("Or, what. Cannot serialize - trails list too large: " + trails.size() + " (max " + maxSize + ")");
+        }
         ListTag ownedList = new ListTag();
         for (String trail : trails) {
             ownedList.add(StringTag.valueOf(trail));
         }
         tag.put(NBT_TRAILS, ownedList);
 
-        // Serialize player selections (for re-equipping if still owned)
+        // Serialize player selections (with size limit check)
+        if (playerSelections.size() > maxSize) {
+            throw new IllegalStateException("Or, what. Cannot serialize - playerSelections list too large: " + playerSelections.size() + " (max " + maxSize + ")");
+        }
         ListTag selectionsLi = new ListTag();
         for (String trail : playerSelections) {
             selectionsLi.add(StringTag.valueOf(trail));
         }
         tag.put(NBT_PLAYER_SELECTIONS, selectionsLi);
 
-        // Serialize external grants (admin/mod forced, always persist)
+        // Serialize external grants (with size limit check)
+        if (externalGrants.size() > maxSize) {
+            throw new IllegalStateException("Or, what. Cannot serialize - externalGrants list too large: " + externalGrants.size() + " (max " + maxSize + ")");
+        }
         ListTag externalList = new ListTag();
         for (String trail : externalGrants) {
             externalList.add(StringTag.valueOf(trail));
@@ -188,8 +202,8 @@ public class TrailsData implements ITrails {
         // Deserialize owned trails (will be synced from GitHub on login)
         if (tag.contains(NBT_TRAILS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_TRAILS, Tag.TAG_STRING);
-            if (list.size() > MAX_NBT_LIST_SIZE) {
-                throw new IllegalArgumentException("NBT trails list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            if (list.size() > TwilightConfig.MAX_NBT_LIST_SIZE.get()) {
+                throw new IllegalArgumentException("NBT trails list too large: " + list.size() + " (max " + TwilightConfig.MAX_NBT_LIST_SIZE.get() + ")");
             }
             for (int i = 0; i < list.size(); i++) {
                 trails.add(list.getString(i));
@@ -199,8 +213,8 @@ public class TrailsData implements ITrails {
         // Deserialize player selections
         if (tag.contains(NBT_PLAYER_SELECTIONS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_PLAYER_SELECTIONS, Tag.TAG_STRING);
-            if (list.size() > MAX_NBT_LIST_SIZE) {
-                throw new IllegalArgumentException("NBT player selections list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            if (list.size() > TwilightConfig.MAX_NBT_LIST_SIZE.get()) {
+                throw new IllegalArgumentException("NBT player selections list too large: " + list.size() + " (max " + TwilightConfig.MAX_NBT_LIST_SIZE.get() + ")");
             }
             for (int i = 0; i < list.size(); i++) {
                 playerSelections.add(list.getString(i));
@@ -210,8 +224,8 @@ public class TrailsData implements ITrails {
         // Deserialize external grants (always persist)
         if (tag.contains(NBT_EXTERNAL_GRANTS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_EXTERNAL_GRANTS, Tag.TAG_STRING);
-            if (list.size() > MAX_NBT_LIST_SIZE) {
-                throw new IllegalArgumentException("NBT external grants list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            if (list.size() > TwilightConfig.MAX_NBT_LIST_SIZE.get()) {
+                throw new IllegalArgumentException("NBT external grants list too large: " + list.size() + " (max " + TwilightConfig.MAX_NBT_LIST_SIZE.get() + ")");
             }
             for (int i = 0; i < list.size(); i++) {
                 externalGrants.add(list.getString(i));

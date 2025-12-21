@@ -28,6 +28,7 @@ public class TrailRenderer {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Random RANDOM = new Random();
     private static int tickCounter = 0;
+    private static final double MOVEMENT_EPSILON = 0.001; // Minimum movement for direction calculation
 
     // Track last positions for accurate velocity calculation (for remote players)
     private static final java.util.Map<java.util.UUID, Vec3> lastPositions = new java.util.concurrent.ConcurrentHashMap<>();
@@ -86,6 +87,11 @@ public class TrailRenderer {
         }
 
         ITrails trails = player.getData(ModAttachments.TRAILS);
+        if (trails == null) {
+            LOGGER.warn("Or, what. Player {} has no trails data!", player.getName().getString());
+            return;
+        }
+
         // Get all active trails and render each one
         for (String activeTrailId : trails.getActiveTrails()) {
             TrailType trailType = TrailType.fromId(activeTrailId);
@@ -193,7 +199,7 @@ public class TrailRenderer {
 
             // Normalize if moving (avoid division by zero)
             double length = Math.sqrt(dirX * dirX + dirZ * dirZ);
-            if (length > 0.001) {
+            if (length > MOVEMENT_EPSILON) {
                 dirX /= length;
                 dirZ /= length;
             }

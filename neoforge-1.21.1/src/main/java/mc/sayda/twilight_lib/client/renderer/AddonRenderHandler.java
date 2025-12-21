@@ -44,22 +44,23 @@ public class AddonRenderHandler {
 
         var addons = player.getData(ModAttachments.ADDONS);
         if (addons != null) {
+            // Single loop to collect both hidden parts AND check hidePlayerModel flag
             for (String addonId : addons.getActiveAddons()) {
                 AddonRegistry.getAddon(addonId).ifPresent(info -> {
-                    // Legacy system: hidePlayerModel flag hides everything
-                    if (info.hidePlayerModel()) {
-                        // Will be handled separately (sets hideEntireModel flag)
-                    }
-                    // New system: collect specific hidden body parts
+                    // Collect specific hidden body parts
                     allHiddenParts.addAll(info.hiddenBodyParts());
+
+                    // Check if this addon wants to hide entire model (legacy system)
+                    if (info.hidePlayerModel()) {
+                        // Can't directly set hideEntireModel here due to lambda limitations
+                        // Instead, we'll use a marker: add a special sentinel value
+                        allHiddenParts.add(null);  // Use null as a sentinel for hideEntireModel
+                    }
                 });
             }
 
-            // Check if any addon wants to hide the entire player model (legacy system)
-            hideEntireModel = addons.getActiveAddons().stream()
-                    .anyMatch(addonId -> AddonRegistry.getAddon(addonId)
-                            .map(info -> info.hidePlayerModel())
-                            .orElse(false));
+            // Check if hideEntireModel was requested (sentinel value present)
+            hideEntireModel = allHiddenParts.remove(null);  // Remove and return true if present
         }
 
         // Hide the entire model if requested (legacy system)

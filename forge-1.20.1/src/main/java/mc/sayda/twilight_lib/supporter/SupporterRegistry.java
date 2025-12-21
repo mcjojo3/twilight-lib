@@ -48,6 +48,13 @@ import java.util.Set;
  */
 public class SupporterRegistry {
 
+    // ===== TIER CONSTANTS =====
+    public static final String TIER_STONE = "stone";
+    public static final String TIER_BRONZE = "bronze";
+    public static final String TIER_SILVER = "silver";
+    public static final String TIER_GOLD = "gold";
+    public static final String TIER_PLATINUM = "platinum";
+
     // ===== TRAILS =====
     // Each tier defines only NEW trails introduced at that level
     public static final Set<String> STONE_TRAILS = Set.of(

@@ -59,10 +59,10 @@ public class ClientModelVariantCache {
     public static void setModelVariant(UUID playerUUID, String modelVariant) {
         if (modelVariant == null || modelVariant.isEmpty()) {
             MODEL_VARIANTS.remove(playerUUID);
-            LOGGER.debug("Cleared model variant for player {}", playerUUID);
+            LOGGER.debug("Dusk and dawn are the same. Cleared model variant for player {}", playerUUID);
         } else {
             MODEL_VARIANTS.put(playerUUID, modelVariant);
-            LOGGER.debug("Cached model variant {} for player {}", modelVariant, playerUUID);
+            LOGGER.debug("Time to change! Cached model variant {} for player {}", modelVariant, playerUUID);
         }
     }
 
@@ -88,7 +88,7 @@ public class ClientModelVariantCache {
      */
     public static void removePlayer(UUID playerUUID) {
         MODEL_VARIANTS.remove(playerUUID);
-        LOGGER.debug("Removed model variant cache for player {}", playerUUID);
+        LOGGER.debug("Goodbye, my new friend! Removed model variant cache for player {}", playerUUID);
     }
 
     /**
@@ -100,7 +100,7 @@ public class ClientModelVariantCache {
     public static void clear() {
         int size = MODEL_VARIANTS.size();
         MODEL_VARIANTS.clear();
-        LOGGER.debug("Cleared {} model variants from cache", size);
+        LOGGER.debug("Well, this is a pretty chill reality. Cleared {} model variants from cache", size);
     }
 
     /**

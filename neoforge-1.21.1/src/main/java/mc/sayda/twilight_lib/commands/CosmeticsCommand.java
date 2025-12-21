@@ -660,21 +660,30 @@ public class CosmeticsCommand {
 
                 // Reuse variables declared earlier in the method
                 if (trails != null) {
-                    manualTrails[0] = trails.getTrails().stream()
-                            .filter(SupporterRegistry::isTrailSupporterExclusive)
-                            .collect(Collectors.toSet());
+                    Set<String> trailSet = trails.getTrails();
+                    if (trailSet != null) {
+                        manualTrails[0] = trailSet.stream()
+                                .filter(SupporterRegistry::isTrailSupporterExclusive)
+                                .collect(Collectors.toSet());
+                    }
                 }
 
                 if (addons != null) {
-                    manualAddons[0] = addons.getAddons().stream()
-                            .filter(SupporterRegistry::isAddonSupporterExclusive)
-                            .collect(Collectors.toSet());
+                    Set<String> addonSet = addons.getAddons();
+                    if (addonSet != null) {
+                        manualAddons[0] = addonSet.stream()
+                                .filter(SupporterRegistry::isAddonSupporterExclusive)
+                                .collect(Collectors.toSet());
+                    }
                 }
 
                 if (effects != null) {
-                    manualEffects[0] = effects.getEffects().stream()
-                            .filter(SupporterRegistry::isEffectSupporterExclusive)
-                            .collect(Collectors.toSet());
+                    Set<String> effectSet = effects.getEffects();
+                    if (effectSet != null) {
+                        manualEffects[0] = effectSet.stream()
+                                .filter(SupporterRegistry::isEffectSupporterExclusive)
+                                .collect(Collectors.toSet());
+                    }
                 }
 
                 if (!manualTrails[0].isEmpty() || !manualAddons[0].isEmpty() || !manualEffects[0].isEmpty()) {

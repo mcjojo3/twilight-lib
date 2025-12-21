@@ -1,5 +1,6 @@
 package mc.sayda.twilight_lib.mixin;
 
+import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.ModAttachments;
 import net.minecraft.sounds.SoundEvent;
@@ -8,6 +9,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -19,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Mixin(value = Player.class, remap = false)
 public class PlayerMorphSoundMixin {
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     /**
      * Inject into getHurtSound to play morphed entity's hurt sound.
@@ -39,21 +42,38 @@ public class PlayerMorphSoundMixin {
         EntityType<?> morphType = morph.getCachedEntityType();
         if (morphType == null) return;
 
+        // Validate that morphType is a LivingEntity before attempting cast
+        if (!LivingEntity.class.isAssignableFrom(morphType.getBaseClass())) {
+            LOGGER.debug("Or, what. Morph type {} is not a LivingEntity, skipping hurt sound override", morphType);
+            return;
+        }
+
+        LivingEntity morphEntity = null;
         try {
             // Create a temporary entity to get its hurt sound
             Level level = player.level();
-            LivingEntity morphEntity = (LivingEntity) morphType.create(level);
+            morphEntity = (LivingEntity) morphType.create(level);
 
-            if (morphEntity != null) {
-                // Use accessor to call protected getHurtSound method
-                SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).invokeGetHurtSound(source);
-                if (morphSound != null) {
-                    cir.setReturnValue(morphSound);
-                }
-                morphEntity.discard(); // Clean up temporary entity
+            if (morphEntity == null) {
+                LOGGER.warn("Yeah? Well... Failed to create morph entity for hurt sound: {}", morphType);
+                return;
             }
+
+            // Use accessor to call protected getHurtSound method
+            SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).invokeGetHurtSound(source);
+            if (morphSound != null) {
+                cir.setReturnValue(morphSound);
+                LOGGER.debug("Well, this is a pretty chill reality. Applied hurt sound for morph: {}", morphType);
+            }
+        } catch (ClassCastException e) {
+            LOGGER.error("Shoot! Morph type {} cannot be cast to LivingEntity", morphType, e);
         } catch (Exception e) {
-            // If anything fails, just use default player sound
+            LOGGER.error("Shoot! Unexpected error getting hurt sound for morph {}: {}", morphType, e.getMessage(), e);
+        } finally {
+            // CRITICAL: Always clean up temporary entity to prevent memory leak
+            if (morphEntity != null) {
+                morphEntity.discard();
+            }
         }
     }
 
@@ -76,21 +96,38 @@ public class PlayerMorphSoundMixin {
         EntityType<?> morphType = morph.getCachedEntityType();
         if (morphType == null) return;
 
+        // Validate that morphType is a LivingEntity before attempting cast
+        if (!LivingEntity.class.isAssignableFrom(morphType.getBaseClass())) {
+            LOGGER.debug("Or, what. Morph type {} is not a LivingEntity, skipping death sound override", morphType);
+            return;
+        }
+
+        LivingEntity morphEntity = null;
         try {
             // Create a temporary entity to get its death sound
             Level level = player.level();
-            LivingEntity morphEntity = (LivingEntity) morphType.create(level);
+            morphEntity = (LivingEntity) morphType.create(level);
 
-            if (morphEntity != null) {
-                // Use accessor to call protected getDeathSound method
-                SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).invokeGetDeathSound();
-                if (morphSound != null) {
-                    cir.setReturnValue(morphSound);
-                }
-                morphEntity.discard(); // Clean up temporary entity
+            if (morphEntity == null) {
+                LOGGER.warn("Yeah? Well... Failed to create morph entity for death sound: {}", morphType);
+                return;
             }
+
+            // Use accessor to call protected getDeathSound method
+            SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).invokeGetDeathSound();
+            if (morphSound != null) {
+                cir.setReturnValue(morphSound);
+                LOGGER.debug("Well, this is a pretty chill reality. Applied death sound for morph: {}", morphType);
+            }
+        } catch (ClassCastException e) {
+            LOGGER.error("Shoot! Morph type {} cannot be cast to LivingEntity", morphType, e);
         } catch (Exception e) {
-            // If anything fails, just use default player sound
+            LOGGER.error("Shoot! Unexpected error getting death sound for morph {}: {}", morphType, e.getMessage(), e);
+        } finally {
+            // CRITICAL: Always clean up temporary entity to prevent memory leak
+            if (morphEntity != null) {
+                morphEntity.discard();
+            }
         }
     }
 }

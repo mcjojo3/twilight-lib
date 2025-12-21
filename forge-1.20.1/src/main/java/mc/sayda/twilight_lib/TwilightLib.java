@@ -17,10 +17,12 @@ import mc.sayda.twilight_lib.capabilities.TrailsProvider;
 import mc.sayda.twilight_lib.commands.CosmeticsCommand;
 import mc.sayda.twilight_lib.commands.TwilightLibCommands;
 import mc.sayda.twilight_lib.config.TwilightConfig;
+import mc.sayda.twilight_lib.cosmetics.ModRequirement;
 import mc.sayda.twilight_lib.entity.ModEntities;
 import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncAddonsPacket;
 import mc.sayda.twilight_lib.network.SyncEffectsPacket;
+import mc.sayda.twilight_lib.network.SyncModelVariantPacket;
 import mc.sayda.twilight_lib.network.SyncMorphPacket;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
 import mc.sayda.twilight_lib.particle.ModParticles;
@@ -139,6 +141,9 @@ public class TwilightLib {
 
         // Register config
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, TwilightConfig.COMMON_CONFIG);
+
+        // Detect loaded mods BEFORE registering cosmetics (critical order!)
+        ModRequirement.detectMods();
 
         ModEntities.register(modBus);
         ModParticles.register(modBus);
@@ -286,6 +291,10 @@ public class TwilightLib {
             });
         }
 
+        // TODO CRITICAL: This blocking .get() call freezes the entire server during player login!
+        // This is a DoS vector - repeated logins can cause server lag for all players.
+        // FIX: Replace with non-blocking check using isDone() or thenAcceptAsync() callback
+        // See audit issue: "Blocking Call on Login (Lines 290-296)"
         // Ensure supporter data is loaded before checking (waits if fetch is in progress)
         try {
             SupporterService.fetchSupporters().get(10, java.util.concurrent.TimeUnit.SECONDS);
@@ -323,8 +332,10 @@ public class TwilightLib {
                 Set<String> currentOwned = new java.util.HashSet<>(trails.getTrails());
 
                 // Type-safe cast to access implementation-specific methods
-                if (trails == null || !(trails instanceof TrailsData)) {
-                    LOGGER.error("Is this the best physical representation you can manifest? Unexpected trails capability implementation: {}", trails == null ? "null" : trails.getClass());
+                if (!(trails instanceof TrailsData)) {
+                    LOGGER.error("Is this the best physical representation you can manifest? Another mod replaced ITrails capability with incompatible implementation: {}. Expected: TrailsData, Got: {}",
+                        trails.getClass().getName(), trails.getClass().getSuperclass().getName());
+                    LOGGER.error("Or, what. Skipping trail sync for {} - capability incompatibility detected", loggedInPlayer.getGameProfile().getName());
                     return;
                 }
                 TrailsData trailsData = (TrailsData) trails;
@@ -352,8 +363,10 @@ public class TwilightLib {
                 Set<String> currentOwned = new java.util.HashSet<>(addons.getAddons());
 
                 // Type-safe cast to access implementation-specific methods
-                if (addons == null || !(addons instanceof AddonsData)) {
-                    LOGGER.error("Is this the best physical representation you can manifest? Unexpected addons capability implementation: {}", addons == null ? "null" : addons.getClass());
+                if (!(addons instanceof AddonsData)) {
+                    LOGGER.error("Is this the best physical representation you can manifest? Another mod replaced IAddons capability with incompatible implementation: {}. Expected: AddonsData, Got: {}",
+                        addons.getClass().getName(), addons.getClass().getSuperclass().getName());
+                    LOGGER.error("Or, what. Skipping addon sync for {} - capability incompatibility detected", loggedInPlayer.getGameProfile().getName());
                     return;
                 }
                 AddonsData addonsData = (AddonsData) addons;
@@ -381,8 +394,10 @@ public class TwilightLib {
                 Set<String> currentOwned = new java.util.HashSet<>(effects.getEffects());
 
                 // Type-safe cast to access implementation-specific methods
-                if (effects == null || !(effects instanceof EffectsData)) {
-                    LOGGER.error("Is this the best physical representation you can manifest? Unexpected effects capability implementation: {}", effects == null ? "null" : effects.getClass());
+                if (!(effects instanceof EffectsData)) {
+                    LOGGER.error("Is this the best physical representation you can manifest? Another mod replaced IEffects capability with incompatible implementation: {}. Expected: EffectsData, Got: {}",
+                        effects.getClass().getName(), effects.getClass().getSuperclass().getName());
+                    LOGGER.error("Or, what. Skipping effect sync for {} - capability incompatibility detected", loggedInPlayer.getGameProfile().getName());
                     return;
                 }
                 EffectsData effectsData = (EffectsData) effects;
@@ -450,7 +465,7 @@ public class TwilightLib {
 
         // Send this player's model variant to everyone else
         loggedInPlayer.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
-            NetworkHandler.sendModelVariantToAll(mc.sayda.twilight_lib.network.SyncModelVariantPacket.of(loggedInPlayer.getUUID(), modelVariant));
+            NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(loggedInPlayer.getUUID(), modelVariant));
             LOGGER.info("We are going to be best friends! Player {} logged in as {} model variant",
                 loggedInPlayer.getGameProfile().getName(), modelVariant.getModelVariant());
         });
@@ -475,7 +490,12 @@ public class TwilightLib {
         if (player.level().isClientSide) return;
 
         // Clean up pending sync tasks for this player (prevent memory leak)
-        pendingTasks.remove(player.getUUID());
+        // Using computeIfPresent for atomic removal (prevents race with tick handler)
+        UUID playerUUID = player.getUUID();
+        pendingTasks.computeIfPresent(playerUUID, (uuid, task) -> {
+            LOGGER.debug("Goodbye, my new friend! Cleaning up pending sync task for {} on logout", player.getGameProfile().getName());
+            return null; // Returning null removes the entry atomically
+        });
 
         // Force invalidate all capabilities to free LazyOptionals
         player.invalidateCaps();
@@ -582,7 +602,7 @@ public class TwilightLib {
 
         // Sync model variant to client after respawn
         player.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
-            NetworkHandler.sendModelVariantToAll(mc.sayda.twilight_lib.network.SyncModelVariantPacket.of(player.getUUID(), modelVariant));
+            NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
             LOGGER.debug("Time to change! Player {} respawned as {} model", player.getGameProfile().getName(), modelVariant.getModelVariant());
         });
     }
@@ -650,7 +670,7 @@ public class TwilightLib {
         });
 
         player.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
-            NetworkHandler.sendModelVariantToAll(mc.sayda.twilight_lib.network.SyncModelVariantPacket.of(player.getUUID(), modelVariant));
+            NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
             LOGGER.debug("Time to change! Player {} entered {} as {} model",
                 player.getGameProfile().getName(), evt.getTo().location(), modelVariant.getModelVariant());
         });
@@ -696,7 +716,7 @@ public class TwilightLib {
         });
 
         trackedPlayer.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
-            NetworkHandler.sendModelVariantToPlayer(trackingPlayer, mc.sayda.twilight_lib.network.SyncModelVariantPacket.of(trackedPlayer.getUUID(), modelVariant));
+            NetworkHandler.sendModelVariantToPlayer(trackingPlayer, SyncModelVariantPacket.of(trackedPlayer.getUUID(), modelVariant));
             LOGGER.debug("Here you go! Sent model variant {} for {} to tracking player {}",
                 modelVariant.getModelVariant(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
         });
@@ -742,6 +762,10 @@ public class TwilightLib {
         if (pendingTasks.isEmpty()) return;
 
         MinecraftServer server = evt.getServer();
+        if (server == null) {
+            LOGGER.warn("Or, what. Cannot process delayed sync tasks - server is null");
+            return;
+        }
         Iterator<Map.Entry<UUID, DelayedSyncTask>> iterator = pendingTasks.entrySet().iterator();
 
         while (iterator.hasNext()) {

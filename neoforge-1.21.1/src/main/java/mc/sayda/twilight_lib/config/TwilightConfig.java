@@ -1,8 +1,11 @@
 package mc.sayda.twilight_lib.config;
 
+import com.mojang.logging.LogUtils;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.slf4j.Logger;
 
 public class TwilightConfig {
+    private static final Logger LOGGER = LogUtils.getLogger();
     public static final ModConfigSpec COMMON_CONFIG;
 
     // Features
@@ -19,6 +22,11 @@ public class TwilightConfig {
     public static final ModConfigSpec.IntValue MAX_SUPPORTER_JSON_SIZE;
     public static final ModConfigSpec.IntValue MAX_ENTITY_CACHE_SIZE;
     public static final ModConfigSpec.IntValue MAX_SUPPORTERS;
+    public static final ModConfigSpec.IntValue MAX_NBT_LIST_SIZE;
+
+    // Input Validation
+    public static final ModConfigSpec.IntValue MAX_HEX_COLOR_LENGTH;
+    public static final ModConfigSpec.IntValue MAX_COSMETIC_ID_LENGTH;
 
     // Network & Caching
     public static final ModConfigSpec.ConfigValue<String> SUPPORTER_BACKUP_URL;
@@ -104,6 +112,20 @@ public class TwilightConfig {
         MAX_SUPPORTERS = builder
                 .comment("Maximum supporters in cache (prevents unbounded growth from malicious JSON)")
                 .defineInRange("max_supporters", 100000, 1000, 1000000);
+        MAX_NBT_LIST_SIZE = builder
+                .comment("Maximum items in NBT lists for addons/trails/effects (prevents DoS attacks via oversized packets)")
+                .defineInRange("max_nbt_list_size", 1000, 100, 10000);
+
+        builder.pop();
+
+        builder.push("input_validation");
+        builder.comment("Input validation and security settings");
+        MAX_HEX_COLOR_LENGTH = builder
+                .comment("Maximum length for hex color strings (prevents DoS via extremely long input strings)")
+                .defineInRange("max_hex_color_length", 16, 6, 128);
+        MAX_COSMETIC_ID_LENGTH = builder
+                .comment("Maximum length for cosmetic IDs (trails, effects, addons) - prevents DoS via extremely long ID strings")
+                .defineInRange("max_cosmetic_id_length", 64, 8, 256);
 
         builder.pop();
 
@@ -217,5 +239,7 @@ public class TwilightConfig {
         builder.pop();
 
         COMMON_CONFIG = builder.build();
+
+        LOGGER.info("Well, this is a pretty chill reality. Twilight Lib configuration loaded successfully.");
     }
 }

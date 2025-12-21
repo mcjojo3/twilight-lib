@@ -2,6 +2,7 @@ package mc.sayda.twilight_lib.capabilities;
 
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
+import mc.sayda.twilight_lib.config.TwilightConfig;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -18,7 +19,6 @@ public class AddonsData implements IAddons {
     private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
     private static final String NBT_EXTERNAL_GRANTS = "ExternalGrants";
     private static final String NBT_ADDON_TINTS = "AddonTints";
-    private static final int MAX_NBT_LIST_SIZE = 1000;  // Same as network packet limit to prevent DoS
 
     private final Set<String> addons = new HashSet<>();  // Owned addons (from supporter status)
     private final Set<String> equippedAddons = new HashSet<>();  // Currently equipped addons
@@ -143,7 +143,9 @@ public class AddonsData implements IAddons {
      */
     public synchronized void syncEquippedFromPacket(Set<String> equipped) {
         this.equippedAddons.clear();
-        for (String addonId : equipped) {
+        // Defensive copy to prevent ConcurrentModificationException
+        Set<String> equipppedCopy = new java.util.HashSet<>(equipped);
+        for (String addonId : equipppedCopy) {
             if (AddonRegistry.hasAddon(addonId)) {
                 this.equippedAddons.add(addonId);
             } else {
@@ -186,21 +188,32 @@ public class AddonsData implements IAddons {
     public synchronized CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
 
-        // Serialize owned addons
+        int maxSize = TwilightConfig.MAX_NBT_LIST_SIZE.get();
+
+        // Serialize owned addons (with size limit check)
+        if (addons.size() > maxSize) {
+            throw new IllegalStateException("Or, what. Cannot serialize - addons list too large: " + addons.size() + " (max " + maxSize + ")");
+        }
         ListTag ownedList = new ListTag();
         for (String addon : addons) {
             ownedList.add(StringTag.valueOf(addon));
         }
         tag.put(NBT_ADDONS, ownedList);
 
-        // Serialize player selections (for re-equipping if still owned)
+        // Serialize player selections (with size limit check)
+        if (playerSelections.size() > maxSize) {
+            throw new IllegalStateException("Or, what. Cannot serialize - playerSelections list too large: " + playerSelections.size() + " (max " + maxSize + ")");
+        }
         ListTag selectionsLi = new ListTag();
         for (String addon : playerSelections) {
             selectionsLi.add(StringTag.valueOf(addon));
         }
         tag.put(NBT_PLAYER_SELECTIONS, selectionsLi);
 
-        // Serialize external grants (admin/mod forced, always persist)
+        // Serialize external grants (with size limit check)
+        if (externalGrants.size() > maxSize) {
+            throw new IllegalStateException("Or, what. Cannot serialize - externalGrants list too large: " + externalGrants.size() + " (max " + maxSize + ")");
+        }
         ListTag externalList = new ListTag();
         for (String addon : externalGrants) {
             externalList.add(StringTag.valueOf(addon));
@@ -228,8 +241,8 @@ public class AddonsData implements IAddons {
         // Deserialize owned addons (will be synced from GitHub on login)
         if (tag.contains(NBT_ADDONS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_ADDONS, Tag.TAG_STRING);
-            if (list.size() > MAX_NBT_LIST_SIZE) {
-                throw new IllegalArgumentException("NBT addons list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            if (list.size() > TwilightConfig.MAX_NBT_LIST_SIZE.get()) {
+                throw new IllegalArgumentException("NBT addons list too large: " + list.size() + " (max " + TwilightConfig.MAX_NBT_LIST_SIZE.get() + ")");
             }
             for (int i = 0; i < list.size(); i++) {
                 addons.add(list.getString(i));
@@ -239,8 +252,8 @@ public class AddonsData implements IAddons {
         // Deserialize player selections
         if (tag.contains(NBT_PLAYER_SELECTIONS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_PLAYER_SELECTIONS, Tag.TAG_STRING);
-            if (list.size() > MAX_NBT_LIST_SIZE) {
-                throw new IllegalArgumentException("NBT player selections list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            if (list.size() > TwilightConfig.MAX_NBT_LIST_SIZE.get()) {
+                throw new IllegalArgumentException("NBT player selections list too large: " + list.size() + " (max " + TwilightConfig.MAX_NBT_LIST_SIZE.get() + ")");
             }
             for (int i = 0; i < list.size(); i++) {
                 playerSelections.add(list.getString(i));
@@ -250,8 +263,8 @@ public class AddonsData implements IAddons {
         // Deserialize external grants (always persist)
         if (tag.contains(NBT_EXTERNAL_GRANTS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_EXTERNAL_GRANTS, Tag.TAG_STRING);
-            if (list.size() > MAX_NBT_LIST_SIZE) {
-                throw new IllegalArgumentException("NBT external grants list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            if (list.size() > TwilightConfig.MAX_NBT_LIST_SIZE.get()) {
+                throw new IllegalArgumentException("NBT external grants list too large: " + list.size() + " (max " + TwilightConfig.MAX_NBT_LIST_SIZE.get() + ")");
             }
             for (int i = 0; i < list.size(); i++) {
                 externalGrants.add(list.getString(i));
@@ -262,8 +275,8 @@ public class AddonsData implements IAddons {
         if (tag.contains(NBT_ADDON_TINTS, Tag.TAG_COMPOUND)) {
             CompoundTag tintsTag = tag.getCompound(NBT_ADDON_TINTS);
             Set<String> keys = tintsTag.getAllKeys();
-            if (keys.size() > MAX_NBT_LIST_SIZE) {
-                throw new IllegalArgumentException("NBT addon tints map too large: " + keys.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            if (keys.size() > TwilightConfig.MAX_NBT_LIST_SIZE.get()) {
+                throw new IllegalArgumentException("NBT addon tints map too large: " + keys.size() + " (max " + TwilightConfig.MAX_NBT_LIST_SIZE.get() + ")");
             }
             for (String key : keys) {
                 addonTints.put(key, tintsTag.getInt(key));

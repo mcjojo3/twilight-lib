@@ -3,6 +3,8 @@ package mc.sayda.twilight_lib.client;
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.MorphProvider;
+import mc.sayda.twilight_lib.config.TwilightConfig;
+import mc.sayda.twilight_lib.entity.CustomFoxEntity;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -34,9 +36,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MorphRenderHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Map<UUID, LivingEntity> CACHE = new ConcurrentHashMap<>();
+    private static final int MAX_CACHE_SIZE = 10000; // Reasonable upper bound to prevent memory exhaustion
     private static int tickCounter = 0;
 
-    public static void register() { /* no-op - static subscriber */ }
+    // Cached config value to avoid repeated config access on every tick
+    private static int cachedCleanupInterval = 6000; // Default value
+
+    public static void register() {
+        // Initialize cached config value
+        try {
+            cachedCleanupInterval = TwilightConfig.MORPH_CACHE_CLEANUP_INTERVAL_TICKS.get();
+        } catch (IllegalStateException e) {
+            // Config not loaded yet, use default
+        }
+    }
 
     @SubscribeEvent
     public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut evt) {
@@ -65,7 +78,7 @@ public class MorphRenderHandler {
 
         // Periodic cleanup: remove stale cache entries based on config interval
         tickCounter++;
-        if (tickCounter >= mc.sayda.twilight_lib.config.TwilightConfig.MORPH_CACHE_CLEANUP_INTERVAL_TICKS.get()) {
+        if (tickCounter >= cachedCleanupInterval) {
             tickCounter = 0;
             cleanupStaleEntries(level);
         }
@@ -89,7 +102,7 @@ public class MorphRenderHandler {
         Player player = evt.getEntity();
 
         // Check if morphs are enabled in config
-        if (!mc.sayda.twilight_lib.config.TwilightConfig.ENABLE_MORPHS.get()) {
+        if (!TwilightConfig.ENABLE_MORPHS.get()) {
             return;
         }
 
@@ -128,11 +141,6 @@ public class MorphRenderHandler {
         LazyOptional<IMorph> morphCap = player.getCapability(MorphProvider.MORPH_CAP);
         morphCap.ifPresent(m -> {
             boolean shouldShowNametag = !m.isNametagHidden();
-            // Debug logging to verify nametag visibility setting
-            /*if (player.tickCount % 100 == 0) { // Log every 100 ticks to avoid spam
-                LOGGER.debug("Please smile! Nametag visibility for {}: hideNametag={}, shouldShow={}",
-                    player.getGameProfile().getName(), m.isNametagHidden(), shouldShowNametag);
-            }*/
             if (shouldShowNametag) {
                 proxy.setCustomName(player.getDisplayName());
                 proxy.setCustomNameVisible(true);
@@ -219,7 +227,7 @@ public class MorphRenderHandler {
             boolean shouldSit = player.isPassenger() && player.getDeltaMovement().lengthSqr() < 0.01;
 
             // For CustomFoxEntity, we can directly control the sleeping state
-            if (fox instanceof mc.sayda.twilight_lib.entity.CustomFoxEntity customFox) {
+            if (fox instanceof CustomFoxEntity customFox) {
                 customFox.setForceSleeping(isSleeping);
             }
 
@@ -305,6 +313,12 @@ public class MorphRenderHandler {
     }
 
     private static LivingEntity getOrCreateProxy(Player player, ResourceLocation rl) {
+        // Check cache size before adding new entries
+        if (CACHE.size() >= MAX_CACHE_SIZE && !CACHE.containsKey(player.getUUID())) {
+            LOGGER.error("Really?! Morph cache exceeded maximum size of {}. This indicates a configuration or cleanup issue.", MAX_CACHE_SIZE);
+            return null; // Refuse to grow beyond limit
+        }
+
         return CACHE.compute(player.getUUID(), (uuid, cached) -> {
             // If cached entity exists and matches the requested type, return it
             if (cached != null && EntityType.getKey(cached.getType()).equals(rl)) {

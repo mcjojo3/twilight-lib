@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -64,45 +65,48 @@ public class SupporterService {
         }
 
         return CompletableFuture.runAsync(() -> {
-            boolean primarySuccess = false;
-
-            // Try primary URL first with retries
             try {
-                LOGGER.info("Here you go! Fetching supporter list from primary URL...");
-                if (fetchFromUrlWithRetries(SUPPORTERS_URL)) {
-                    primarySuccess = true;
-                    lastFetchTime = System.currentTimeMillis();
-                    LOGGER.info("We are going to be best friends! Successfully fetched {} supporters from primary URL", supporterCache.get().size());
-                }
-            } catch (Exception e) {
-                LOGGER.warn("Are we done in this reality yet? Hello? Hellooo? Primary URL failed: {}", e.getMessage());
-            }
+                boolean primarySuccess = false;
 
-            // If primary failed, try backup URL
-            if (!primarySuccess) {
+                // Try primary URL first with retries
                 try {
-                    // Get backup URL from config
-                    String backupUrl = TwilightConstants.Supporter.DEFAULT_BACKUP_URL;
-                    try {
-                        backupUrl = TwilightConfig.SUPPORTER_BACKUP_URL.get();
-                    } catch (IllegalStateException e) {
-                        // Config not loaded yet, use default
-                    }
-
-                    LOGGER.info("Is this the best physical representation you can manifest? Trying backup URL...");
-                    if (fetchFromUrlWithRetries(backupUrl)) {
+                    LOGGER.info("Here you go! Fetching supporter list from primary URL...");
+                    if (fetchFromUrlWithRetries(SUPPORTERS_URL)) {
+                        primarySuccess = true;
                         lastFetchTime = System.currentTimeMillis();
-                        LOGGER.info("We are going to be best friends! Successfully fetched {} supporters from backup URL", supporterCache.get().size());
-                    } else {
-                        LOGGER.warn("How did I?! Uuuughh! Both primary and backup URLs failed. Skipping supporter sync.");
+                        LOGGER.info("We are going to be best friends! Successfully fetched {} supporters from primary URL", supporterCache.get().size());
                     }
                 } catch (Exception e) {
-                    LOGGER.error("How did I?! Uuuughh! Backup URL also failed: {}", e.getMessage());
-                    LOGGER.warn("How did I?! Uuuughh! Both primary and backup URLs failed. Skipping supporter sync.");
+                    LOGGER.warn("Are we done in this reality yet? Hello? Hellooo? Primary URL failed: {}", e.getMessage());
                 }
-            }
 
-            fetchInProgress.set(false);
+                // If primary failed, try backup URL
+                if (!primarySuccess) {
+                    try {
+                        // Get backup URL from config
+                        String backupUrl = TwilightConstants.Supporter.DEFAULT_BACKUP_URL;
+                        try {
+                            backupUrl = TwilightConfig.SUPPORTER_BACKUP_URL.get();
+                        } catch (IllegalStateException e) {
+                            // Config not loaded yet, use default
+                        }
+
+                        LOGGER.info("Is this the best physical representation you can manifest? Trying backup URL...");
+                        if (fetchFromUrlWithRetries(backupUrl)) {
+                            lastFetchTime = System.currentTimeMillis();
+                            LOGGER.info("We are going to be best friends! Successfully fetched {} supporters from backup URL", supporterCache.get().size());
+                        } else {
+                            LOGGER.warn("How did I?! Uuuughh! Both primary and backup URLs failed. Skipping supporter sync.");
+                        }
+                    } catch (Exception e) {
+                        LOGGER.error("How did I?! Uuuughh! Backup URL also failed: {}", e.getMessage());
+                        LOGGER.warn("How did I?! Uuuughh! Both primary and backup URLs failed. Skipping supporter sync.");
+                    }
+                }
+            } finally {
+                // Always reset flag, even on unexpected exceptions
+                fetchInProgress.set(false);
+            }
         });
     }
 
@@ -268,10 +272,28 @@ public class SupporterService {
                     }
 
                     String uuid = validateJsonString(supporter.get("uuid").getAsString(), "uuid");
+
+                    // Validate UUID format
+                    try {
+                        UUID.fromString(uuid);
+                    } catch (IllegalArgumentException e) {
+                        LOGGER.warn("Is this the best physical representation you can manifest? Invalid UUID format '{}', skipping supporter entry", uuid);
+                        continue;
+                    }
+
                     String name = supporter.has("name") ? validateJsonString(supporter.get("name").getAsString(), "name") : "Unknown";
 
                     // Tier: null or "none" = not a supporter, but can still have manual cosmetics
                     String tier = supporter.has("tier") ? validateJsonString(supporter.get("tier").getAsString(), "tier") : null;
+
+                    // Validate tier against known tiers
+                    if (tier != null && !tier.equals("none")) {
+                        Set<String> VALID_TIERS = Set.of("stone", "bronze", "silver", "gold", "platinum");
+                        if (!VALID_TIERS.contains(tier.toLowerCase())) {
+                            LOGGER.warn("Or, what. Unknown supporter tier '{}' for {}. Treating as no tier.", tier, name);
+                            tier = null;
+                        }
+                    }
 
                     // Parse manual cosmetic overrides (optional field)
                     Set<String> manualTrails = new HashSet<>();
@@ -328,6 +350,11 @@ public class SupporterService {
     private static Set<String> jsonArrayToSet(JsonArray array) {
         Set<String> set = new HashSet<>();
         if (array != null) {
+            // Validate array size to prevent memory exhaustion
+            if (array.size() > 500) {
+                LOGGER.error("Or, what. Cosmetic array too large: {} items (max 500)", array.size());
+                return set; // Return empty set
+            }
             for (JsonElement element : array) {
                 String value = element.getAsString();
                 set.add(validateJsonString(value, "array element"));

@@ -111,7 +111,7 @@ public class PlayerModelVariantMixin {
                 cir.setReturnValue(newSkin);
                 LOGGER.debug("Time to change! Overriding player model to: {}", newModel);
             }
-        } catch (Exception e) {
+        } catch (NullPointerException | IllegalStateException e) {
             LOGGER.error("How did I?! Uuuughh! Failed to override player skin model", e);
         }
     }

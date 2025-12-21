@@ -84,29 +84,54 @@ public class SpawnEffectHandler {
                         if (effects == null) return null; // Remove entry if no effects data
 
                         // Check which spawn effects are active and trigger them
+                        // Wrap each effect in try-catch to prevent crashes from particle system failures
                         if (effects.isEffectActive("spawn_ethereal")) {
-                            spawnEtherealEffect(player);
-                            LOGGER.debug("More sparkles, now! Triggered spawn_ethereal effect for player {}", player.getName().getString());
+                            try {
+                                spawnEtherealEffect(player);
+                                LOGGER.debug("More sparkles, now! Triggered spawn_ethereal effect for player {}", player.getName().getString());
+                            } catch (Exception e) {
+                                LOGGER.error("How did I?! Uuuughh! Failed to spawn ethereal effect for player {}", player.getName().getString(), e);
+                            }
                         }
                         if (effects.isEffectActive("spawn_rainbow")) {
-                            spawnRainbowEffect(player);
-                            LOGGER.debug("More sparkles, now! Triggered spawn_rainbow effect for player {}", player.getName().getString());
+                            try {
+                                spawnRainbowEffect(player);
+                                LOGGER.debug("More sparkles, now! Triggered spawn_rainbow effect for player {}", player.getName().getString());
+                            } catch (Exception e) {
+                                LOGGER.error("How did I?! Uuuughh! Failed to spawn rainbow effect for player {}", player.getName().getString(), e);
+                            }
                         }
                         if (effects.isEffectActive("spawn_portal")) {
-                            spawnPortalEffect(player);
-                            LOGGER.debug("More sparkles, now! Triggered spawn_portal effect for player {}", player.getName().getString());
+                            try {
+                                spawnPortalEffect(player);
+                                LOGGER.debug("More sparkles, now! Triggered spawn_portal effect for player {}", player.getName().getString());
+                            } catch (Exception e) {
+                                LOGGER.error("How did I?! Uuuughh! Failed to spawn portal effect for player {}", player.getName().getString(), e);
+                            }
                         }
                         if (effects.isEffectActive("spawn_frost")) {
-                            spawnFrostEffect(player);
-                            LOGGER.debug("More sparkles, now! Triggered spawn_frost effect for player {}", player.getName().getString());
+                            try {
+                                spawnFrostEffect(player);
+                                LOGGER.debug("More sparkles, now! Triggered spawn_frost effect for player {}", player.getName().getString());
+                            } catch (Exception e) {
+                                LOGGER.error("How did I?! Uuuughh! Failed to spawn frost effect for player {}", player.getName().getString(), e);
+                            }
                         }
                         if (effects.isEffectActive("spawn_flame")) {
-                            spawnFlameEffect(player);
-                            LOGGER.debug("More sparkles, now! Triggered spawn_flame effect for player {}", player.getName().getString());
+                            try {
+                                spawnFlameEffect(player);
+                                LOGGER.debug("More sparkles, now! Triggered spawn_flame effect for player {}", player.getName().getString());
+                            } catch (Exception e) {
+                                LOGGER.error("How did I?! Uuuughh! Failed to spawn flame effect for player {}", player.getName().getString(), e);
+                            }
                         }
                         if (effects.isEffectActive("spawn_nature")) {
-                            spawnNatureEffect(player);
-                            LOGGER.debug("More sparkles, now! Triggered spawn_nature effect for player {}", player.getName().getString());
+                            try {
+                                spawnNatureEffect(player);
+                                LOGGER.debug("More sparkles, now! Triggered spawn_nature effect for player {}", player.getName().getString());
+                            } catch (Exception e) {
+                                LOGGER.error("How did I?! Uuuughh! Failed to spawn nature effect for player {}", player.getName().getString(), e);
+                            }
                         }
                     }
                     return null; // Remove this entry
@@ -153,9 +178,13 @@ public class SpawnEffectHandler {
     private static void spawnEtherealEffect(Player player) {
         Vec3 pos = player.position();
 
+        // Cache particle counts to avoid repeated method calls
+        int particleCount = getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT);
+        int soulParticleCount = getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT);
+
         // Spawn a beautiful ethereal burst
         // Purple and blue particles spiraling upward
-        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT); i++) {
+        for (int i = 0; i < particleCount; i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double height = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
@@ -190,7 +219,7 @@ public class SpawnEffectHandler {
         }
 
         // Add soul particles at the center
-        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT); i++) {
+        for (int i = 0; i < soulParticleCount; i++) {
             double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
             double offsetY = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
@@ -214,6 +243,9 @@ public class SpawnEffectHandler {
     private static void spawnRainbowEffect(Player player) {
         Vec3 pos = player.position();
 
+        // Cache particle count to avoid repeated method calls
+        int particleCount = getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT);
+
         // Rainbow colors: Red -> Orange -> Yellow -> Green -> Blue -> Purple
         Vector3f[] rainbowColors = {
             new Vector3f(1.0f, 0.0f, 0.0f),      // Red
@@ -225,7 +257,7 @@ public class SpawnEffectHandler {
         };
 
         // Create rainbow burst with colored dust particles
-        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT); i++) {
+        for (int i = 0; i < particleCount; i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double height = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
@@ -257,8 +289,12 @@ public class SpawnEffectHandler {
     private static void spawnPortalEffect(Player player) {
         Vec3 pos = player.position();
 
+        // Cache particle counts to avoid repeated method calls
+        int particleCount = (int)(getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT) * 1.5);
+        int soulParticleCount = getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT);
+
         // End portal particles rising from below
-        for (int i = 0; i < (int)(getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT) * 1.5); i++) {
+        for (int i = 0; i < particleCount; i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS * 1.2;
 
@@ -278,7 +314,7 @@ public class SpawnEffectHandler {
         }
 
         // Add some dragon breath for extra mystique
-        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT); i++) {
+        for (int i = 0; i < soulParticleCount; i++) {
             double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
             double offsetY = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT * 0.5;
             double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
@@ -302,8 +338,11 @@ public class SpawnEffectHandler {
     private static void spawnFrostEffect(Player player) {
         Vec3 pos = player.position();
 
+        // Cache particle count to avoid repeated method calls
+        int particleCount = getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT);
+
         // Snowflakes falling and floating around
-        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT); i++) {
+        for (int i = 0; i < particleCount; i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double height = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
@@ -345,8 +384,12 @@ public class SpawnEffectHandler {
     private static void spawnFlameEffect(Player player) {
         Vec3 pos = player.position();
 
+        // Cache particle counts to avoid repeated method calls
+        int particleCount = getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT);
+        int soulParticleCount = getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT);
+
         // Soul fire burst
-        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT); i++) {
+        for (int i = 0; i < particleCount; i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double height = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
@@ -381,7 +424,7 @@ public class SpawnEffectHandler {
         }
 
         // Smoke rising from the center
-        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT); i++) {
+        for (int i = 0; i < soulParticleCount; i++) {
             double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
             double offsetY = RANDOM.nextDouble();
             double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS;
@@ -405,8 +448,12 @@ public class SpawnEffectHandler {
     private static void spawnNatureEffect(Player player) {
         Vec3 pos = player.position();
 
+        // Cache particle counts to avoid repeated method calls
+        int particleCount = getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT);
+        int soulParticleCount = getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT);
+
         // Spore blossom particles floating around
-        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.PARTICLE_COUNT); i++) {
+        for (int i = 0; i < particleCount; i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             double radius = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_RADIUS;
             double height = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
@@ -441,7 +488,7 @@ public class SpawnEffectHandler {
         }
 
         // Cherry leaves falling in the center
-        for (int i = 0; i < getClampedParticleCount(TwilightConstants.SpawnEffect.SOUL_PARTICLE_COUNT); i++) {
+        for (int i = 0; i < soulParticleCount; i++) {
             double offsetX = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS * 2;
             double offsetY = RANDOM.nextDouble() * TwilightConstants.SpawnEffect.MAX_HEIGHT;
             double offsetZ = (RANDOM.nextDouble() - 0.5) * TwilightConstants.SpawnEffect.CENTER_SPAWN_RADIUS * 2;

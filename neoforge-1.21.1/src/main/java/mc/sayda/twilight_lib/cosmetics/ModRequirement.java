@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.cosmetics;
 
 import com.mojang.logging.LogUtils;
+import mc.sayda.twilight_lib.config.TwilightConfig;
 import net.neoforged.fml.ModList;
 import org.slf4j.Logger;
 
@@ -40,6 +41,12 @@ public class ModRequirement {
     private static Set<String> LOADED_MODS = new HashSet<>();
 
     /**
+     * Flag to track if mod detection has already been initialized.
+     * Prevents detectMods() from being called multiple times.
+     */
+    private static boolean initialized = false;
+
+    /**
      * Known integration mods to check for cosmetic loading.
      * Add new mod IDs here as integrations are added.
      */
@@ -59,6 +66,12 @@ public class ModRequirement {
      * </ol>
      */
     public static void detectMods() {
+        // Guard against double-call (would crash when trying to add to immutable set)
+        if (initialized) {
+            LOGGER.warn("Or, what. detectMods() already called - ignoring duplicate call");
+            return;
+        }
+
         LOGGER.info("What's your name? Detecting loaded mods for cosmetic filtering...");
 
         int detected = 0;
@@ -77,6 +90,7 @@ public class ModRequirement {
 
         // Make the set immutable after initialization for thread safety
         LOADED_MODS = Set.copyOf(LOADED_MODS);
+        initialized = true;
     }
 
     /**
@@ -109,12 +123,14 @@ public class ModRequirement {
     public static boolean shouldLoad(Set<String> modTags) {
         // Config override: force load all addons regardless of mod requirements
         try {
-            if (mc.sayda.twilight_lib.config.TwilightConfig.FORCE_LOAD_ALL_ADDONS.get()) {
+            if (TwilightConfig.FORCE_LOAD_ALL_ADDONS.get()) {
                 return true;
             }
         } catch (IllegalStateException e) {
             // Config not loaded yet - default to false (don't force load)
             // This can happen during early initialization when addons register before config loads
+            LOGGER.debug("Or, what. Config not loaded yet, using default behavior for shouldLoad (modTags: {})",
+                modTags == null ? "null" : (modTags.isEmpty() ? "empty" : String.join(", ", modTags)));
         }
 
         // Empty tags = always load (default Twilight Lib cosmetics)

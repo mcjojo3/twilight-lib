@@ -49,6 +49,13 @@ public class SyncModelVariantPacket {
         // Limit string length to 16 chars to prevent malicious large strings
         String variant = buf.readUtf(16);
         boolean hasCustom = buf.readBoolean();
+
+        // Whitelist validation - only allow "steve" or "alex" to prevent injection attacks
+        if (variant != null && !variant.equals("steve") && !variant.equals("alex")) {
+            LOGGER.warn("Or, what. Rejected invalid model variant from network: '{}' (only 'steve' or 'alex' allowed)", variant);
+            variant = "steve"; // Default to steve for safety
+        }
+
         return new SyncModelVariantPacket(id, variant, hasCustom);
     }
 

@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.addon;
 
 import com.mojang.logging.LogUtils;
+import mc.sayda.twilight_lib.TwilightConstants;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.client.model.addon.BeanieModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestModel;
@@ -32,8 +33,15 @@ import java.util.Set;
  */
 public class AddonInit {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static boolean initialized = false;
 
     public static void registerAddons() {
+        if (initialized) {
+            LOGGER.warn("Really?! Addons already registered, skipping duplicate initialization");
+            return;
+        }
+        initialized = true;
+
         LOGGER.info("I should come here every millennium! Registering built-in addons...");
 
         AddonRegistry.registerAddon(
@@ -262,7 +270,7 @@ public class AddonInit {
                 true  // Force all addons translucent (makes all equipped addons semi-transparent)
         );
 
-        // Register slime body addon - uses player skin and hides the base player model
+        // Register slime body addon
         AddonRegistry.registerAddon(
                 "slime_body",
                 NymphModel.LAYER_LOCATION,
@@ -289,22 +297,13 @@ public class AddonInit {
      * All kitsune cosmetics require the CreRaces mod to be loaded.
      */
     private static void registerKitsuneVariants() {
-        String[] colors = {"white", "black", "blue", "yellow", "orange", "purple", "red"};
+        String[] colors = TwilightConstants.Addon.KITSUNE_COLORS;
 
         // Kitsune addons require CreRaces mod
         Set<String> kitsuneModTags = Set.of("creraces");
 
         // Define which tails are visible for each variant
-        // Standard variants (swapped with alt for 3-5):
-        // 1: 1
-        // 2: 2, 3
-        // 3: 1, 2, 3 (was alt, now standard)
-        // 4: 2, 3, 4, 7 (was alt, now standard)
-        // 5: 1, 2, 3, 4, 7 (was alt, now standard)
-        // 6: 2, 3, 7, 4, 8, 5
-        // 7: 1, 2, 3, 4, 5, 7, 8
-        // 8: 2, 3, 4, 5, 6, 7, 8, 9
-        // 9: 1, 2, 3, 4, 5, 6, 7, 8, 9
+        // Standard variants
         Map<Integer, Set<Integer>> tailVariants = Map.of(
             1, Set.of(1),
             2, Set.of(2, 3),
@@ -317,16 +316,7 @@ public class AddonInit {
             9, Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
         );
 
-        // Alt variants (swapped with standard for 3-5):
-        // 1: 1
-        // 2: 2, 3
-        // 3: 1, 4, 7 (was standard, now alt)
-        // 4: 2, 3, 5, 8 (was standard, now alt)
-        // 5: 1, 7, 4, 9, 6 (was standard, now alt)
-        // 6: 2, 3, 4, 7, 5, 8
-        // 7: 1, 2, 3, 4, 7, 5, 8
-        // 8: 2, 3, 4, 7, 5, 8, 6, 9
-        // 9: 1, 2, 3, 4, 7, 5, 8, 6, 9
+        // Alt variants:
         Map<Integer, Set<Integer>> tailVariantsAlt = Map.of(
             1, Set.of(1),
             2, Set.of(2, 3),
@@ -355,8 +345,9 @@ public class AddonInit {
 
         for (String color : colors) {
             // Register ears (standard variant) - CreRaces only
+            String earId = "kitsune_ears_" + color;
             AddonRegistry.registerAddon(
-                "kitsune_ears_" + color,
+                earId,
                 KitsuneEarsModel.LAYER_LOCATION,
                 KitsuneEarsModel::createBodyLayer,
                 KitsuneEarsModel::new,
@@ -364,11 +355,13 @@ public class AddonInit {
                 false, false, false, false,
                 kitsuneModTags
             );
+            LOGGER.debug("What's your name? Registered kitsune addon: {}", earId);
             totalAddons++;
 
             // Register ears (alt variant - same texture) - CreRaces only
+            String earAltId = "kitsune_ears_" + color + "_alt";
             AddonRegistry.registerAddon(
-                "kitsune_ears_" + color + "_alt",
+                earAltId,
                 KitsuneEarsModel.LAYER_LOCATION_ALT,
                 KitsuneEarsModel::createBodyLayerAlt,
                 KitsuneEarsModel::new,
@@ -376,11 +369,13 @@ public class AddonInit {
                 false, false, false, false,
                 kitsuneModTags
             );
+            LOGGER.debug("What's your name? Registered kitsune addon: {}", earAltId);
             totalAddons++;
 
             // Register snout - CreRaces only
+            String snoutId = "kitsune_snout_" + color;
             AddonRegistry.registerAddon(
-                "kitsune_snout_" + color,
+                snoutId,
                 KitsuneSnoutModel.LAYER_LOCATION,
                 KitsuneSnoutModel::createBodyLayer,
                 KitsuneSnoutModel::new,
@@ -388,6 +383,7 @@ public class AddonInit {
                 false, false, false, false,
                 kitsuneModTags
             );
+            LOGGER.debug("What's your name? Registered kitsune addon: {}", snoutId);
             totalAddons++;
 
             // Register tail variants (1-9 tails, including full 9-tail as the standard)
@@ -398,8 +394,9 @@ public class AddonInit {
                 ModelLayerLocation layerLocation = layerLocations.get(count);
 
                 // Register standard variant - CreRaces only
+                String tailId = "kitsune_tails_" + count + "_" + color;
                 AddonRegistry.registerAddon(
-                    "kitsune_tails_" + count + "_" + color,
+                    tailId,
                     layerLocation,
                     KitsuneTailsVariantModel::createBodyLayer,
                     root -> new KitsuneTailsVariantModel<>(root, visibleTails),
@@ -407,13 +404,15 @@ public class AddonInit {
                     false, false, false, false,
                     kitsuneModTags
                 );
+                LOGGER.debug("What's your name? Registered kitsune addon: {}", tailId);
                 totalAddons++;
 
                 // Register alt variant only if it's different from standard - CreRaces only
                 // Alt variants that differ: 3, 4, 5
                 if (count >= 3 && count <= 5) {
+                    String tailAltId = "kitsune_tails_" + count + "_" + color + "_alt";
                     AddonRegistry.registerAddon(
-                        "kitsune_tails_" + count + "_" + color + "_alt",
+                        tailAltId,
                         layerLocation,
                         KitsuneTailsVariantModel::createBodyLayer,
                         root -> new KitsuneTailsVariantModel<>(root, visibleTailsAlt),
@@ -421,6 +420,7 @@ public class AddonInit {
                         false, false, false, false,
                         kitsuneModTags
                     );
+                    LOGGER.debug("What's your name? Registered kitsune addon: {}", tailAltId);
                     totalAddons++;
                 }
             }

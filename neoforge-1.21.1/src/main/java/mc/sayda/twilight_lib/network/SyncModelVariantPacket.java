@@ -82,11 +82,18 @@ public record SyncModelVariantPacket(UUID playerId, String modelVariant, boolean
                     return;
                 }
 
+                // Whitelist validation - only allow "steve" or "alex" to prevent injection attacks
+                String validatedVariant = msg.modelVariant();
+                if (validatedVariant != null && !validatedVariant.equals("steve") && !validatedVariant.equals("alex")) {
+                    LOGGER.warn("Or, what. Rejected invalid model variant from network: '{}' (only 'steve' or 'alex' allowed)", validatedVariant);
+                    validatedVariant = "steve"; // Default to steve for safety
+                }
+
                 // Update client-side cache for mixin to use (works even if entity not loaded yet)
                 if (!msg.hasCustomVariant()) {
                     ClientModelVariantCache.setModelVariant(msg.playerId(), null);
                 } else {
-                    ClientModelVariantCache.setModelVariant(msg.playerId(), msg.modelVariant());
+                    ClientModelVariantCache.setModelVariant(msg.playerId(), validatedVariant);
                 }
 
                 var level = Minecraft.getInstance().level;
@@ -111,9 +118,9 @@ public record SyncModelVariantPacket(UUID playerId, String modelVariant, boolean
                 if (!msg.hasCustomVariant()) {
                     modelVariant.clearCustomVariant();
                 } else {
-                    modelVariant.setModelVariant(msg.modelVariant());
+                    modelVariant.setModelVariant(validatedVariant);
                 }
-                LOGGER.debug("Time to change! Synced model variant {} for {}", msg.modelVariant(), entity.getName().getString());
+                LOGGER.debug("Time to change! Synced model variant {} for {}", validatedVariant, entity.getName().getString());
             } catch (Exception e) {
                 LOGGER.error("How did I?! Uuuughh! Failed to sync model variant for player {}", msg.playerId(), e);
             }

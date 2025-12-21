@@ -1,7 +1,9 @@
 package mc.sayda.twilight_lib.capabilities;
 
 import com.mojang.logging.LogUtils;
+import mc.sayda.twilight_lib.cosmetics.EffectCategory;
 import mc.sayda.twilight_lib.cosmetics.EffectType;
+import mc.sayda.twilight_lib.config.TwilightConfig;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -17,7 +19,7 @@ public class EffectsData implements IEffects {
     private static final String NBT_EQUIPPED_EFFECTS = "EquippedEffects";
     private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
     private static final String NBT_EXTERNAL_GRANTS = "ExternalGrants";
-    private static final int MAX_NBT_LIST_SIZE = 1000;  // Same as network packet limit to prevent DoS
+    // TwilightConfig.MAX_NBT_LIST_SIZE.get() moved to TwilightConfig  // Same as network packet limit to prevent DoS
 
     private final Set<String> effects = new HashSet<>();  // Owned effects (from supporter status)
     private final Set<String> equippedEffects = new HashSet<>();  // Currently equipped effects
@@ -73,13 +75,13 @@ public class EffectsData implements IEffects {
             // Player can only activate owned cosmetics via /tlcosmetics
             if (effects.contains(effectId)) {
                 // Enforce one-per-category rule: deactivate other effects in same category
-                mc.sayda.twilight_lib.cosmetics.EffectType newEffectType = mc.sayda.twilight_lib.cosmetics.EffectType.fromId(effectId);
+                EffectType newEffectType = EffectType.fromId(effectId);
                 if (newEffectType != null) {
-                    mc.sayda.twilight_lib.cosmetics.EffectCategory category = newEffectType.getCategory();
+                    EffectCategory category = newEffectType.getCategory();
 
                     // Remove any other player-selected effects in this category
                     playerSelections.removeIf(existingEffectId -> {
-                        mc.sayda.twilight_lib.cosmetics.EffectType existingType = mc.sayda.twilight_lib.cosmetics.EffectType.fromId(existingEffectId);
+                        EffectType existingType = EffectType.fromId(existingEffectId);
                         if (existingType != null && existingType.getCategory() == category && !existingEffectId.equals(effectId)) {
                             equippedEffects.remove(existingEffectId);
                             return true;  // Remove from playerSelections
@@ -113,13 +115,13 @@ public class EffectsData implements IEffects {
     public synchronized void setActiveEffect(String effectId, boolean active, boolean persistent) {
         if (active) {
             // Enforce one-per-category rule: deactivate other effects in same category
-            mc.sayda.twilight_lib.cosmetics.EffectType newEffectType = mc.sayda.twilight_lib.cosmetics.EffectType.fromId(effectId);
+            EffectType newEffectType = EffectType.fromId(effectId);
             if (newEffectType != null) {
-                mc.sayda.twilight_lib.cosmetics.EffectCategory category = newEffectType.getCategory();
+                EffectCategory category = newEffectType.getCategory();
 
                 // Remove any other effects in this category (both player selections and external grants)
                 equippedEffects.removeIf(existingEffectId -> {
-                    mc.sayda.twilight_lib.cosmetics.EffectType existingType = mc.sayda.twilight_lib.cosmetics.EffectType.fromId(existingEffectId);
+                    EffectType existingType = EffectType.fromId(existingEffectId);
                     if (existingType != null && existingType.getCategory() == category && !existingEffectId.equals(effectId)) {
                         playerSelections.remove(existingEffectId);
                         externalGrants.remove(existingEffectId);
@@ -175,7 +177,9 @@ public class EffectsData implements IEffects {
      */
     public synchronized void syncEquippedFromPacket(Set<String> equipped) {
         this.equippedEffects.clear();
-        for (String effectId : equipped) {
+        // Defensive copy to prevent ConcurrentModificationException
+        Set<String> equippedCopy = new java.util.HashSet<>(equipped);
+        for (String effectId : equippedCopy) {
             if (EffectType.fromId(effectId) != null) {
                 this.equippedEffects.add(effectId);
             } else {
@@ -188,21 +192,32 @@ public class EffectsData implements IEffects {
     public synchronized CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
 
-        // Serialize owned effects
+        int maxSize = TwilightConfig.MAX_NBT_LIST_SIZE.get();
+
+        // Serialize owned effects (with size limit check)
+        if (effects.size() > maxSize) {
+            throw new IllegalStateException("Or, what. Cannot serialize - effects list too large: " + effects.size() + " (max " + maxSize + ")");
+        }
         ListTag ownedList = new ListTag();
         for (String effect : effects) {
             ownedList.add(StringTag.valueOf(effect));
         }
         tag.put(NBT_EFFECTS, ownedList);
 
-        // Serialize player selections (for re-equipping if still owned)
+        // Serialize player selections (with size limit check)
+        if (playerSelections.size() > maxSize) {
+            throw new IllegalStateException("Or, what. Cannot serialize - playerSelections list too large: " + playerSelections.size() + " (max " + maxSize + ")");
+        }
         ListTag selectionsList = new ListTag();
         for (String effect : playerSelections) {
             selectionsList.add(StringTag.valueOf(effect));
         }
         tag.put(NBT_PLAYER_SELECTIONS, selectionsList);
 
-        // Serialize external grants (admin/mod forced, always persist)
+        // Serialize external grants (with size limit check)
+        if (externalGrants.size() > maxSize) {
+            throw new IllegalStateException("Or, what. Cannot serialize - externalGrants list too large: " + externalGrants.size() + " (max " + maxSize + ")");
+        }
         ListTag externalList = new ListTag();
         for (String effect : externalGrants) {
             externalList.add(StringTag.valueOf(effect));
@@ -222,8 +237,8 @@ public class EffectsData implements IEffects {
         // Deserialize owned effects (will be synced from GitHub on login)
         if (tag.contains(NBT_EFFECTS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_EFFECTS, Tag.TAG_STRING);
-            if (list.size() > MAX_NBT_LIST_SIZE) {
-                throw new IllegalArgumentException("NBT effects list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            if (list.size() > TwilightConfig.MAX_NBT_LIST_SIZE.get()) {
+                throw new IllegalArgumentException("NBT effects list too large: " + list.size() + " (max " + TwilightConfig.MAX_NBT_LIST_SIZE.get() + ")");
             }
             for (int i = 0; i < list.size(); i++) {
                 effects.add(list.getString(i));
@@ -233,8 +248,8 @@ public class EffectsData implements IEffects {
         // Deserialize player selections
         if (tag.contains(NBT_PLAYER_SELECTIONS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_PLAYER_SELECTIONS, Tag.TAG_STRING);
-            if (list.size() > MAX_NBT_LIST_SIZE) {
-                throw new IllegalArgumentException("NBT player selections list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            if (list.size() > TwilightConfig.MAX_NBT_LIST_SIZE.get()) {
+                throw new IllegalArgumentException("NBT player selections list too large: " + list.size() + " (max " + TwilightConfig.MAX_NBT_LIST_SIZE.get() + ")");
             }
             for (int i = 0; i < list.size(); i++) {
                 playerSelections.add(list.getString(i));
@@ -244,8 +259,8 @@ public class EffectsData implements IEffects {
         // Deserialize external grants (always persist)
         if (tag.contains(NBT_EXTERNAL_GRANTS, Tag.TAG_LIST)) {
             ListTag list = tag.getList(NBT_EXTERNAL_GRANTS, Tag.TAG_STRING);
-            if (list.size() > MAX_NBT_LIST_SIZE) {
-                throw new IllegalArgumentException("NBT external grants list too large: " + list.size() + " (max " + MAX_NBT_LIST_SIZE + ")");
+            if (list.size() > TwilightConfig.MAX_NBT_LIST_SIZE.get()) {
+                throw new IllegalArgumentException("NBT external grants list too large: " + list.size() + " (max " + TwilightConfig.MAX_NBT_LIST_SIZE.get() + ")");
             }
             for (int i = 0; i < list.size(); i++) {
                 externalGrants.add(list.getString(i));

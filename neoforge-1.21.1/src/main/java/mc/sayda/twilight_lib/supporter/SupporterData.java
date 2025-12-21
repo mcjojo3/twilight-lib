@@ -18,12 +18,21 @@ public class SupporterData {
     private final Set<String> manualEffects;
 
     public SupporterData(String uuid, String name, String tier, Set<String> manualTrails, Set<String> manualAddons, Set<String> manualEffects) {
+        // Defensive null checks for input parameters
+        if (uuid == null || uuid.trim().isEmpty()) {
+            throw new IllegalArgumentException("Or, what. UUID cannot be null or empty");
+        }
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Or, what. Name cannot be null or empty");
+        }
+
         this.uuid = uuid;
         this.name = name;
         this.tier = tier;
-        this.manualTrails = new HashSet<>(manualTrails);
-        this.manualAddons = new HashSet<>(manualAddons);
-        this.manualEffects = new HashSet<>(manualEffects);
+        // Defensive copy with null fallback
+        this.manualTrails = manualTrails != null ? new HashSet<>(manualTrails) : new HashSet<>();
+        this.manualAddons = manualAddons != null ? new HashSet<>(manualAddons) : new HashSet<>();
+        this.manualEffects = manualEffects != null ? new HashSet<>(manualEffects) : new HashSet<>();
     }
 
     public String getUuid() {

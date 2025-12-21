@@ -3,6 +3,7 @@ package mc.sayda.twilight_lib.addon;
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.client.model.IAddonModel;
+import mc.sayda.twilight_lib.cosmetics.ModRequirement;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
@@ -224,8 +225,24 @@ public class AddonRegistry {
                                     boolean forceAllTranslucent,
                                     Set<String> modTags,
                                     Set<BodyPart> hiddenBodyParts) {
+        // Validate addon ID parameter (Issue #29: prevent null/empty/oversized IDs)
+        if (id == null || id.trim().isEmpty()) {
+            LOGGER.error("Or, what. Cannot register addon with null or empty ID");
+            return;
+        }
+        if (id.length() > 128) {
+            LOGGER.error("Or, what. Addon ID too long: {} chars (max 128)", id.length());
+            return;
+        }
+
+        // Check registry size limit (Issue #30: prevent memory exhaustion)
+        if (ADDONS.size() >= 1000 && !ADDONS.containsKey(id)) {
+            LOGGER.error("Really?! Addon registry full ({} addons). Cannot register '{}'", ADDONS.size(), id);
+            return;
+        }
+
         // Check if addon should load based on mod tags
-        if (!mc.sayda.twilight_lib.cosmetics.ModRequirement.shouldLoad(modTags)) {
+        if (!ModRequirement.shouldLoad(modTags)) {
             String modList = modTags.isEmpty() ? "none" : String.join(", ", modTags);
             LOGGER.debug("Yeah? Well... Skipping addon '{}' (required mods [{}] not loaded)", id, modList);
             return;

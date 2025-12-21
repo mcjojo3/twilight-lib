@@ -51,12 +51,11 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
         new LinkedHashMap<String, Object>(16, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<String, Object> eldest) {
-                // Synchronized access to size() and config value
-                synchronized(this) {
-                    // No explicit cleanup needed - models don't hold native GPU resources
-                    // Minecraft's resource management handles texture/geometry lifecycle
-                    return size() > TwilightConfig.MAX_CACHED_ADDON_MODELS.get();
-                }
+                // No additional synchronization needed - Collections.synchronizedMap() handles thread safety
+                // Config access outside any manual synchronized blocks to prevent potential deadlock
+                // No explicit cleanup needed - models don't hold native GPU resources
+                // Minecraft's resource management handles texture/geometry lifecycle
+                return size() > TwilightConfig.MAX_CACHED_ADDON_MODELS.get();
             }
         }
     );
@@ -128,9 +127,10 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     // Check if THIS addon is the one forcing translucency
                     boolean thisAddonForcesTranslucency = addonInfo.forceAllTranslucent();
 
-                    // Apply translucency if:
-                    // - This addon is naturally translucent, OR
-                    // - Another addon is forcing translucency (but not this one)
+                    // Translucency rules (spotlight effect):
+                    // 1. If THIS addon is naturally translucent → make it translucent
+                    // 2. If THIS addon is forcing others translucent → keep THIS opaque (spotlight: forces others but stays solid)
+                    // 3. If ANOTHER addon is forcing translucency → make THIS translucent (follow the force)
                     boolean shouldBeTranslucent = addonInfo.translucent() || (forceAllTranslucent && !thisAddonForcesTranslucency);
 
                     // Use translucent render type for transparent addons
@@ -144,12 +144,16 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
 
                     // Get tint color for this addon (stored as 0xRRGGBB)
                     int tintColor = addons.getAddonTint(addonId);
+                    // Mask to ensure only RGB, no alpha or sign extension issues
+                    tintColor = tintColor & 0x00FFFFFF;
                     final float tintRed = ((tintColor >> 16) & 0xFF) / 255.0F;
                     final float tintGreen = ((tintColor >> 8) & 0xFF) / 255.0F;
                     final float tintBlue = (tintColor & 0xFF) / 255.0F;
 
                     // Wrap vertex consumer to apply tint color AND transparency
-                    final float targetAlpha = shouldBeTranslucent ? TwilightConfig.TRANSLUCENT_ADDON_ALPHA.get().floatValue() : 1.0F;
+                    final float targetAlpha = shouldBeTranslucent ?
+                        Math.max(0.0F, Math.min(1.0F, TwilightConfig.TRANSLUCENT_ADDON_ALPHA.get().floatValue())) :
+                        1.0F;
                     VertexConsumer originalConsumer = vertexConsumer;
                     vertexConsumer = new VertexConsumer() {
                         @Override

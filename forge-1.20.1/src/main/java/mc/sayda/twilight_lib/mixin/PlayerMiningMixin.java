@@ -34,7 +34,13 @@ public class PlayerMiningMixin {
     private void twilightlib$onGetDigSpeed(BlockState state, BlockPos pos, CallbackInfoReturnable<Float> cir) {
         Player player = (Player) (Object) this;
 
-        double miningPenalty = player.getAttributeValue(ModAttributes.MINING_PENALTY.get());
+        // Validate attribute exists to prevent NPE if ModAttributes initialization failed
+        var attributeInstance = player.getAttribute(ModAttributes.MINING_PENALTY.get());
+        if (attributeInstance == null) {
+            return; // No mining penalty removal if attribute missing (vanilla behavior)
+        }
+
+        double miningPenalty = attributeInstance.getValue();
 
         if (miningPenalty == 0.0) {
             float currentSpeed = cir.getReturnValue();
@@ -46,12 +52,22 @@ public class PlayerMiningMixin {
 
             // Check if underwater slowdown is active (in water, no aqua affinity)
             if (inWater && !hasAquaAffinity) {
-                multiplier *= mc.sayda.twilight_lib.config.TwilightConfig.MINING_WATER_SLOWDOWN_MULTIPLIER.get();
+                double waterMultiplier = mc.sayda.twilight_lib.config.TwilightConfig.MINING_WATER_SLOWDOWN_MULTIPLIER.get();
+                // Validate config value is reasonable (between 1.0 and 100.0)
+                if (waterMultiplier < 1.0 || waterMultiplier > 100.0) {
+                    return; // Invalid config, skip modification (keep vanilla behavior)
+                }
+                multiplier *= waterMultiplier;
             }
 
             // Check if flight break slowdown is active (not on ground)
             if (!onGround) {
-                multiplier *= mc.sayda.twilight_lib.config.TwilightConfig.MINING_FLIGHT_SLOWDOWN_MULTIPLIER.get();
+                double flightMultiplier = mc.sayda.twilight_lib.config.TwilightConfig.MINING_FLIGHT_SLOWDOWN_MULTIPLIER.get();
+                // Validate config value is reasonable (between 1.0 and 100.0)
+                if (flightMultiplier < 1.0 || flightMultiplier > 100.0) {
+                    return; // Invalid config, skip modification (keep vanilla behavior)
+                }
+                multiplier *= flightMultiplier;
             }
 
             // Restore speed by multiplying back

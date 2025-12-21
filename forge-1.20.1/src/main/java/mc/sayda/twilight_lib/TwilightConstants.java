@@ -214,4 +214,31 @@ public class TwilightConstants {
          */
         public static final double WHITE_ASH_SPAWN_PROBABILITY = 0.4;
     }
+
+    /**
+     * Addon registration constants - reusable values for built-in addon variants.
+     *
+     * <p>These constants define standard addon variants that can be registered
+     * across different addon types (e.g., kitsune ears, tails, legs).
+     *
+     * <p><b>Why centralized?</b> Prevents typos in color names and makes it easy
+     * to add new variants consistently across all addon types.
+     */
+    public static final class Addon {
+        /**
+         * Standard kitsune color variants used across multiple addon types.
+         *
+         * <p>These colors are used for:
+         * <ul>
+         *   <li>Kitsune ears (kitsune_ears_white, kitsune_ears_black, etc.)</li>
+         *   <li>Kitsune tails (kitsune_tail_white, kitsune_tail_black, etc.)</li>
+         *   <li>Kitsune legs (kitsune_legs_white, kitsune_legs_black, etc.)</li>
+         * </ul>
+         *
+         * <p><b>Order matters</b>: This array defines the canonical registration order.
+         */
+        public static final String[] KITSUNE_COLORS = {
+            "white", "black", "blue", "yellow", "orange", "purple", "red"
+        };
+    }
 }

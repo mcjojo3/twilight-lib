@@ -15,6 +15,9 @@ import mc.sayda.twilight_lib.capabilities.AddonsProvider;
 import mc.sayda.twilight_lib.capabilities.AddonsData;
 import mc.sayda.twilight_lib.capabilities.ModelVariantProvider;
 import mc.sayda.twilight_lib.capabilities.IModelVariant;
+import mc.sayda.twilight_lib.capabilities.IAddons;
+import mc.sayda.twilight_lib.capabilities.IEffects;
+import mc.sayda.twilight_lib.capabilities.ITrails;
 import mc.sayda.twilight_lib.commands.CommandUtils;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
 import mc.sayda.twilight_lib.cosmetics.EffectType;
@@ -114,12 +117,20 @@ public class TwilightLibCommands {
     private static final SuggestionProvider<CommandSourceStack> ENTITY_SUGGESTIONS = (context, builder) -> {
         // Initialize or refresh cache if registry changed (synchronized to prevent race condition)
         var level = context.getSource().getLevel();
+        // Null check: console/command block commands have no level context
+        if (level == null) {
+            LOGGER.debug("Or, what. Cannot provide entity suggestions - no world context (console/command block)");
+            return builder.buildFuture(); // Return empty suggestions
+        }
         synchronized (TwilightLibCommands.class) {
             if (!cacheInitialized || shouldRefreshCache(level)) {
                 initializeEntityCache(level);
             }
         }
-        return SharedSuggestionProvider.suggestResource(VALID_LIVING_ENTITIES.stream(), builder);
+        // Synchronize on the set itself for iteration (per Collections.synchronizedSet() contract)
+        synchronized (VALID_LIVING_ENTITIES) {
+            return SharedSuggestionProvider.suggestResource(VALID_LIVING_ENTITIES.stream(), builder);
+        }
     };
 
     // Suggestion provider for trail types
@@ -600,6 +611,11 @@ public class TwilightLibCommands {
 
     private static void setMorph(CommandSourceStack source, ServerPlayer target, Optional<ResourceLocation> morph, boolean hideNametag) {
         LazyOptional<IMorph> cap = target.getCapability(MorphProvider.MORPH_CAP);
+        if (!cap.isPresent()) {
+            source.sendFailure(Component.literal("Or, what. Player " + target.getName().getString() + " has no morph capability!"));
+            LOGGER.error("Or, what. Cannot set morph for {} - morph capability not present", target.getName().getString());
+            return;
+        }
         cap.ifPresent(m -> {
             // Optimization: Skip if already morphed to this entity
             if (m.getEntityType().equals(morph)) {
@@ -635,6 +651,14 @@ public class TwilightLibCommands {
     }
 
     private static int executeEquipTrail(CommandSourceStack source, ServerPlayer target, String trailId, boolean persistent) {
+        // Validate trail ID length (DoS protection)
+        if (trailId == null || trailId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
+            source.sendFailure(Component.literal("Or, what. Trail ID too long (max " + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            LOGGER.warn("Or, what. Rejected oversized trail ID (length: {}, max: {})",
+                trailId == null ? 0 : trailId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
+            return 0;
+        }
+
         // Validate trail type
         TrailType trailType = TrailType.fromId(trailId);
         if (trailType == null) {
@@ -642,7 +666,13 @@ public class TwilightLibCommands {
             return 0;
         }
 
-        target.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+        LazyOptional<ITrails> trailsCap = target.getCapability(TrailsProvider.TRAILS_CAP);
+        if (!trailsCap.isPresent()) {
+            source.sendFailure(Component.literal("Or, what. Player " + target.getName().getString() + " has no trails capability!"));
+            LOGGER.error("Or, what. Cannot equip trail for {} - trails capability not present", target.getName().getString());
+            return 0;
+        }
+        trailsCap.ifPresent(trails -> {
             // Optimization: Skip if trail is already active
             if (trails.isTrailActive(trailId)) {
                 LOGGER.debug("Yeah? Well... {} already has trail '{}' active, skipping unnecessary update",
@@ -689,7 +719,21 @@ public class TwilightLibCommands {
     }
 
     private static int executeUnequipTrail(CommandSourceStack source, ServerPlayer target, String trailId) {
-        target.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
+        // Validate trail ID length (DoS protection)
+        if (trailId == null || trailId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
+            source.sendFailure(Component.literal("Or, what. Trail ID too long (max " + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            LOGGER.warn("Or, what. Rejected oversized trail ID (length: {}, max: {})",
+                trailId == null ? 0 : trailId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
+            return 0;
+        }
+
+        LazyOptional<ITrails> trailsCap = target.getCapability(TrailsProvider.TRAILS_CAP);
+        if (!trailsCap.isPresent()) {
+            source.sendFailure(Component.literal("Or, what. Player " + target.getName().getString() + " has no trails capability!"));
+            LOGGER.error("Or, what. Cannot unequip trail for {} - trails capability not present", target.getName().getString());
+            return 0;
+        }
+        trailsCap.ifPresent(trails -> {
             // Admin command: Force unequip regardless of source (player selection or external grant)
             ((TrailsData) trails).forceUnequipTrail(trailId);
 
@@ -709,7 +753,29 @@ public class TwilightLibCommands {
     }
 
     private static int executeEquipEffect(CommandSourceStack source, ServerPlayer target, String effectId, boolean persistent) {
-        target.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+        // Validate effect ID length (DoS protection)
+        if (effectId == null || effectId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
+            source.sendFailure(Component.literal("Or, what. Effect ID too long (max " + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            LOGGER.warn("Or, what. Rejected oversized effect ID (length: {}, max: {})",
+                effectId == null ? 0 : effectId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
+            return 0;
+        }
+
+        // Validate effect type
+        EffectType effectType = EffectType.fromId(effectId);
+        if (effectType == null) {
+            source.sendFailure(Component.literal("Invalid effect type: " + effectId));
+            LOGGER.warn("Or, what. Unknown effect type requested: {}", effectId);
+            return 0;
+        }
+
+        LazyOptional<IEffects> effectsCap = target.getCapability(EffectsProvider.EFFECTS_CAP);
+        if (!effectsCap.isPresent()) {
+            source.sendFailure(Component.literal("Or, what. Player " + target.getName().getString() + " has no effects capability!"));
+            LOGGER.error("Or, what. Cannot equip effect for {} - effects capability not present", target.getName().getString());
+            return 0;
+        }
+        effectsCap.ifPresent(effects -> {
             // Optimization: Skip if effect is already active
             if (effects.isEffectActive(effectId)) {
                 LOGGER.debug("Yeah? Well... {} already has effect '{}' active, skipping unnecessary update",
@@ -739,7 +805,21 @@ public class TwilightLibCommands {
     }
 
     private static int executeUnequipEffect(CommandSourceStack source, ServerPlayer target, String effectId) {
-        target.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
+        // Validate effect ID length (DoS protection)
+        if (effectId == null || effectId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
+            source.sendFailure(Component.literal("Or, what. Effect ID too long (max " + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            LOGGER.warn("Or, what. Rejected oversized effect ID (length: {}, max: {})",
+                effectId == null ? 0 : effectId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
+            return 0;
+        }
+
+        LazyOptional<IEffects> effectsCap = target.getCapability(EffectsProvider.EFFECTS_CAP);
+        if (!effectsCap.isPresent()) {
+            source.sendFailure(Component.literal("Or, what. Player " + target.getName().getString() + " has no effects capability!"));
+            LOGGER.error("Or, what. Cannot unequip effect for {} - effects capability not present", target.getName().getString());
+            return 0;
+        }
+        effectsCap.ifPresent(effects -> {
             // Admin command: Force unequip regardless of source (player selection or external grant)
             ((EffectsData) effects).forceUnequipEffect(effectId);
 
@@ -1005,6 +1085,14 @@ public class TwilightLibCommands {
     }
 
     private static int executeSetAddonTint(CommandSourceStack source, ServerPlayer target, String addonId, String colorHex) {
+        // Validate hex color length (DoS protection)
+        if (colorHex == null || colorHex.length() > TwilightConfig.MAX_HEX_COLOR_LENGTH.get()) {
+            source.sendFailure(Component.literal("Or, what. Hex color string too long (max " + TwilightConfig.MAX_HEX_COLOR_LENGTH.get() + " characters)"));
+            LOGGER.warn("Or, what. Rejected oversized hex color string (length: {}, max: {})",
+                colorHex == null ? 0 : colorHex.length(), TwilightConfig.MAX_HEX_COLOR_LENGTH.get());
+            return 0;
+        }
+
         // Parse hex color (supports #RRGGBB or RRGGBB format)
         String hexString = colorHex.startsWith("#") ? colorHex.substring(1) : colorHex;
 

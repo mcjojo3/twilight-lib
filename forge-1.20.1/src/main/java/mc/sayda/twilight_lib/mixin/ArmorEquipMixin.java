@@ -53,6 +53,10 @@ public class ArmorEquipMixin {
      * Shared logic for both setItemSlot injections.
      * Checks allow_helmet, allow_chestplate, allow_leggings, allow_boots attributes.
      * If attribute is 0, prevents that armor type from being equipped.
+     *
+     * NOTE: This mixin only blocks NEW armor from being equipped when restricted.
+     * It does NOT block removing restricted armor or swapping between items.
+     * The ArmorEquipHandler event handles cleanup after swaps/equips.
      */
     private void onSetItemSlot(EquipmentSlot slot, ItemStack stack, CallbackInfo ci) {
         Player player = (Player) (Object) this;
@@ -68,16 +72,26 @@ public class ArmorEquipMixin {
         }
 
         // Check attribute based on armor type
-        double allowAttribute = 1.0;
-        switch (armorItem.getType()) {
-            case HELMET -> allowAttribute = player.getAttributeValue(ModAttributes.ALLOW_HELMET.get());
-            case CHESTPLATE -> allowAttribute = player.getAttributeValue(ModAttributes.ALLOW_CHESTPLATE.get());
-            case LEGGINGS -> allowAttribute = player.getAttributeValue(ModAttributes.ALLOW_LEGGINGS.get());
-            case BOOTS -> allowAttribute = player.getAttributeValue(ModAttributes.ALLOW_BOOTS.get());
+        // Validate attribute exists to prevent NPE if ModAttributes initialization failed
+        var attributeInstance = switch (armorItem.getType()) {
+            case HELMET -> player.getAttribute(ModAttributes.ALLOW_HELMET.get());
+            case CHESTPLATE -> player.getAttribute(ModAttributes.ALLOW_CHESTPLATE.get());
+            case LEGGINGS -> player.getAttribute(ModAttributes.ALLOW_LEGGINGS.get());
+            case BOOTS -> player.getAttribute(ModAttributes.ALLOW_BOOTS.get());
+            default -> null;
+        };
+
+        if (attributeInstance == null) {
+            return; // Allow equipping if attribute missing (fail-safe default)
         }
 
-        // Cancel equipping if attribute is 0
-        if (allowAttribute == 0.0) {
+        double allowAttribute = attributeInstance.getValue();
+
+        // Block ONLY if equipping to empty slot
+        // Allow swaps to proceed (ArmorEquipHandler will revert if needed)
+        // This prevents armor from vanishing during failed swaps
+        ItemStack currentArmor = player.getItemBySlot(slot);
+        if (allowAttribute == 0.0 && currentArmor.isEmpty()) {
             ci.cancel();
         }
     }

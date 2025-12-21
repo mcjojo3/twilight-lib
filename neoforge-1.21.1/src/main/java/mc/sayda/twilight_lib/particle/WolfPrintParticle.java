@@ -48,7 +48,7 @@ public class WolfPrintParticle extends TextureSheetParticle {
     protected WolfPrintParticle(ClientLevel world, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
         super(world, x, y, z);
         this.setSize(0.25f, 0.25f);
-        this.quadSize *= 1f; // Small footprint size
+        // Size is controlled by setSize() above
         this.lifetime = mc.sayda.twilight_lib.config.TwilightConfig.FOOTPRINT_LIFETIME_TICKS.get();
         this.gravity = 0.0f; // No gravity - stays on ground
         this.hasPhysics = false; // No collision

@@ -679,21 +679,30 @@ public class CosmeticsCommand {
                 final Set<String>[] manualEffects = new Set[]{Collections.emptySet()};
 
                 player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-                    manualTrails[0] = trails.getTrails().stream()
-                        .filter(SupporterRegistry::isTrailSupporterExclusive)
-                        .collect(Collectors.toSet());
+                    Set<String> trailSet = trails.getTrails();
+                    if (trailSet != null) {
+                        manualTrails[0] = trailSet.stream()
+                            .filter(SupporterRegistry::isTrailSupporterExclusive)
+                            .collect(Collectors.toSet());
+                    }
                 });
 
                 player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-                    manualAddons[0] = addons.getAddons().stream()
-                        .filter(SupporterRegistry::isAddonSupporterExclusive)
-                        .collect(Collectors.toSet());
+                    Set<String> addonSet = addons.getAddons();
+                    if (addonSet != null) {
+                        manualAddons[0] = addonSet.stream()
+                            .filter(SupporterRegistry::isAddonSupporterExclusive)
+                            .collect(Collectors.toSet());
+                    }
                 });
 
                 player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-                    manualEffects[0] = effects.getEffects().stream()
-                        .filter(SupporterRegistry::isEffectSupporterExclusive)
-                        .collect(Collectors.toSet());
+                    Set<String> effectSet = effects.getEffects();
+                    if (effectSet != null) {
+                        manualEffects[0] = effectSet.stream()
+                            .filter(SupporterRegistry::isEffectSupporterExclusive)
+                            .collect(Collectors.toSet());
+                    }
                 });
 
                 if (!manualTrails[0].isEmpty() || !manualAddons[0].isEmpty() || !manualEffects[0].isEmpty()) {

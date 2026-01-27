@@ -113,7 +113,9 @@ publishing {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     // Add Mixin annotation processor arguments for refmap generation
-    if (project.hasProperty('createSrgToMcp')) {
+    if (project.tasks.findByName('createMcpToSrg')) {
+        options.compilerArgs << "-AreobfSrgFile=${project.tasks.createMcpToSrg.output.get().asFile}"
+    } else if (project.hasProperty('createSrgToMcp')) {
         options.compilerArgs << "-AreobfSrgFile=${tasks.createSrgToMcp.output.get().asFile}"
     }
     options.compilerArgs << "-AoutSrgFile=${buildDir}/tmp/compileJava/mixin.refmap.srg"

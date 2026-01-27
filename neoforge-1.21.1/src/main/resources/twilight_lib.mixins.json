@@ -6,13 +6,18 @@
   "priority": 1000,
   "refmap": "twilight_lib.refmap.json",
   "mixins": [
-    "ArmorEquipMixin"
+    "ArmorEquipMixin",
+    "ArmorItemMixin",
+    "ArmorSlotMixin",
+    "LivingEntityMixin",
+    "PlayerMixin"
   ],
   "client": [
     "LivingEntityAccessor",
     "PlayerMiningMixin",
     "PlayerModelVariantMixin",
-    "PlayerMorphSoundMixin"
+    "PlayerMorphSoundMixin",
+    "LocalPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

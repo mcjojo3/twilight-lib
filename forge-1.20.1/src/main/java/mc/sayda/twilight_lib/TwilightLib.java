@@ -57,23 +57,33 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Main mod class for Twilight Lib - A cosmetic player customization library for Minecraft.
+ * Main mod class for Twilight Lib - A cosmetic player customization library for
+ * Minecraft.
  *
- * <p>Twilight Lib provides a framework for player cosmetics including:
+ * <p>
+ * Twilight Lib provides a framework for player cosmetics including:
  * <ul>
- *   <li><b>Morphs</b>: Transform players into different entities with matching hitboxes</li>
- *   <li><b>Addons</b>: Visual 3D attachments like tails, wings, and ears</li>
- *   <li><b>Trails</b>: Particle effects that follow player movement</li>
- *   <li><b>Effects</b>: Event-triggered cosmetics like spawn effects and ambient particles</li>
+ * <li><b>Morphs</b>: Transform players into different entities with matching
+ * hitboxes</li>
+ * <li><b>Addons</b>: Visual 3D attachments like tails, wings, and ears</li>
+ * <li><b>Trails</b>: Particle effects that follow player movement</li>
+ * <li><b>Effects</b>: Event-triggered cosmetics like spawn effects and ambient
+ * particles</li>
  * </ul>
  *
- * <p><b>Supporter Integration</b>: Cosmetics are tied to Patreon supporter tiers.
- * The mod fetches supporter data from GitHub on startup and grants cosmetics based on tier.
- * Manual cosmetic grants persist independently of supporter status for gifting/admin purposes.
+ * <p>
+ * <b>Supporter Integration</b>: Cosmetics are tied to Patreon supporter tiers.
+ * The mod fetches supporter data from GitHub on startup and grants cosmetics
+ * based on tier.
+ * Manual cosmetic grants persist independently of supporter status for
+ * gifting/admin purposes.
  *
- * <p><b>Thread Safety</b>: This class uses concurrent data structures for delayed sync tasks.
+ * <p>
+ * <b>Thread Safety</b>: This class uses concurrent data structures for delayed
+ * sync tasks.
  * The {@link #pendingTasks} map is thread-safe via {@link ConcurrentHashMap}.
- * The {@link #serverTicks} counter uses {@link AtomicLong} for atomic increments during server ticks.
+ * The {@link #serverTicks} counter uses {@link AtomicLong} for atomic
+ * increments during server ticks.
  *
  * @author SaydaGames (mc_jojo3)
  * @version 1.0
@@ -86,28 +96,39 @@ public class TwilightLib {
     /**
      * Delayed task scheduler for login cosmetics sync.
      *
-     * <p><b>Why delayed sync?</b> When a player logs in, their client-side entity may not be
-     * fully loaded yet. Syncing cosmetics immediately can cause visual glitches or lost packets.
-     * This queue delays cosmetics sync by a configurable number of ticks (default: 20 ticks = 1 second)
+     * <p>
+     * <b>Why delayed sync?</b> When a player logs in, their client-side entity may
+     * not be
+     * fully loaded yet. Syncing cosmetics immediately can cause visual glitches or
+     * lost packets.
+     * This queue delays cosmetics sync by a configurable number of ticks (default:
+     * 20 ticks = 1 second)
      * to ensure the client is ready to receive and render cosmetic data.
      *
-     * <p><b>Thread Safety</b>: Uses ConcurrentHashMap to allow safe concurrent access from
-     * multiple server threads (login events and tick events may occur on different threads).
+     * <p>
+     * <b>Thread Safety</b>: Uses ConcurrentHashMap to allow safe concurrent access
+     * from
+     * multiple server threads (login events and tick events may occur on different
+     * threads).
      */
     private static final Map<UUID, DelayedSyncTask> pendingTasks = new ConcurrentHashMap<>();
 
     /**
      * Server tick counter for delayed task scheduling.
      *
-     * <p><b>Thread Safety</b>: Uses AtomicLong for thread-safe increments without synchronization.
-     * Incremented once per server tick in {@link #onServerTick(TickEvent.ServerTickEvent)}.
+     * <p>
+     * <b>Thread Safety</b>: Uses AtomicLong for thread-safe increments without
+     * synchronization.
+     * Incremented once per server tick in
+     * {@link #onServerTick(TickEvent.ServerTickEvent)}.
      */
     private static final AtomicLong serverTicks = new AtomicLong(0);
 
     /**
      * Represents a cosmetics sync task scheduled for future execution.
      *
-     * <p>Tasks are immutable after creation to prevent race conditions.
+     * <p>
+     * Tasks are immutable after creation to prevent race conditions.
      */
     private static class DelayedSyncTask {
         final UUID playerUUID;
@@ -122,18 +143,23 @@ public class TwilightLib {
     /**
      * Mod constructor - initializes Twilight Lib and registers all systems.
      *
-     * <p><b>Initialization Order</b>:
+     * <p>
+     * <b>Initialization Order</b>:
      * <ol>
-     *   <li>Register configuration (accessible before game loads)</li>
-     *   <li>Register entities, particles, and attributes on mod bus</li>
-     *   <li>Initialize network packet handlers</li>
-     *   <li>Attach event listeners for player events (login, respawn, tracking)</li>
-     *   <li>Fetch supporter data asynchronously (non-blocking)</li>
+     * <li>Register configuration (accessible before game loads)</li>
+     * <li>Register entities, particles, and attributes on mod bus</li>
+     * <li>Initialize network packet handlers</li>
+     * <li>Attach event listeners for player events (login, respawn, tracking)</li>
+     * <li>Fetch supporter data asynchronously (non-blocking)</li>
      * </ol>
      *
-     * <p><b>Why async supporter fetch?</b> The supporter list is fetched from GitHub on startup
-     * to avoid blocking server startup. The first player to join will wait for the fetch to complete
-     * via {@code SupporterService.fetchSupporters().join()} in {@link #onPlayerLogin}.
+     * <p>
+     * <b>Why async supporter fetch?</b> The supporter list is fetched from GitHub
+     * on startup
+     * to avoid blocking server startup. The first player to join will wait for the
+     * fetch to complete
+     * via {@code SupporterService.fetchSupporters().join()} in
+     * {@link #onPlayerLogin}.
      */
     public TwilightLib() {
         LOGGER.info("Yes! This'll be fun! Right? Twilight Lib is loading...");
@@ -185,6 +211,7 @@ public class TwilightLib {
         evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_CHESTPLATE.get());
         evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_LEGGINGS.get());
         evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_BOOTS.get());
+        evt.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ELYTRA_FLIGHT.get());
         LOGGER.debug("Come on, this is gonna be fun! Added custom attributes to players.");
     }
 
@@ -218,40 +245,60 @@ public class TwilightLib {
     }
 
     /**
-     * Handles player login - loads persisted cosmetics, syncs with supporter tier, and broadcasts to clients.
+     * Handles player login - loads persisted cosmetics, syncs with supporter tier,
+     * and broadcasts to clients.
      *
-     * <p><b>Execution Order (Critical!)</b>:
+     * <p>
+     * <b>Execution Order (Critical!)</b>:
      * <ol>
-     *   <li>Restore cosmetics from persistent NBT (preserves player's previous state)</li>
-     *   <li>Wait for supporter data fetch to complete (blocking via {@code join()})</li>
-     *   <li>Sync owned cosmetics with current supporter tier (grants/revokes based on tier)</li>
-     *   <li>Broadcast cosmetics to all tracking clients immediately</li>
-     *   <li>Schedule delayed full sync to logged-in player (ensures client entity is loaded)</li>
+     * <li>Restore cosmetics from persistent NBT (preserves player's previous
+     * state)</li>
+     * <li>Wait for supporter data fetch to complete (blocking via
+     * {@code join()})</li>
+     * <li>Sync owned cosmetics with current supporter tier (grants/revokes based on
+     * tier)</li>
+     * <li>Broadcast cosmetics to all tracking clients immediately</li>
+     * <li>Schedule delayed full sync to logged-in player (ensures client entity is
+     * loaded)</li>
      * </ol>
      *
-     * <p><b>Why restore BEFORE supporter sync?</b> Supporter tier may have changed since last login.
-     * By loading NBT first, we preserve the player's active selection (e.g., active trail choice),
-     * then sync ownership with current tier. If they lost access to a cosmetic, it's deactivated
+     * <p>
+     * <b>Why restore BEFORE supporter sync?</b> Supporter tier may have changed
+     * since last login.
+     * By loading NBT first, we preserve the player's active selection (e.g., active
+     * trail choice),
+     * then sync ownership with current tier. If they lost access to a cosmetic,
+     * it's deactivated
      * but their other selections are preserved.
      *
-     * <p><b>Why block on supporter fetch?</b> The first player to join after server startup will
-     * wait for the GitHub fetch to complete. Subsequent players use the cached data.
-     * This prevents race conditions where cosmetics are granted before supporter data loads.
+     * <p>
+     * <b>Why block on supporter fetch?</b> The first player to join after server
+     * startup will
+     * wait for the GitHub fetch to complete. Subsequent players use the cached
+     * data.
+     * This prevents race conditions where cosmetics are granted before supporter
+     * data loads.
      *
-     * <p><b>Supporter Tier Sync Logic</b>:
+     * <p>
+     * <b>Supporter Tier Sync Logic</b>:
      * <ul>
-     *   <li><b>Trails</b>: CLEARED and re-granted on each login (prevents tier drift)</li>
-     *   <li><b>Addons</b>: Granted additively, removed selectively (preserves admin grants)</li>
-     *   <li><b>Effects</b>: Granted additively, removed selectively (preserves admin grants)</li>
+     * <li><b>Trails</b>: CLEARED and re-granted on each login (prevents tier
+     * drift)</li>
+     * <li><b>Addons</b>: Granted additively, removed selectively (preserves admin
+     * grants)</li>
+     * <li><b>Effects</b>: Granted additively, removed selectively (preserves admin
+     * grants)</li>
      * </ul>
      *
      * @param evt The PlayerLoggedInEvent containing the player entity
      */
     private void onPlayerLogin(final PlayerEvent.PlayerLoggedInEvent evt) {
         Player loggedInPlayer = evt.getEntity();
-        if (loggedInPlayer.level().isClientSide) return;
+        if (loggedInPlayer.level().isClientSide)
+            return;
 
-        LOGGER.info("I wanna have fun and chat with someone besides myself! Syncing morphs and addons for {}", loggedInPlayer.getGameProfile().getName());
+        LOGGER.info("I wanna have fun and chat with someone besides myself! Syncing morphs and addons for {}",
+                loggedInPlayer.getGameProfile().getName());
 
         // Load persisted data from NBT FIRST (before supporter checks modify it)
         CompoundTag persistentData = loggedInPlayer.getPersistentData();
@@ -259,52 +306,62 @@ public class TwilightLib {
         if (persistentData.contains(TwilightConstants.NBT_MORPH, CompoundTag.TAG_COMPOUND)) {
             loggedInPlayer.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
                 morph.deserialize(persistentData.getCompound(TwilightConstants.NBT_MORPH));
-                LOGGER.debug("Come on, this is gonna be fun! Restored morph from NBT for {}", loggedInPlayer.getGameProfile().getName());
+                LOGGER.debug("Come on, this is gonna be fun! Restored morph from NBT for {}",
+                        loggedInPlayer.getGameProfile().getName());
             });
         }
 
         if (persistentData.contains(TwilightConstants.NBT_ADDONS, CompoundTag.TAG_COMPOUND)) {
             loggedInPlayer.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
                 addons.deserialize(persistentData.getCompound(TwilightConstants.NBT_ADDONS));
-                LOGGER.debug("Come on, this is gonna be fun! Restored {} addons from NBT for {}", addons.getAddons().size(), loggedInPlayer.getGameProfile().getName());
+                LOGGER.debug("Come on, this is gonna be fun! Restored {} addons from NBT for {}",
+                        addons.getAddons().size(), loggedInPlayer.getGameProfile().getName());
             });
         }
 
         if (persistentData.contains(TwilightConstants.NBT_TRAILS, CompoundTag.TAG_COMPOUND)) {
             loggedInPlayer.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
                 trails.deserialize(persistentData.getCompound(TwilightConstants.NBT_TRAILS));
-                LOGGER.debug("Come on, this is gonna be fun! Restored {} trails from NBT for {}", trails.getTrails().size(), loggedInPlayer.getGameProfile().getName());
+                LOGGER.debug("Come on, this is gonna be fun! Restored {} trails from NBT for {}",
+                        trails.getTrails().size(), loggedInPlayer.getGameProfile().getName());
             });
         }
 
         if (persistentData.contains(TwilightConstants.NBT_EFFECTS, CompoundTag.TAG_COMPOUND)) {
             loggedInPlayer.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
                 effects.deserialize(persistentData.getCompound(TwilightConstants.NBT_EFFECTS));
-                LOGGER.debug("Come on, this is gonna be fun! Restored {} effects from NBT for {}", effects.getEffects().size(), loggedInPlayer.getGameProfile().getName());
+                LOGGER.debug("Come on, this is gonna be fun! Restored {} effects from NBT for {}",
+                        effects.getEffects().size(), loggedInPlayer.getGameProfile().getName());
             });
         }
 
         if (persistentData.contains(TwilightConstants.NBT_MODEL_VARIANT, CompoundTag.TAG_COMPOUND)) {
             loggedInPlayer.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
                 modelVariant.deserialize(persistentData.getCompound(TwilightConstants.NBT_MODEL_VARIANT));
-                LOGGER.debug("Come on, this is gonna be fun! Restored model variant from NBT for {}", loggedInPlayer.getGameProfile().getName());
+                LOGGER.debug("Come on, this is gonna be fun! Restored model variant from NBT for {}",
+                        loggedInPlayer.getGameProfile().getName());
             });
         }
 
-        // TODO CRITICAL: This blocking .get() call freezes the entire server during player login!
+        // TODO CRITICAL: This blocking .get() call freezes the entire server during
+        // player login!
         // This is a DoS vector - repeated logins can cause server lag for all players.
-        // FIX: Replace with non-blocking check using isDone() or thenAcceptAsync() callback
+        // FIX: Replace with non-blocking check using isDone() or thenAcceptAsync()
+        // callback
         // See audit issue: "Blocking Call on Login (Lines 290-296)"
-        // Ensure supporter data is loaded before checking (waits if fetch is in progress)
+        // Ensure supporter data is loaded before checking (waits if fetch is in
+        // progress)
         try {
             SupporterService.fetchSupporters().get(10, java.util.concurrent.TimeUnit.SECONDS);
         } catch (java.util.concurrent.TimeoutException e) {
-            LOGGER.warn("How did I?! Uuuughh! Supporter data fetch timed out after 10 seconds. Proceeding without supporter sync.");
+            LOGGER.warn(
+                    "How did I?! Uuuughh! Supporter data fetch timed out after 10 seconds. Proceeding without supporter sync.");
         } catch (Exception e) {
             LOGGER.warn("Shoot! Error waiting for supporter data: {}", e.getMessage());
         }
 
-        // Check supporter status and auto-grant cosmetics (tier unlocks + manual overrides)
+        // Check supporter status and auto-grant cosmetics (tier unlocks + manual
+        // overrides)
         String uuid = loggedInPlayer.getStringUUID();
         Optional<SupporterData> supporterData = SupporterService.getSupporterData(uuid);
 
@@ -319,28 +376,32 @@ public class TwilightLib {
             // Log supporter status
             if (data.isActiveSupporter()) {
                 LOGGER.info("Delightful little world you have... I like it! {} is a {} tier supporter",
-                    loggedInPlayer.getGameProfile().getName(), data.getTier());
+                        loggedInPlayer.getGameProfile().getName(), data.getTier());
                 LOGGER.debug("I have a gift for you! Tier '{}' grants trails: {}", data.getTier(), allTrails);
             } else {
                 LOGGER.info("I have a gift for you! {} has manual cosmetic grants (expired/gift supporter)",
-                    loggedInPlayer.getGameProfile().getName());
+                        loggedInPlayer.getGameProfile().getName());
             }
 
             // Auto-grant trails (tier unlocks + manual overrides)
             loggedInPlayer.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
-                // Sync owned trails with current supporter status (preserves persistent active state)
+                // Sync owned trails with current supporter status (preserves persistent active
+                // state)
                 Set<String> currentOwned = new java.util.HashSet<>(trails.getTrails());
 
                 // Type-safe cast to access implementation-specific methods
                 if (!(trails instanceof TrailsData)) {
-                    LOGGER.error("Is this the best physical representation you can manifest? Another mod replaced ITrails capability with incompatible implementation: {}. Expected: TrailsData, Got: {}",
-                        trails.getClass().getName(), trails.getClass().getSuperclass().getName());
-                    LOGGER.error("Or, what. Skipping trail sync for {} - capability incompatibility detected", loggedInPlayer.getGameProfile().getName());
+                    LOGGER.error(
+                            "Is this the best physical representation you can manifest? Another mod replaced ITrails capability with incompatible implementation: {}. Expected: TrailsData, Got: {}",
+                            trails.getClass().getName(), trails.getClass().getSuperclass().getName());
+                    LOGGER.error("Or, what. Skipping trail sync for {} - capability incompatibility detected",
+                            loggedInPlayer.getGameProfile().getName());
                     return;
                 }
                 TrailsData trailsData = (TrailsData) trails;
 
-                // Remove trails no longer granted (ownership only - doesn't affect persistent active)
+                // Remove trails no longer granted (ownership only - doesn't affect persistent
+                // active)
                 for (String trail : currentOwned) {
                     if (!allTrails.contains(trail)) {
                         trailsData.removeTrailOwnership(trail);
@@ -359,19 +420,23 @@ public class TwilightLib {
 
             // Auto-grant addons (tier unlocks + manual overrides)
             loggedInPlayer.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
-                // Sync owned addons with current supporter status (preserves persistent active state)
+                // Sync owned addons with current supporter status (preserves persistent active
+                // state)
                 Set<String> currentOwned = new java.util.HashSet<>(addons.getAddons());
 
                 // Type-safe cast to access implementation-specific methods
                 if (!(addons instanceof AddonsData)) {
-                    LOGGER.error("Is this the best physical representation you can manifest? Another mod replaced IAddons capability with incompatible implementation: {}. Expected: AddonsData, Got: {}",
-                        addons.getClass().getName(), addons.getClass().getSuperclass().getName());
-                    LOGGER.error("Or, what. Skipping addon sync for {} - capability incompatibility detected", loggedInPlayer.getGameProfile().getName());
+                    LOGGER.error(
+                            "Is this the best physical representation you can manifest? Another mod replaced IAddons capability with incompatible implementation: {}. Expected: AddonsData, Got: {}",
+                            addons.getClass().getName(), addons.getClass().getSuperclass().getName());
+                    LOGGER.error("Or, what. Skipping addon sync for {} - capability incompatibility detected",
+                            loggedInPlayer.getGameProfile().getName());
                     return;
                 }
                 AddonsData addonsData = (AddonsData) addons;
 
-                // Remove addons no longer granted (ownership only - doesn't affect persistent active)
+                // Remove addons no longer granted (ownership only - doesn't affect persistent
+                // active)
                 for (String addon : currentOwned) {
                     if (!allAddons.contains(addon)) {
                         addonsData.removeAddonOwnership(addon);
@@ -390,19 +455,23 @@ public class TwilightLib {
 
             // Auto-grant effects (tier unlocks + manual overrides)
             loggedInPlayer.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
-                // Sync owned effects with current supporter status (preserves persistent active state)
+                // Sync owned effects with current supporter status (preserves persistent active
+                // state)
                 Set<String> currentOwned = new java.util.HashSet<>(effects.getEffects());
 
                 // Type-safe cast to access implementation-specific methods
                 if (!(effects instanceof EffectsData)) {
-                    LOGGER.error("Is this the best physical representation you can manifest? Another mod replaced IEffects capability with incompatible implementation: {}. Expected: EffectsData, Got: {}",
-                        effects.getClass().getName(), effects.getClass().getSuperclass().getName());
-                    LOGGER.error("Or, what. Skipping effect sync for {} - capability incompatibility detected", loggedInPlayer.getGameProfile().getName());
+                    LOGGER.error(
+                            "Is this the best physical representation you can manifest? Another mod replaced IEffects capability with incompatible implementation: {}. Expected: EffectsData, Got: {}",
+                            effects.getClass().getName(), effects.getClass().getSuperclass().getName());
+                    LOGGER.error("Or, what. Skipping effect sync for {} - capability incompatibility detected",
+                            loggedInPlayer.getGameProfile().getName());
                     return;
                 }
                 EffectsData effectsData = (EffectsData) effects;
 
-                // Remove effects no longer granted (ownership only - doesn't affect persistent active)
+                // Remove effects no longer granted (ownership only - doesn't affect persistent
+                // active)
                 for (String effect : currentOwned) {
                     if (!allEffects.contains(effect)) {
                         effectsData.removeEffectOwnership(effect);
@@ -419,47 +488,56 @@ public class TwilightLib {
                 loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_EFFECTS, effects.serialize());
             });
 
-            LOGGER.info("You need more stardust, I could give you some! Auto-granted {} trails, {} addons, {} effects to {}",
+            LOGGER.info(
+                    "You need more stardust, I could give you some! Auto-granted {} trails, {} addons, {} effects to {}",
                     allTrails.size(), allAddons.size(), allEffects.size(),
                     loggedInPlayer.getGameProfile().getName());
         }
 
         // Schedule delayed cosmetics sync to allow client entity loading
         long delayTicks = TwilightConfig.LOGIN_SYNC_DELAY_TICKS.get();
-        pendingTasks.put(loggedInPlayer.getUUID(), new DelayedSyncTask(loggedInPlayer.getUUID(), serverTicks.get() + delayTicks));
+        pendingTasks.put(loggedInPlayer.getUUID(),
+                new DelayedSyncTask(loggedInPlayer.getUUID(), serverTicks.get() + delayTicks));
 
         // Send this player's morph to everyone else
         loggedInPlayer.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
             morph.getEntityType().ifPresent(rl -> {
-                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(loggedInPlayer.getUUID(), Optional.of(rl), morph.isNametagHidden()));
+                NetworkHandler.sendMorphToAll(
+                        SyncMorphPacket.of(loggedInPlayer.getUUID(), Optional.of(rl), morph.isNametagHidden()));
                 // Force dimension refresh to apply morph hitbox immediately
                 loggedInPlayer.refreshDimensions();
                 // Persist morph state to NBT to prevent data loss on logout
                 loggedInPlayer.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
-                LOGGER.info("We are going to be best friends! Player {} logged in with morph: {}", loggedInPlayer.getGameProfile().getName(), rl);
+                LOGGER.info("We are going to be best friends! Player {} logged in with morph: {}",
+                        loggedInPlayer.getGameProfile().getName(), rl);
             });
         });
 
         // Send this player's active addons to everyone else
         loggedInPlayer.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(loginAddons -> {
             if (!loginAddons.getActiveAddons().isEmpty()) {
-                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(loggedInPlayer.getUUID(), loginAddons.getActiveAddons(), loginAddons.getAllAddonTints()));
-                LOGGER.info("We are going to be best friends! Player {} logged in with {} active addons", loggedInPlayer.getGameProfile().getName(), loginAddons.getActiveAddons().size());
+                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(loggedInPlayer.getUUID(),
+                        loginAddons.getActiveAddons(), loginAddons.getAllAddonTints()));
+                LOGGER.info("We are going to be best friends! Player {} logged in with {} active addons",
+                        loggedInPlayer.getGameProfile().getName(), loginAddons.getActiveAddons().size());
             }
         });
 
         // Send this player's active trails to everyone else
         loggedInPlayer.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(loginTrails -> {
             if (!loginTrails.getActiveTrails().isEmpty()) {
-                NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(loggedInPlayer.getUUID(), loginTrails.getActiveTrails()));
-                LOGGER.info("We are going to be best friends! Player {} logged in with {} active trails", loggedInPlayer.getGameProfile().getName(), loginTrails.getActiveTrails().size());
+                NetworkHandler
+                        .sendTrailsToAll(new SyncTrailsPacket(loggedInPlayer.getUUID(), loginTrails.getActiveTrails()));
+                LOGGER.info("We are going to be best friends! Player {} logged in with {} active trails",
+                        loggedInPlayer.getGameProfile().getName(), loginTrails.getActiveTrails().size());
             }
         });
 
         // Send this player's effects to everyone else (trigger spawn effect on login)
         loggedInPlayer.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
             if (!effects.getActiveEffects().isEmpty()) {
-                NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(loggedInPlayer.getUUID(), effects.getActiveEffects(), true));
+                NetworkHandler.sendEffectsToAll(
+                        new SyncEffectsPacket(loggedInPlayer.getUUID(), effects.getActiveEffects(), true));
             }
         });
 
@@ -467,44 +545,56 @@ public class TwilightLib {
         loggedInPlayer.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
             NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(loggedInPlayer.getUUID(), modelVariant));
             LOGGER.info("We are going to be best friends! Player {} logged in as {} model variant",
-                loggedInPlayer.getGameProfile().getName(), modelVariant.getModelVariant());
+                    loggedInPlayer.getGameProfile().getName(), modelVariant.getModelVariant());
         });
     }
 
     /**
-     * Handles player logout - explicitly invalidates all capabilities to prevent memory leaks.
+     * Handles player logout - explicitly invalidates all capabilities to prevent
+     * memory leaks.
      *
-     * <p><b>Why explicit invalidation?</b> Forge capabilities use LazyOptional<T> which can hold
-     * references to capability instances. While the {@code AttachCapabilitiesEvent} adds invalidation
-     * listeners, they may not trigger reliably on all logout scenarios (crashes, forcekicks, etc.).
+     * <p>
+     * <b>Why explicit invalidation?</b> Forge capabilities use LazyOptional<T>
+     * which can hold
+     * references to capability instances. While the {@code AttachCapabilitiesEvent}
+     * adds invalidation
+     * listeners, they may not trigger reliably on all logout scenarios (crashes,
+     * forcekicks, etc.).
      * This explicit cleanup ensures LazyOptionals are properly released.
      *
-     * <p><b>Memory Leak Prevention</b>: Without invalidation, LazyOptionals can retain references
-     * to capability providers, preventing garbage collection. On long-running servers with many
+     * <p>
+     * <b>Memory Leak Prevention</b>: Without invalidation, LazyOptionals can retain
+     * references
+     * to capability providers, preventing garbage collection. On long-running
+     * servers with many
      * player join/disconnect cycles, this can accumulate and cause memory issues.
      *
      * @param evt The PlayerLoggedOutEvent containing the disconnecting player
      */
     private void onPlayerLogout(final PlayerEvent.PlayerLoggedOutEvent evt) {
         Player player = evt.getEntity();
-        if (player.level().isClientSide) return;
+        if (player.level().isClientSide)
+            return;
 
         // Clean up pending sync tasks for this player (prevent memory leak)
         // Using computeIfPresent for atomic removal (prevents race with tick handler)
         UUID playerUUID = player.getUUID();
         pendingTasks.computeIfPresent(playerUUID, (uuid, task) -> {
-            LOGGER.debug("Goodbye, my new friend! Cleaning up pending sync task for {} on logout", player.getGameProfile().getName());
+            LOGGER.debug("Goodbye, my new friend! Cleaning up pending sync task for {} on logout",
+                    player.getGameProfile().getName());
             return null; // Returning null removes the entry atomically
         });
 
         // Force invalidate all capabilities to free LazyOptionals
         player.invalidateCaps();
-        LOGGER.debug("Goodbye, my new friend! Cleaned up pending tasks and invalidated capabilities for disconnecting player: {}",
-            player.getGameProfile().getName());
+        LOGGER.debug(
+                "Goodbye, my new friend! Cleaned up pending tasks and invalidated capabilities for disconnecting player: {}",
+                player.getGameProfile().getName());
     }
 
     private void onPlayerClone(final PlayerEvent.Clone evt) {
-        if (evt.getEntity().level().isClientSide) return;
+        if (evt.getEntity().level().isClientSide)
+            return;
 
         // Handle both death and dimension changes
         // Capabilities are copied/invalidated, so we must use persistent NBT data
@@ -563,12 +653,14 @@ public class TwilightLib {
 
     private void onPlayerRespawn(final PlayerEvent.PlayerRespawnEvent evt) {
         Player player = evt.getEntity();
-        if (player.level().isClientSide) return;
+        if (player.level().isClientSide)
+            return;
 
         // Sync morph to client after respawn (when client-side player entity exists)
         player.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
             morph.getEntityType().ifPresent(rl -> {
-                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), Optional.of(rl), morph.isNametagHidden()));
+                NetworkHandler
+                        .sendMorphToAll(SyncMorphPacket.of(player.getUUID(), Optional.of(rl), morph.isNametagHidden()));
                 player.refreshDimensions();
                 // Persist morph state to NBT to prevent data loss
                 player.getPersistentData().put(TwilightConstants.NBT_MORPH, morph.serialize());
@@ -579,8 +671,10 @@ public class TwilightLib {
         // Sync active addons to client after respawn
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             if (!addons.getActiveAddons().isEmpty()) {
-                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
-                LOGGER.debug("Time to change! Player {} respawned with {} active addons", player.getGameProfile().getName(), addons.getActiveAddons().size());
+                NetworkHandler.sendAddonsToAll(
+                        new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                LOGGER.debug("Time to change! Player {} respawned with {} active addons",
+                        player.getGameProfile().getName(), addons.getActiveAddons().size());
             }
         });
 
@@ -588,68 +682,90 @@ public class TwilightLib {
         player.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
             if (!trails.getActiveTrails().isEmpty()) {
                 NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.getActiveTrails()));
-                LOGGER.debug("Time to change! Player {} respawned with {} active trails", player.getGameProfile().getName(), trails.getActiveTrails().size());
+                LOGGER.debug("Time to change! Player {} respawned with {} active trails",
+                        player.getGameProfile().getName(), trails.getActiveTrails().size());
             }
         });
 
         // Sync effects to client after respawn (trigger spawn effect on respawn)
         player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
             if (!effects.getActiveEffects().isEmpty()) {
-                NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects(), true));
-                LOGGER.debug("Time to change! Player {} respawned with {} active effects", player.getGameProfile().getName(), effects.getActiveEffects().size());
+                NetworkHandler
+                        .sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects(), true));
+                LOGGER.debug("Time to change! Player {} respawned with {} active effects",
+                        player.getGameProfile().getName(), effects.getActiveEffects().size());
             }
         });
 
         // Sync model variant to client after respawn
         player.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
             NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
-            LOGGER.debug("Time to change! Player {} respawned as {} model", player.getGameProfile().getName(), modelVariant.getModelVariant());
+            LOGGER.debug("Time to change! Player {} respawned as {} model", player.getGameProfile().getName(),
+                    modelVariant.getModelVariant());
         });
     }
 
     /**
-     * Handles player dimension change - syncs cosmetics to clients after traveling to a new dimension.
+     * Handles player dimension change - syncs cosmetics to clients after traveling
+     * to a new dimension.
      *
-     * <p><b>Why this handler?</b> When a player changes dimensions (e.g., Overworld → Nether),
-     * the client needs to be re-synced with all cosmetic data. The {@link #onPlayerClone} event
-     * restores data from NBT, but doesn't broadcast to clients. This handler ensures:
+     * <p>
+     * <b>Why this handler?</b> When a player changes dimensions (e.g., Overworld →
+     * Nether),
+     * the client needs to be re-synced with all cosmetic data. The
+     * {@link #onPlayerClone} event
+     * restores data from NBT, but doesn't broadcast to clients. This handler
+     * ensures:
      * <ul>
-     *   <li>The player's cosmetics are visible in the new dimension</li>
-     *   <li>Other players in the new dimension can see the arriving player's cosmetics</li>
-     *   <li>Spawn effects trigger on dimension entry</li>
+     * <li>The player's cosmetics are visible in the new dimension</li>
+     * <li>Other players in the new dimension can see the arriving player's
+     * cosmetics</li>
+     * <li>Spawn effects trigger on dimension entry</li>
      * </ul>
      *
-     * <p><b>Forge 1.20.1 Dimension Change Bug Workaround</b>: In Forge 1.20.1, capabilities are
-     * invalidated during dimension changes and not automatically restored. PlayerEvent.Clone only
-     * fires for death, not dimension changes. This handler detects missing capabilities and
+     * <p>
+     * <b>Forge 1.20.1 Dimension Change Bug Workaround</b>: In Forge 1.20.1,
+     * capabilities are
+     * invalidated during dimension changes and not automatically restored.
+     * PlayerEvent.Clone only
+     * fires for death, not dimension changes. This handler detects missing
+     * capabilities and
      * manually restores them from persistent NBT before syncing to clients.
      *
-     * @param evt The PlayerChangedDimensionEvent containing the player and dimension info
+     * @param evt The PlayerChangedDimensionEvent containing the player and
+     *            dimension info
      */
     private void onPlayerChangedDimension(final PlayerEvent.PlayerChangedDimensionEvent evt) {
         Player player = evt.getEntity();
-        if (player.level().isClientSide) return;
+        if (player.level().isClientSide)
+            return;
 
         LOGGER.debug("Time to change! Player {} changed dimensions from {} to {}",
-            player.getGameProfile().getName(), evt.getFrom(), evt.getTo());
+                player.getGameProfile().getName(), evt.getFrom(), evt.getTo());
 
-        // Capability providers now automatically recreate LazyOptionals when accessed after invalidation
-        // This fixes the Forge 1.20.1 dimension change bug where capabilities were invalidated during travel
-        // Simply sync all cosmetics to clients - providers handle the recreation internally
+        // Capability providers now automatically recreate LazyOptionals when accessed
+        // after invalidation
+        // This fixes the Forge 1.20.1 dimension change bug where capabilities were
+        // invalidated during travel
+        // Simply sync all cosmetics to clients - providers handle the recreation
+        // internally
 
         player.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
             morph.getEntityType().ifPresent(rl -> {
-                NetworkHandler.sendMorphToAll(SyncMorphPacket.of(player.getUUID(), Optional.of(rl), morph.isNametagHidden()));
+                NetworkHandler
+                        .sendMorphToAll(SyncMorphPacket.of(player.getUUID(), Optional.of(rl), morph.isNametagHidden()));
                 player.refreshDimensions();
-                LOGGER.debug("Time to change! Player {} entered {} as {}", player.getGameProfile().getName(), evt.getTo().location(), rl);
+                LOGGER.debug("Time to change! Player {} entered {} as {}", player.getGameProfile().getName(),
+                        evt.getTo().location(), rl);
             });
         });
 
         player.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             if (!addons.getActiveAddons().isEmpty()) {
-                NetworkHandler.sendAddonsToAll(new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                NetworkHandler.sendAddonsToAll(
+                        new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
                 LOGGER.debug("Time to change! Player {} entered {} with {} active addons",
-                    player.getGameProfile().getName(), evt.getTo().location(), addons.getActiveAddons().size());
+                        player.getGameProfile().getName(), evt.getTo().location(), addons.getActiveAddons().size());
             }
         });
 
@@ -657,109 +773,134 @@ public class TwilightLib {
             if (!trails.getActiveTrails().isEmpty()) {
                 NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.getActiveTrails()));
                 LOGGER.debug("Time to change! Player {} entered {} with {} active trails",
-                    player.getGameProfile().getName(), evt.getTo().location(), trails.getActiveTrails().size());
+                        player.getGameProfile().getName(), evt.getTo().location(), trails.getActiveTrails().size());
             }
         });
 
         player.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
             if (!effects.getActiveEffects().isEmpty()) {
-                NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects(), true));
+                NetworkHandler
+                        .sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects(), true));
                 LOGGER.debug("Time to change! Player {} entered {} with {} active effects",
-                    player.getGameProfile().getName(), evt.getTo().location(), effects.getActiveEffects().size());
+                        player.getGameProfile().getName(), evt.getTo().location(), effects.getActiveEffects().size());
             }
         });
 
         player.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
             NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
             LOGGER.debug("Time to change! Player {} entered {} as {} model",
-                player.getGameProfile().getName(), evt.getTo().location(), modelVariant.getModelVariant());
+                    player.getGameProfile().getName(), evt.getTo().location(), modelVariant.getModelVariant());
         });
     }
 
     private void onPlayerStartTracking(final PlayerEvent.StartTracking evt) {
-        // When player A starts tracking entity B, if B is a player, send B's cosmetics to A
-        if (!(evt.getTarget() instanceof ServerPlayer trackedPlayer)) return;
-        if (!(evt.getEntity() instanceof ServerPlayer trackingPlayer)) return;
-        if (trackingPlayer.level().isClientSide) return;
+        // When player A starts tracking entity B, if B is a player, send B's cosmetics
+        // to A
+        if (!(evt.getTarget() instanceof ServerPlayer trackedPlayer))
+            return;
+        if (!(evt.getEntity() instanceof ServerPlayer trackingPlayer))
+            return;
+        if (trackingPlayer.level().isClientSide)
+            return;
 
         // Send the tracked player's cosmetics to the tracking player
         trackedPlayer.getCapability(MorphProvider.MORPH_CAP).ifPresent(morph -> {
             morph.getEntityType().ifPresent(rl -> {
-                NetworkHandler.sendToPlayer(trackingPlayer, SyncMorphPacket.of(trackedPlayer.getUUID(), Optional.of(rl), morph.isNametagHidden()));
+                NetworkHandler.sendToPlayer(trackingPlayer,
+                        SyncMorphPacket.of(trackedPlayer.getUUID(), Optional.of(rl), morph.isNametagHidden()));
                 LOGGER.debug("Here you go! Sent morph {} for {} to tracking player {}",
-                    rl, trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
+                        rl, trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
             });
         });
 
         trackedPlayer.getCapability(AddonsProvider.ADDONS_CAP).ifPresent(addons -> {
             if (!addons.getActiveAddons().isEmpty()) {
-                NetworkHandler.sendAddonsToPlayer(trackingPlayer, new SyncAddonsPacket(trackedPlayer.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                NetworkHandler.sendAddonsToPlayer(trackingPlayer, new SyncAddonsPacket(trackedPlayer.getUUID(),
+                        addons.getActiveAddons(), addons.getAllAddonTints()));
                 LOGGER.debug("Here you go! Sent {} addons for {} to tracking player {}",
-                    addons.getActiveAddons().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
+                        addons.getActiveAddons().size(), trackedPlayer.getGameProfile().getName(),
+                        trackingPlayer.getGameProfile().getName());
             }
         });
 
         trackedPlayer.getCapability(TrailsProvider.TRAILS_CAP).ifPresent(trails -> {
             if (!trails.getActiveTrails().isEmpty()) {
-                NetworkHandler.sendTrailsToPlayer(trackingPlayer, new SyncTrailsPacket(trackedPlayer.getUUID(), trails.getActiveTrails()));
+                NetworkHandler.sendTrailsToPlayer(trackingPlayer,
+                        new SyncTrailsPacket(trackedPlayer.getUUID(), trails.getActiveTrails()));
                 LOGGER.debug("Here you go! Sent {} trails for {} to tracking player {}",
-                    trails.getActiveTrails().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
+                        trails.getActiveTrails().size(), trackedPlayer.getGameProfile().getName(),
+                        trackingPlayer.getGameProfile().getName());
             }
         });
 
         trackedPlayer.getCapability(EffectsProvider.EFFECTS_CAP).ifPresent(effects -> {
             if (!effects.getActiveEffects().isEmpty()) {
-                NetworkHandler.sendEffectsToPlayer(trackingPlayer, new SyncEffectsPacket(trackedPlayer.getUUID(), effects.getActiveEffects(), false));
+                NetworkHandler.sendEffectsToPlayer(trackingPlayer,
+                        new SyncEffectsPacket(trackedPlayer.getUUID(), effects.getActiveEffects(), false));
                 LOGGER.debug("Here you go! Sent {} effects for {} to tracking player {}",
-                    effects.getActiveEffects().size(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
+                        effects.getActiveEffects().size(), trackedPlayer.getGameProfile().getName(),
+                        trackingPlayer.getGameProfile().getName());
             }
         });
 
         trackedPlayer.getCapability(ModelVariantProvider.MODEL_VARIANT_CAP).ifPresent(modelVariant -> {
-            NetworkHandler.sendModelVariantToPlayer(trackingPlayer, SyncModelVariantPacket.of(trackedPlayer.getUUID(), modelVariant));
+            NetworkHandler.sendModelVariantToPlayer(trackingPlayer,
+                    SyncModelVariantPacket.of(trackedPlayer.getUUID(), modelVariant));
             LOGGER.debug("Here you go! Sent model variant {} for {} to tracking player {}",
-                modelVariant.getModelVariant(), trackedPlayer.getGameProfile().getName(), trackingPlayer.getGameProfile().getName());
+                    modelVariant.getModelVariant(), trackedPlayer.getGameProfile().getName(),
+                    trackingPlayer.getGameProfile().getName());
         });
     }
 
     /**
      * Server tick handler - processes delayed cosmetics sync tasks.
      *
-     * <p><b>Why delayed sync?</b> When a player logs in, their client needs time to:
+     * <p>
+     * <b>Why delayed sync?</b> When a player logs in, their client needs time to:
      * <ol>
-     *   <li>Create the client-side player entity</li>
-     *   <li>Initialize rendering systems</li>
-     *   <li>Load nearby chunks and entities</li>
+     * <li>Create the client-side player entity</li>
+     * <li>Initialize rendering systems</li>
+     * <li>Load nearby chunks and entities</li>
      * </ol>
      *
      * Sending cosmetics data immediately can cause:
      * <ul>
-     *   <li>Lost packets (client not ready to receive)</li>
-     *   <li>Visual glitches (rendering systems not initialized)</li>
-     *   <li>Missing cosmetics for other players (tracking not established)</li>
+     * <li>Lost packets (client not ready to receive)</li>
+     * <li>Visual glitches (rendering systems not initialized)</li>
+     * <li>Missing cosmetics for other players (tracking not established)</li>
      * </ul>
      *
-     * <p><b>How it works</b>:
+     * <p>
+     * <b>How it works</b>:
      * <ol>
-     *   <li>On player login, schedule a task for {@code currentTick + delay}</li>
-     *   <li>Every tick, check if any tasks are ready (current tick >= execute tick)</li>
-     *   <li>Send full cosmetics sync to the logged-in player (all other players' cosmetics)</li>
-     *   <li>Remove completed task from queue</li>
+     * <li>On player login, schedule a task for {@code currentTick + delay}</li>
+     * <li>Every tick, check if any tasks are ready (current tick >= execute
+     * tick)</li>
+     * <li>Send full cosmetics sync to the logged-in player (all other players'
+     * cosmetics)</li>
+     * <li>Remove completed task from queue</li>
      * </ol>
      *
-     * <p><b>Thread Safety</b>: Uses iterator.remove() to safely remove tasks during iteration.
-     * ConcurrentHashMap prevents ConcurrentModificationException if new tasks are added during iteration.
+     * <p>
+     * <b>Thread Safety</b>: Uses iterator.remove() to safely remove tasks during
+     * iteration.
+     * ConcurrentHashMap prevents ConcurrentModificationException if new tasks are
+     * added during iteration.
      *
-     * <p><b>Performance</b>: Early return if no tasks pending. Iterator allocation only when needed.
+     * <p>
+     * <b>Performance</b>: Early return if no tasks pending. Iterator allocation
+     * only when needed.
      *
      * @param evt The ServerTickEvent (only processes during END phase)
      */
     private static void onServerTick(final TickEvent.ServerTickEvent evt) {
-        if (evt.phase != TickEvent.Phase.END) return; // Only process at end of tick
+        if (evt.phase != TickEvent.Phase.END)
+            return; // Only process at end of tick
         long currentTick = serverTicks.incrementAndGet();
 
         // Process pending delayed sync tasks
-        if (pendingTasks.isEmpty()) return;
+        if (pendingTasks.isEmpty())
+            return;
 
         MinecraftServer server = evt.getServer();
         if (server == null) {
@@ -781,7 +922,8 @@ public class TwilightLib {
                     NetworkHandler.sendAllTrailsToPlayer(player);
                     NetworkHandler.sendAllEffectsToPlayer(player);
                     NetworkHandler.sendAllModelVariantsToPlayer(player);
-                    LOGGER.debug("While I wait, I will stay happy! Delayed cosmetics sync complete for {}", player.getGameProfile().getName());
+                    LOGGER.debug("While I wait, I will stay happy! Delayed cosmetics sync complete for {}",
+                            player.getGameProfile().getName());
                 } else {
                     LOGGER.debug("Goodbye, my new friend! Player left before delayed sync could complete");
                 }

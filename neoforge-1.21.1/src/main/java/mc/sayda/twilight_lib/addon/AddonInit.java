@@ -182,6 +182,14 @@ public class AddonInit {
                                                         "textures/addon/wings_" + i + ".png"));
                 }
 
+                AddonRegistry.registerAddon(
+                                "wings_pixie",
+                                WingsModel.LAYER_LOCATION,
+                                WingsModel::createBodyLayer,
+                                WingsModel::new,
+                                ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID,
+                                                "textures/addon/wings_pixie.png"));
+
                 // Register harpy legs addon - digitigrade bird legs (lower portion without
                 // thighs)
                 AddonRegistry.registerAddon(

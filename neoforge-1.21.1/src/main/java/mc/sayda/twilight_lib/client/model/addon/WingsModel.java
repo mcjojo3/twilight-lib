@@ -42,10 +42,7 @@ public class WingsModel<T extends Entity> extends BaseAddonModel<T> {
                 PartPose.offset(0.0F, 0.0F, 0.0F));
 
         // Right Wing
-        // Position: Moved down 1px from 10.0F -> 11.0F ("just move them down one
-        // pixel")
-        // Rotation: 1.0472F (60 deg) kept as requested ("perfect")
-
+        // Using texOffs(0, 0) - Front: 0-10, Back: 10-20
         Body.addOrReplaceChild("right_wing",
                 CubeListBuilder.create()
                         .texOffs(0, 0)
@@ -53,11 +50,14 @@ public class WingsModel<T extends Entity> extends BaseAddonModel<T> {
                 PartPose.offsetAndRotation(-0.5F, 11.0F, 2.0F, 0.0F, 1.0472F, 0.0F));
 
         // Left Wing
+        // Using mirror() and texOffs(0, 0) ensures it samples the same way as the right
+        // wing but flipped
         Body.addOrReplaceChild("left_wing",
                 CubeListBuilder.create()
-                        .texOffs(10, 0)
+                        .mirror()
+                        .texOffs(0, 0)
                         .addBox(0.0F, -14.0F, 0.0F, 10.0F, 14.0F, 0.0F, new CubeDeformation(0.01F)),
-                PartPose.offsetAndRotation(0.5F, 11.0F, 2.0F, 0.0F, 2.0944F, 0.0F)); // 120 deg (mirrored 60)
+                PartPose.offsetAndRotation(0.5F, 11.0F, 2.0F, 0.0F, -1.0472F, 0.0F));
 
         return LayerDefinition.create(meshdefinition, 64, 64);
     }

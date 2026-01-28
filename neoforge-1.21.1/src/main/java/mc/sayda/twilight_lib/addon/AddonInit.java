@@ -179,7 +179,13 @@ public class AddonInit {
                                         WingsModel::createBodyLayer,
                                         WingsModel::new,
                                         ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID,
-                                                        "textures/addon/wings_" + i + ".png"));
+                                                        "textures/addon/wings_" + i + ".png"),
+                                        false, // usePlayerSkin
+                                        true, // translucent
+                                        false, // hidePlayerModel
+                                        false, // forceAllTranslucent
+                                        Set.of("creraces") // modTags
+                        );
                 }
 
                 AddonRegistry.registerAddon(
@@ -188,7 +194,13 @@ public class AddonInit {
                                 WingsModel::createBodyLayer,
                                 WingsModel::new,
                                 ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID,
-                                                "textures/addon/wings_pixie.png"));
+                                                "textures/addon/wings_pixie.png"),
+                                false, // usePlayerSkin
+                                true, // translucent
+                                false, // hidePlayerModel
+                                false, // forceAllTranslucent
+                                Set.of("creraces") // modTags
+                );
 
                 // Register harpy legs addon - digitigrade bird legs (lower portion without
                 // thighs)

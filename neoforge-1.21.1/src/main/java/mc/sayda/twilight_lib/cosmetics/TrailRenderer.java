@@ -55,10 +55,12 @@ public class TrailRenderer {
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         // Check if trails are enabled in config
-        if (!TwilightConfig.ENABLE_TRAILS.get()) return;
+        if (!TwilightConfig.ENABLE_TRAILS.get())
+            return;
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.isPaused()) return;
+        if (mc.level == null || mc.isPaused())
+            return;
 
         tickCounter++;
 
@@ -95,7 +97,8 @@ public class TrailRenderer {
         // Get all active trails and render each one
         for (String activeTrailId : trails.getActiveTrails()) {
             TrailType trailType = TrailType.fromId(activeTrailId);
-            if (trailType == null) continue;
+            if (trailType == null || !trailType.isAvailable())
+                continue;
 
             renderSingleTrail(player, trailType);
         }
@@ -113,12 +116,15 @@ public class TrailRenderer {
         }
 
         // Don't render trails too frequently (configurable)
-        // Exception: Footprint trails spawn more frequently for consistent footstep spacing
-        int updateFrequency = (spawnMode == TrailSpawnMode.FOOTPRINT) ?
-            TwilightConfig.FOOTPRINT_UPDATE_FREQUENCY.get() : Math.max(1, TwilightConfig.TRAIL_UPDATE_FREQUENCY.get());
-        if (tickCounter % updateFrequency != 0) return;
+        // Exception: Footprint trails spawn more frequently for consistent footstep
+        // spacing
+        int updateFrequency = (spawnMode == TrailSpawnMode.FOOTPRINT) ? TwilightConfig.FOOTPRINT_UPDATE_FREQUENCY.get()
+                : Math.max(1, TwilightConfig.TRAIL_UPDATE_FREQUENCY.get());
+        if (tickCounter % updateFrequency != 0)
+            return;
 
-        // Calculate velocity based on position change for more accurate movement detection
+        // Calculate velocity based on position change for more accurate movement
+        // detection
         Vec3 currentPos = player.position();
         Vec3 lastPos = lastPositions.get(player.getUUID());
 
@@ -141,19 +147,25 @@ public class TrailRenderer {
         switch (spawnMode) {
             case MOVEMENT:
                 // Standard movement trail - requires movement, works in air and on ground
-                if (horizontalSpeed < TwilightConstants.Trail.MIN_HORIZONTAL_SPEED) return;
+                if (horizontalSpeed < TwilightConstants.Trail.MIN_HORIZONTAL_SPEED)
+                    return;
                 break;
 
             case FOOTPRINT:
                 // Footprint trail - requires movement AND being on ground
-                if (horizontalSpeed < TwilightConstants.Trail.MIN_HORIZONTAL_SPEED) return;
-                if (!player.onGround()) return; // Don't spawn footprints in air
+                if (horizontalSpeed < TwilightConstants.Trail.MIN_HORIZONTAL_SPEED)
+                    return;
+                if (!player.onGround())
+                    return; // Don't spawn footprints in air
                 break;
 
             case GROUNDED:
-                // Grounded trail - requires movement AND being on ground (but no foot alternation)
-                if (horizontalSpeed < TwilightConstants.Trail.MIN_HORIZONTAL_SPEED) return;
-                if (!player.onGround()) return; // Only spawn when on ground
+                // Grounded trail - requires movement AND being on ground (but no foot
+                // alternation)
+                if (horizontalSpeed < TwilightConstants.Trail.MIN_HORIZONTAL_SPEED)
+                    return;
+                if (!player.onGround())
+                    return; // Only spawn when on ground
                 break;
 
             case CONTINUOUS:
@@ -168,10 +180,10 @@ public class TrailRenderer {
             // Hearts - look up tier from supporter service
             Optional<SupporterData> supporterData = SupporterService.getSupporterData(player.getStringUUID());
             String tier = supporterData
-                .map(SupporterData::getTier)
-                .filter(t -> t != null && !t.equalsIgnoreCase("none"))
-                .orElse("bronze")
-                .toLowerCase();
+                    .map(SupporterData::getTier)
+                    .filter(t -> t != null && !t.equalsIgnoreCase("none"))
+                    .orElse("bronze")
+                    .toLowerCase();
 
             particleType = switch (tier) {
                 case "platinum" -> ModParticles.PLATINUM_HEART.get();
@@ -184,13 +196,15 @@ public class TrailRenderer {
             particleType = trailType.getParticleType();
         }
 
-        if (particleType == null) return;
+        if (particleType == null)
+            return;
 
         // Spawn particles at player's feet (accounts for morphs)
         Vec3 pos = player.position();
         double offsetY = TwilightConstants.Trail.FEET_OFFSET_Y; // Start at feet level (works for all entity heights)
 
-        // Special handling for footprint trails - alternating left/right feet with movement direction
+        // Special handling for footprint trails - alternating left/right feet with
+        // movement direction
         if (spawnMode == TrailSpawnMode.FOOTPRINT) {
             // Calculate movement direction vector
             Vec3 movement = player.getDeltaMovement();
@@ -210,8 +224,8 @@ public class TrailRenderer {
 
             // Calculate perpendicular offset for left/right foot placement
             // Perpendicular vector to movement direction (rotate 90 degrees)
-            double perpX = -dirZ;  // Perpendicular X
-            double perpZ = dirX;   // Perpendicular Z
+            double perpX = -dirZ; // Perpendicular X
+            double perpZ = dirX; // Perpendicular Z
 
             // Offset distance from center (paw width)
             double footOffset = 0.15; // Distance from center line
@@ -224,11 +238,11 @@ public class TrailRenderer {
             // Spawn footprint particles with movement direction
             for (int i = 0; i < trailType.getParticleCount(); i++) {
                 player.level().addParticle(
-                    particleType,
-                    footX,
-                    pos.y + offsetY - 0.05, // Slightly below feet level for ground contact
-                    footZ,
-                    dirX, 0, dirZ // Pass movement direction
+                        particleType,
+                        footX,
+                        pos.y + offsetY - 0.05, // Slightly below feet level for ground contact
+                        footZ,
+                        dirX, 0, dirZ // Pass movement direction
                 );
             }
         } else {
@@ -239,12 +253,11 @@ public class TrailRenderer {
                 double randomY = RANDOM.nextDouble() * TwilightConstants.Trail.PARTICLE_SPREAD_VERTICAL;
 
                 player.level().addParticle(
-                    particleType,
-                    pos.x + offsetX,
-                    pos.y + offsetY + randomY,
-                    pos.z + offsetZ,
-                    0, 0, 0
-                );
+                        particleType,
+                        pos.x + offsetX,
+                        pos.y + offsetY + randomY,
+                        pos.z + offsetZ,
+                        0, 0, 0);
             }
         }
     }

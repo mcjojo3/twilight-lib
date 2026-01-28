@@ -11,9 +11,11 @@ import java.util.Set;
  * Players can only have ONE effect active per category at a time.
  */
 public enum EffectType {
-    SPAWN_ETHEREAL("spawn_ethereal", "Ethereal particle burst (soul + portal + enchanting particles)", EffectCategory.SPAWN, Set.of()),
+    SPAWN_ETHEREAL("spawn_ethereal", "Ethereal particle burst (soul + portal + enchanting particles)",
+            EffectCategory.SPAWN, Set.of()),
     SPAWN_RAINBOW("spawn_rainbow", "Rainbow cycling particles (vibrant multi-color)", EffectCategory.SPAWN, Set.of()),
-    SPAWN_PORTAL("spawn_portal", "End portal particles with reverse gravity (mysterious void theme)", EffectCategory.SPAWN, Set.of()),
+    SPAWN_PORTAL("spawn_portal", "End portal particles with reverse gravity (mysterious void theme)",
+            EffectCategory.SPAWN, Set.of()),
     SPAWN_FROST("spawn_frost", "Snowflake particles (icy winter theme)", EffectCategory.SPAWN, Set.of()),
     SPAWN_FLAME("spawn_flame", "Soul fire particles (blazing fire theme)", EffectCategory.SPAWN, Set.of()),
     SPAWN_NATURE("spawn_nature", "Spore blossom particles (natural floral theme)", EffectCategory.SPAWN, Set.of()),
@@ -31,10 +33,9 @@ public enum EffectType {
 
     static {
         for (EffectType type : values()) {
-            // Only register effects if their required mods are loaded
-            if (ModRequirement.shouldLoad(type.modTags)) {
-                ID_CACHE.put(type.id, type);
-            }
+            // Register all effects - availability is checked via isAvailable() when needed
+            // This prevents early initialization issues where config isn't loaded yet
+            ID_CACHE.put(type.id, type);
         }
     }
 
@@ -59,6 +60,7 @@ public enum EffectType {
 
     /**
      * Get the mod tags for this effect.
+     * 
      * @return Set of required mod IDs (empty = always available)
      */
     public Set<String> getModTags() {
@@ -67,6 +69,7 @@ public enum EffectType {
 
     /**
      * Check if this effect is available based on loaded mods.
+     * 
      * @return true if this effect should be accessible
      */
     public boolean isAvailable() {
@@ -76,6 +79,7 @@ public enum EffectType {
     /**
      * Look up an effect type by its string ID using cached O(1) lookup.
      * Only returns effects that are available based on loaded mods.
+     * 
      * @param id The effect type ID
      * @return The matching EffectType, or null if not found or not available
      */

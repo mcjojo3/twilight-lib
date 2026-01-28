@@ -11,21 +11,33 @@ import java.util.Set;
 /**
  * Service for detecting loaded mods and checking cosmetic requirements.
  *
- * <p>This system enables mod-specific cosmetics that only load when their required mods are present.
- * Cosmetics can be tagged with one or more mod IDs, and will only register if at least one
+ * <p>
+ * This system enables mod-specific cosmetics that only load when their required
+ * mods are present.
+ * Cosmetics can be tagged with one or more mod IDs, and will only register if
+ * at least one
  * of those mods is loaded (OR logic).
  *
- * <p><b>Tagging Examples:</b>
+ * <p>
+ * <b>Tagging Examples:</b>
  * <ul>
- *   <li><b>Empty tags</b>: Cosmetic always loads (default Twilight Lib cosmetics)</li>
- *   <li><b>Single tag</b>: {@code Set.of("creraces")} - Loads only if CreRaces is present</li>
- *   <li><b>Multiple tags</b>: {@code Set.of("creraces", "other_mod")} - Loads if EITHER mod is present</li>
+ * <li><b>Empty tags</b>: Cosmetic always loads (default Twilight Lib
+ * cosmetics)</li>
+ * <li><b>Single tag</b>: {@code Set.of("creraces")} - Loads only if CreRaces is
+ * present</li>
+ * <li><b>Multiple tags</b>: {@code Set.of("creraces", "other_mod")} - Loads if
+ * EITHER mod is present</li>
  * </ul>
  *
- * <p><b>Complete Exclusion:</b> If a cosmetic's required mods aren't loaded, it's completely
- * invisible to the system - not registered, doesn't appear in commands, lists, or supporter tiers.
+ * <p>
+ * <b>Complete Exclusion:</b> If a cosmetic's required mods aren't loaded, it's
+ * completely
+ * invisible to the system - not registered, doesn't appear in commands, lists,
+ * or supporter tiers.
  *
- * <p><b>Thread Safety:</b> Initialization happens once during mod loading (single-threaded).
+ * <p>
+ * <b>Thread Safety:</b> Initialization happens once during mod loading
+ * (single-threaded).
  * After initialization, the loaded mods set is immutable (read-only access).
  *
  * @author SaydaGames (mc_jojo3)
@@ -36,7 +48,8 @@ public class ModRequirement {
 
     /**
      * Set of mod IDs that are currently loaded.
-     * Mutable during initialization, then made immutable after detectMods() completes.
+     * Mutable during initialization, then made immutable after detectMods()
+     * completes.
      */
     private static Set<String> LOADED_MODS = new HashSet<>();
 
@@ -51,18 +64,20 @@ public class ModRequirement {
      * Add new mod IDs here as integrations are added.
      */
     private static final String[] KNOWN_MODS = {
-        "creraces",           // CreRaces - kitsune cosmetics
-        "mgrr",
+            "creraces", // CreRaces - kitsune cosmetics
+            "mgrr",
     };
 
     /**
      * Initialize mod detection on startup.
      * Called from TwilightLib constructor before cosmetic registration.
      *
-     * <p><b>Execution Order (Critical!):</b>
+     * <p>
+     * <b>Execution Order (Critical!):</b>
      * <ol>
-     *   <li>Call this method FIRST (before AddonInit, TrailType, EffectType initialization)</li>
-     *   <li>Then register cosmetics (they'll be filtered based on detected mods)</li>
+     * <li>Call this method FIRST (before AddonInit, TrailType, EffectType
+     * initialization)</li>
+     * <li>Then register cosmetics (they'll be filtered based on detected mods)</li>
      * </ol>
      */
     public static void detectMods() {
@@ -83,9 +98,10 @@ public class ModRequirement {
 
         if (detected > 0) {
             LOGGER.info("I like all these things around me! Detected {} compatible mod(s): {}",
-                       detected, String.join(", ", LOADED_MODS));
+                    detected, String.join(", ", LOADED_MODS));
         } else {
-            LOGGER.info("I like all these things around me! No integration mods detected, using default cosmetics only.");
+            LOGGER.info(
+                    "I like all these things around me! No integration mods detected, using default cosmetics only.");
         }
 
         // Make the set immutable after initialization for thread safety
@@ -95,6 +111,7 @@ public class ModRequirement {
 
     /**
      * Check if a specific mod is loaded and add it to the loaded set.
+     * 
      * @param modId The mod ID to check (e.g., "creraces")
      * @return true if mod is loaded
      */
@@ -110,11 +127,12 @@ public class ModRequirement {
     /**
      * Check if a cosmetic should load based on its mod tags.
      *
-     * <p><b>Logic:</b>
+     * <p>
+     * <b>Logic:</b>
      * <ul>
-     *   <li>Config override → if FORCE_LOAD_ALL_ADDONS is enabled, always load</li>
-     *   <li>Empty tags → always load (default behavior)</li>
-     *   <li>Non-empty tags → load if ANY tag matches a loaded mod (OR logic)</li>
+     * <li>Config override → if FORCE_LOAD_ALL_ADDONS is enabled, always load</li>
+     * <li>Empty tags → always load (default behavior)</li>
+     * <li>Non-empty tags → load if ANY tag matches a loaded mod (OR logic)</li>
      * </ul>
      *
      * @param modTags Set of mod IDs this cosmetic requires (empty = always load)
@@ -123,14 +141,18 @@ public class ModRequirement {
     public static boolean shouldLoad(Set<String> modTags) {
         // Config override: force load all addons regardless of mod requirements
         try {
-            if (TwilightConfig.FORCE_LOAD_ALL_ADDONS.get()) {
+            if (TwilightConfig.FORCE_LOAD_ALL_ADDONS != null && TwilightConfig.FORCE_LOAD_ALL_ADDONS.get()) {
+                LOGGER.info(
+                        "I should come here every millennium! FORCE_LOAD_ALL_ADDONS is enabled, allowing cosmetic registration for tags: {}",
+                        modTags == null ? "none" : String.join(", ", modTags));
                 return true;
             }
         } catch (IllegalStateException e) {
             // Config not loaded yet - default to false (don't force load)
-            // This can happen during early initialization when addons register before config loads
-            LOGGER.debug("Or, what. Config not loaded yet, using default behavior for shouldLoad (modTags: {})",
-                modTags == null ? "null" : (modTags.isEmpty() ? "empty" : String.join(", ", modTags)));
+            // This can happen during early initialization when addons register before
+            // config loads
+            LOGGER.debug("Or, what. Config not ready for shouldLoad (modTags: {}), using default mod-check behavior",
+                    modTags == null ? "null" : (modTags.isEmpty() ? "empty" : String.join(", ", modTags)));
         }
 
         // Empty tags = always load (default Twilight Lib cosmetics)
@@ -151,6 +173,7 @@ public class ModRequirement {
 
     /**
      * Check if a specific mod is loaded.
+     * 
      * @param modId The mod ID to check
      * @return true if mod is loaded
      */
@@ -160,6 +183,7 @@ public class ModRequirement {
 
     /**
      * Get all detected mods (immutable copy).
+     * 
      * @return Set of loaded mod IDs
      */
     public static Set<String> getLoadedMods() {

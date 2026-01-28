@@ -36,14 +36,14 @@ public enum TrailType {
 
     static {
         for (TrailType type : values()) {
-            // Only register trails if their required mods are loaded
-            if (ModRequirement.shouldLoad(type.modTags)) {
-                ID_CACHE.put(type.id, type);
-            }
+            // Register all trails - availability is checked via isAvailable() when needed
+            // This prevents early initialization issues where config isn't loaded yet
+            ID_CACHE.put(type.id, type);
         }
     }
 
-    TrailType(String id, ParticleOptions particleType, int particleCount, TrailSpawnMode spawnMode, Set<String> modTags) {
+    TrailType(String id, ParticleOptions particleType, int particleCount, TrailSpawnMode spawnMode,
+            Set<String> modTags) {
         this.id = id;
         this.particleType = particleType;
         this.particleCount = particleCount;
@@ -56,7 +56,9 @@ public enum TrailType {
     }
 
     /**
-     * Get the particle type for this trail. Can be null for tier-based trails (e.g., hearts).
+     * Get the particle type for this trail. Can be null for tier-based trails
+     * (e.g., hearts).
+     * 
      * @return The particle type, or null if tier-based
      */
     @Nullable
@@ -73,7 +75,9 @@ public enum TrailType {
     }
 
     /**
-     * Get the spawn mode for this trail, which determines when and how particles spawn.
+     * Get the spawn mode for this trail, which determines when and how particles
+     * spawn.
+     * 
      * @return The spawn mode (MOVEMENT, FOOTPRINT, CONTINUOUS, or GROUNDED)
      */
     public TrailSpawnMode getSpawnMode() {
@@ -81,9 +85,12 @@ public enum TrailType {
     }
 
     /**
-     * Check if this trail is a footprint-style trail (alternating left/right placement).
+     * Check if this trail is a footprint-style trail (alternating left/right
+     * placement).
+     * 
      * @return true if spawn mode is FOOTPRINT
-     * @deprecated Use getSpawnMode() instead for more flexible spawn behavior checking
+     * @deprecated Use getSpawnMode() instead for more flexible spawn behavior
+     *             checking
      */
     @Deprecated
     public boolean isFootprint() {
@@ -92,6 +99,7 @@ public enum TrailType {
 
     /**
      * Get the mod tags for this trail.
+     * 
      * @return Set of required mod IDs (empty = always available)
      */
     public Set<String> getModTags() {
@@ -100,6 +108,7 @@ public enum TrailType {
 
     /**
      * Check if this trail is available based on loaded mods.
+     * 
      * @return true if this trail should be accessible
      */
     public boolean isAvailable() {
@@ -109,6 +118,7 @@ public enum TrailType {
     /**
      * Look up a trail type by its string ID using cached O(1) lookup.
      * Only returns trails that are available based on loaded mods.
+     * 
      * @param id The trail type ID
      * @return The matching TrailType, or null if not found or not available
      */

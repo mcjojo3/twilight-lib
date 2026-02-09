@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "mc.sayda.twilight_lib.fabric.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "priority": 1000,
+  "mixins": [
+    "FabricPlayerAttributeMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

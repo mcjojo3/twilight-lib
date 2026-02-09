@@ -1,0 +1,70 @@
+package mc.sayda.twilight_lib;
+
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.RangedAttribute;
+import dev.architectury.registry.registries.Registrar;
+
+public class ModAttributes {
+        public static final Registrar<Attribute> ATTRIBUTES = dev.architectury.registry.registries.RegistrarManager
+                        .get(TwilightLib.MODID).get(net.minecraft.core.registries.Registries.ATTRIBUTE);
+
+        public static final dev.architectury.registry.registries.RegistrySupplier<Attribute> MINING_PENALTY = ATTRIBUTES
+                        .register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID,
+                                        "mining_penalty"),
+                                        () -> new RangedAttribute("attribute.name.twilight_lib.mining_penalty", 1.0,
+                                                        0.0, 1.0)
+                                                        .setSyncable(true));
+
+        public static final dev.architectury.registry.registries.RegistrySupplier<Attribute> FOV_MODIFIER = ATTRIBUTES
+                        .register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID,
+                                        "fov_modifier"),
+                                        () -> new RangedAttribute("attribute.name.twilight_lib.fov_modifier", 1.0, 0.0,
+                                                        1.0)
+                                                        .setSyncable(true));
+
+        public static final dev.architectury.registry.registries.RegistrySupplier<Attribute> ALLOW_HELMET = ATTRIBUTES
+                        .register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID,
+                                        "allow_helmet"),
+                                        () -> new RangedAttribute("attribute.name.twilight_lib.allow_helmet", 1.0, 0.0,
+                                                        1.0)
+                                                        .setSyncable(true));
+
+        public static final dev.architectury.registry.registries.RegistrySupplier<Attribute> ALLOW_CHESTPLATE = ATTRIBUTES
+                        .register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID,
+                                        "allow_chestplate"),
+                                        () -> new RangedAttribute("attribute.name.twilight_lib.allow_chestplate", 1.0,
+                                                        0.0, 1.0)
+                                                        .setSyncable(true));
+
+        public static final dev.architectury.registry.registries.RegistrySupplier<Attribute> ALLOW_LEGGINGS = ATTRIBUTES
+                        .register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID,
+                                        "allow_leggings"),
+                                        () -> new RangedAttribute("attribute.name.twilight_lib.allow_leggings", 1.0,
+                                                        0.0, 1.0)
+                                                        .setSyncable(true));
+
+        public static final dev.architectury.registry.registries.RegistrySupplier<Attribute> ALLOW_BOOTS = ATTRIBUTES
+                        .register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID,
+                                        "allow_boots"),
+                                        () -> new RangedAttribute("attribute.name.twilight_lib.allow_boots", 1.0, 0.0,
+                                                        1.0)
+                                                        .setSyncable(true));
+
+        public static final dev.architectury.registry.registries.RegistrySupplier<Attribute> ELYTRA_FLIGHT = ATTRIBUTES
+                        .register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID,
+                                        "elytra_flight"),
+                                        () -> new RangedAttribute("attribute.name.twilight_lib.elytra_flight", 0.0, 0.0,
+                                                        1024.0)
+                                                        .setSyncable(true));
+
+        public static net.minecraft.core.Holder<Attribute> getHolder(
+                        dev.architectury.registry.registries.RegistrySupplier<Attribute> supplier) {
+                return net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.wrapAsHolder(supplier.get());
+        }
+
+        public static void register() {
+                // Trigger class loading and log registration
+                com.mojang.logging.LogUtils.getLogger().info("Yes! This'll be fun! Registering Twilight Attributes...");
+                ATTRIBUTES.getClass(); // Force static init
+        }
+}

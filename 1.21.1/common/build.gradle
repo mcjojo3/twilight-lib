@@ -1,0 +1,20 @@
+architectury {
+    common(rootProject.property('1_21_1_enabled_platforms').split(","))
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/twilight_lib.accesswidener")
+    mixin {
+        useLegacyMixinAp = true
+    }
+}
+
+dependencies {
+    // We depend on fabric loader here to use the fabric @Environment annotations and get the mixin json properties
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    // Architectury API
+    modApi "dev.architectury:architectury:${rootProject.property('1_21_1_architectury_version')}"
+    // Utilities
+    implementation "com.google.code.findbugs:jsr305:3.0.2"
+    api "com.google.code.findbugs:jsr305:3.0.2"
+}

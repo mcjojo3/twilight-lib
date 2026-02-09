@@ -1,0 +1,11 @@
+{
+    "required": true,
+    "package": "mc.sayda.twilight_lib.mixin.fabric",
+    "compatibilityLevel": "JAVA_17",
+    "mixins": [
+        "PlayerMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

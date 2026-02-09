@@ -74,17 +74,51 @@ tmp/
 # IDE workspace folders
 .claude/
 
-# Windows shortcuts (leftover from old structure)
+# Windows shortcuts & legacy
 *.lnk
 NUL
-TRAIL_TUTORIAL.txt
-zoe_quotes_reference.txt
-ADDON_CONVERSION_TUTORIAL.txt
-DEVELOPER_GUIDE.txt
-QUOTE_STANDARD.md
-code_audit.md
-ADDON_TUTORIAL.txt
-CONFIG_AUDIT_REPORT.md
-code_audit_2025-12-04.md
-code_audit_2025-12-09.md
+/.legacy
+
+# Assistants & Local Tools
+.gemini/
+.history/
+
+# Additional Minecraft Junk
+crash-reports/
+usercache.json
+usernamecache.json
+stats/
+advancements/
+backups/
+screenshots/
+logs/
+!/src/**/logs/  # Keep logs directory in source if it exists
+replay_mod_recordings/
+.mixin.out/
+.mixin.out
+
+# Additional IDE & System
+.factorypath
+*.code-workspace
+*.launch
+.nb-gradle
+.vscode-test/
+desktop.ini
+$RECYCLE.BIN/
+System Volume Information/
+*.patch
+*.diff
+
+# Java & Local Config
+local.properties
+.apt_generated/
+*.jar
+!gradle-wrapper.jar
+
+# Umbrella Ignores (Ignore all of a type except specific ones)
+*.md
+!README.md
+
 *.txt
+!LICENSE.txt
+!CREDITS.txt

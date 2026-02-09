@@ -1,0 +1,32 @@
+{
+    "schemaVersion": 1,
+    "id": "twilight_lib",
+    "version": "${version}",
+    "name": "Twilight Lib",
+    "description": "Twilight Lib is a library mod used by mc_jojo3's mods.",
+    "authors": [
+        "mc_jojo3"
+    ],
+    "contact": {},
+    "license": "All Rights Reserved",
+    "icon": "logo.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "mc.sayda.twilight_lib.fabric.TwilightLibFabric"
+        ],
+        "client": [
+            "mc.sayda.twilight_lib.fabric.TwilightLibFabricClient"
+        ]
+    },
+    "mixins": [
+        "twilight_lib.mixins.json",
+        "twilight_lib-fabric.mixins.json"
+    ],
+    "depends": {
+        "fabricloader": ">=0.14.22",
+        "minecraft": ">=1.20.1",
+        "java": ">=17",
+        "architectury": ">=9.2.14"
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "required": true,
+    "package": "mc.sayda.twilight_lib.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "mixins": [
+        "ArmorEquipMixin",
+        "ArmorItemMixin",
+        "ArmorSlotMixin",
+        "AttributeSupplierAccessor",
+        "AttributeInstanceAccessor",
+        "DefaultAttributesAccessor",
+        "EntityMixin",
+        "LivingEntityAccessor",
+        "LivingEntityMixin",
+        "PlayerMixin",
+        "PlayerMiningMixin",
+        "PlayerMorphSoundMixin"
+    ],
+    "client": [
+        "AddonRenderMixin",
+        "LocalPlayerMixin",
+        "PlayerModelVariantMixin",
+        "client.AbstractClientPlayerMixin",
+        "client.PlayerRendererMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

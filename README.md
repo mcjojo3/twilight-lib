@@ -76,4 +76,4 @@ The project uses a centralized Gradle setup. You can build all platforms simulta
 - **Special Thanks**: To all supporters who make development possible!
 
 ---
-<p align="center">Made with ❤️ by mc_jojo3</p>
+<p align="center">Made by mc_jojo3</p>

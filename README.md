@@ -1,92 +1,79 @@
-# Twilight Lib
+# ✨ Twilight Lib
 
-Twilight Lib is a library mod used by mc_jojo3's mods. It is designed to more easily allow synchronization and compatibility between my different mods and is in no way meant to be used in other ways. If anyone (which I doubt) finds this mod useful for other purposes, feel free to use it.
+[![CurseForge](https://img.shields.io/badge/CurseForge-Twilight_Lib-orange?style=for-the-badge&logo=curseforge)](https://legacy.curseforge.com/minecraft/mc-mods/twilight-lib)
+[![Modrinth](https://img.shields.io/badge/Modrinth-Twilight_Lib-green?style=for-the-badge&logo=modrinth)](https://modrinth.com/mod/twilight-lib)
 
-- [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/twilight-lib)
-- [Modrinth](https://modrinth.com/mod/twilight-lib)
+**Twilight Lib** is a high-performance, cross-platform library mod designed for mc_jojo3's projects. It provides a robust framework for player cosmetics, data synchronization, and multi-loader compatibility.
+
+---
+
+## 🚀 Key Features
+
+### 🎭 Advanced Morph System
+Transform into any supported Minecraft entity. The system automatically handles:
+- **Visual Transforms**: Accurate entity rendering.
+- **Hitbox Synchronization**: Server-side hitbox updates to match the morphed entity.
+- **Perspective Adjustment**: Eye height shifts based on entity size.
+
+### 👒 Cosmetic Addon System
+Attach custom 3D models directly to the player rig:
+- **Modular Addons**: Equipment like tails, ears, wings, and more.
+- **Tinting System**: Support for per-layer color overrides.
+- **Low Impact**: Optimized rendering to ensure zero FPS drops.
+
+### ✨ Ambient Cosmetics
+- **Particle Trails**: Custom particle effects that follow movement.
+- **Visual Effects**: Special effects for spawning, death, and persistent idle states.
+
+### 🛡️ Supporter Integration
+- **Cross-Platform Sync**: Automatic unlocking of cosmetics based on supporter tiers.
+- **Persistent Storage**: All selections are saved to player NBT and synchronized across servers.
+
+---
 
 ## 📁 Repository Structure
 
-This repository uses a **mono-repo structure** with independent mod projects:
+This repository follows a **multi-version ARCHITECTURY** pattern, allowing seamless development across multiple Minecraft versions and loaders:
 
-- **`forge-1.20.1/`** - Forge 1.20.1 mod (standalone Gradle project)
-- **`neoforge-1.21.1/`** - NeoForge 1.21.1 mod (standalone Gradle project)
+- **[`1.20.1/`](file:///H:/Github/twilight-lib/1.20.1)**: Supports Forge & Fabric.
+- **[`1.21.1/`](file:///H:/Github/twilight-lib/1.21.1)**: Supports NeoForge & Fabric.
 
-Each module is a complete, independent Gradle project with its own isolated dependency cache. This prevents classpath conflicts and allows both modules to be developed simultaneously.
+Each version is further divided into:
+- **`common`**: Shared core logic, registry, and assets.
+- **`fabric` / `forge` / `neoforge`**: Platform-specific hooks and implementation.
 
-### Quick Start
+---
 
-**Building:**
+## 🛠️ Build Information
+
+The project uses a centralized Gradle setup. You can build all platforms simultaneously from the root directory.
+
+### **Building**
 ```bash
-# Forge 1.20.1
-cd forge-1.20.1
-./gradlew build
-
-# NeoForge 1.21.1
-cd neoforge-1.21.1
 ./gradlew build
 ```
 
-**Running:**
+### **Running (Dev Environment)**
 ```bash
-# Forge 1.20.1
-cd forge-1.20.1
-./gradlew runClient --offline
+# 1.20.1 Fabric
+./gradlew :1.20.1:fabric:runClient
 
-# NeoForge 1.21.1
-cd neoforge-1.21.1
-./gradlew runClient --offline
+# 1.21.1 NeoForge
+./gradlew :1.21.1:neoforge:runClient
 ```
 
-> **Note**: Both modules work fully in offline mode after initial dependency download. The isolated Gradle caches (`.gradle-forge/` and `.gradle-neoforge/`) ensure no conflicts between versions.
+---
 
-<details>
-<summary><strong><u>Functionalities</u></strong></summary>
-
-- Synchronize data between mods, like tags, variables etc
-- Custom renderer, for mods like [CreRaces Classic](https://modrinth.com/mod/creraces) etc
-- Possibly some shared items / blocks and more...
-
-</details>
-
-<details>
-<summary><strong><u>Mods utilizing the Library</u></strong></summary>
-
+## 🤝 Used By
 - [CreRaces](https://modrinth.com/mod/creraces-experimental)
 - [CreRaces Classic](https://modrinth.com/mod/creraces)
 
-</details>
+---
 
-<details>
-<summary><strong><u>Supported Versions</u></strong></summary>
+## 📜 Credits
+- **Primary Developer**: [mc_jojo3](https://www.legacy.curseforge.com/members/mc_jojo3/)
+- **Icon Art**: Traced from original art by [Kezi](https://www.artstation.com/kezi)
+- **Special Thanks**: To all supporters who make development possible!
 
-- **1.7.10:** N/A: None
-- **1.12.2:** N/A: None
-- **1.14.4:** N/A: None
-- **1.15.2:** N/A: None
-- **1.16.5:** N/A: None
-- **1.17.1:** N/A: None
-- **1.18.2:** N/A: None
-- **1.19.2:** N/A: None
-- **1.19.4:** N/A: None
-- **1.20.1:** ADS: "Active Development Support" (Forge)
-- **1.20.4:** N/A: None
-- **1.20.6:** N/A: None
-- **1.21.1:** ADS: "Active Development Support" (NeoForge)
-
-*Do note that this is the plan, but things may change over time!*
-
-</details>
-
-<details>
-<summary><strong><u>Credits</u></strong></summary>
-
-- **Developers:**
-  - [mc_jojo3](https://www.legacy.curseforge.com/members/mc_jojo3/)
-
-- **Textures:**
-  - Icon traced from art by [Kezi](https://www.artstation.com/kezi)
-
-</details>
-
-Made by: [mc_jojo3](https://modrinth.com/user/mcjojo3)
+---
+<p align="center">Made with ❤️ by mc_jojo3</p>

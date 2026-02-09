@@ -2,6 +2,7 @@
 
 [![CurseForge](https://img.shields.io/badge/CurseForge-Twilight_Lib-orange?style=for-the-badge&logo=curseforge)](https://legacy.curseforge.com/minecraft/mc-mods/twilight-lib)
 [![Modrinth](https://img.shields.io/badge/Modrinth-Twilight_Lib-green?style=for-the-badge&logo=modrinth)](https://modrinth.com/mod/twilight-lib)
+[![Patreon](https://img.shields.io/badge/Patreon-Support_Me-red?style=for-the-badge&logo=patreon)](https://www.patreon.com/creraces)
 
 **Twilight Lib** is a high-performance, cross-platform library mod designed for mc_jojo3's projects. It provides a robust framework for player cosmetics, data synchronization, and multi-loader compatibility.
 
@@ -73,6 +74,7 @@ The project uses a centralized Gradle setup. You can build all platforms simulta
 ## 📜 Credits
 - **Primary Developer**: [mc_jojo3](https://www.legacy.curseforge.com/members/mc_jojo3/)
 - **Icon Art**: Traced from original art by [Kezi](https://www.artstation.com/kezi)
+- **Support**: Join our [Patreon](https://www.patreon.com/creraces) to support development!
 - **Special Thanks**: To all supporters who make development possible!
 
 ---

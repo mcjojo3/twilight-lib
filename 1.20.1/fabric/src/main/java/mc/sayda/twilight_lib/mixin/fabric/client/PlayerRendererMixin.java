@@ -1,4 +1,4 @@
-package mc.sayda.twilight_lib.mixin.client;
+package mc.sayda.twilight_lib.mixin.fabric.client;
 
 import mc.sayda.twilight_lib.client.renderer.PlayerAddonLayer;
 import net.minecraft.client.model.PlayerModel;
@@ -29,7 +29,7 @@ public abstract class PlayerRendererMixin
         this.addLayer(new PlayerAddonLayer(this));
     }
 
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "render(Lnet/minecraft/client/player/AbstractClientPlayer;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
     public void twilight_lib$render(AbstractClientPlayer entity, float entityYaw, float partialTicks,
             PoseStack matrixStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
         if (MorphRenderHandler.onRenderPlayerPre(entity,

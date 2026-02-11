@@ -1,4 +1,4 @@
-package mc.sayda.twilight_lib.mixin;
+package mc.sayda.twilight_lib.mixin.fabric;
 
 import mc.sayda.twilight_lib.capabilities.DataUtils;
 import mc.sayda.twilight_lib.client.ClientModelVariantCache;
@@ -16,32 +16,28 @@ import java.util.UUID;
 @Mixin(PlayerInfo.class)
 public class PlayerModelVariantMixin {
 
-    @Inject(method = { "getModelName", "m_105051_" }, at = @At("RETURN"), cancellable = true, remap = false)
+    @Inject(method = "getModelName", at = @At("RETURN"), cancellable = true)
     private void twilightlib$overrideModelName(CallbackInfoReturnable<String> cir) {
         PlayerInfo playerInfo = (PlayerInfo) (Object) this;
         UUID playerUUID = playerInfo.getProfile().getId();
 
-        // Check client player first (for first-person rendering)
+        // 1. Check client-side cache first (most reliable for network-synced variants)
+        ResourceLocation cachedVariantId = ClientModelVariantCache.getModelVariant(playerUUID);
+        if (cachedVariantId != null) {
+            mc.sayda.twilight_lib.api.model_variant.IModelVariantRegistry.getInstance()
+                    .get(cachedVariantId)
+                    .ifPresent(m -> cir.setReturnValue(m.isSlim() ? "slim" : "default"));
+            return;
+        }
+
+        // 2. Fallback to capability (useful for self if cache not yet populated)
         Minecraft minecraftInstance = Minecraft.getInstance();
         if (minecraftInstance.player != null && minecraftInstance.player.getUUID().equals(playerUUID)) {
             var modelVariantData = DataUtils.getModelVariantData(minecraftInstance.player);
             if (modelVariantData != null && modelVariantData.hasCustomVariant()) {
-                String newModel = modelVariantData.getVariant()
-                        .map(m -> m.isSlim() ? "slim" : "default")
-                        .orElse(cir.getReturnValue());
-                cir.setReturnValue(newModel);
-                return;
+                modelVariantData.getVariant()
+                        .ifPresent(m -> cir.setReturnValue(m.isSlim() ? "slim" : "default"));
             }
-        }
-
-        // For other players, use client-side cache
-        ResourceLocation cachedVariantId = ClientModelVariantCache.getModelVariant(playerUUID);
-        if (cachedVariantId != null) {
-            String newModel = mc.sayda.twilight_lib.api.model_variant.IModelVariantRegistry.getInstance()
-                    .get(cachedVariantId)
-                    .map(m -> m.isSlim() ? "slim" : "default")
-                    .orElse(cir.getReturnValue());
-            cir.setReturnValue(newModel);
         }
     }
 }

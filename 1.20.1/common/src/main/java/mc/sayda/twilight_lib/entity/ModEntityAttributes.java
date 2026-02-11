@@ -1,12 +1,10 @@
 package mc.sayda.twilight_lib.entity;
 
 import com.mojang.logging.LogUtils;
-import mc.sayda.twilight_lib.TwilightLib;
 import net.minecraft.world.entity.animal.Fox;
 import org.slf4j.Logger;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 // In 1.21.1, bus parameter is deprecated - MOD bus is implied
 import dev.architectury.registry.level.entity.EntityAttributeRegistry;

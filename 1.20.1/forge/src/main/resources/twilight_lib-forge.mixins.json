@@ -1,0 +1,14 @@
+{
+    "required": true,
+    "package": "mc.sayda.twilight_lib.mixin.forge",
+    "compatibilityLevel": "JAVA_17",
+    "mixins": [
+        "PlayerModelVariantMixin"
+    ],
+    "client": [
+        "client.AddonRenderMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

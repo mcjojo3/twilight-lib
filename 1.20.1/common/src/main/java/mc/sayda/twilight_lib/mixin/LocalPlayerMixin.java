@@ -7,6 +7,12 @@ import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
+/**
+ * Reserved for future client-side enhancements (e.g. morph physics, input
+ * handling).
+ * Currently serves as a placeholder for capability-related state access on the
+ * client.
+ */
 @Mixin(LocalPlayer.class)
 public abstract class LocalPlayerMixin extends LivingEntity {
 

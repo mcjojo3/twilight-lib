@@ -9,18 +9,13 @@
         "EntityMixin",
         "LivingEntityAccessor",
         "LivingEntityMixin",
-        "PlayerAttributesMixin",
         "PlayerMixin",
         "PlayerMiningMixin",
         "PlayerMorphSoundMixin"
     ],
     "client": [
-        "AddonRenderMixin",
         "LocalPlayerMixin",
-        "PlayerModelVariantMixin",
-        "client.AbstractClientPlayerMixin",
-        "client.GameRendererMixin",
-        "client.PlayerRendererMixin"
+        "client.AbstractClientPlayerMixin"
     ],
     "injectors": {
         "defaultRequire": 1

@@ -1,4 +1,4 @@
-package mc.sayda.twilight_lib.mixin;
+package mc.sayda.twilight_lib.mixin.forge.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import mc.sayda.twilight_lib.client.renderer.AddonRenderHandler;

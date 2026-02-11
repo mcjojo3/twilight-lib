@@ -27,7 +27,7 @@ public class PlayerMiningMixin {
         Player player = (Player) (Object) this;
 
         // Skip if penalty is not removed
-        if (player.getAttributeValue(ModAttributes.getHolder(ModAttributes.MINING_PENALTY)) > 0) {
+        if (player.getAttributeValue(ModAttributes.MINING_PENALTY.get()) > 0) {
             return;
         }
 

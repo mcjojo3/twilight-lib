@@ -33,7 +33,18 @@ public class TwilightLibForge {
         }
 
         modBus.addListener(this::onRegisterCapabilities);
+        modBus.addListener(this::onAttributeModification);
         MinecraftForge.EVENT_BUS.addGenericListener(Entity.class, this::attachEntityCaps);
+    }
+
+    private void onAttributeModification(final EntityAttributeModificationEvent event) {
+        event.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.MINING_PENALTY.get());
+        event.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.FOV_MODIFIER.get());
+        event.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_HELMET.get());
+        event.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_CHESTPLATE.get());
+        event.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_LEGGINGS.get());
+        event.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ALLOW_BOOTS.get());
+        event.add(net.minecraft.world.entity.EntityType.PLAYER, ModAttributes.ELYTRA_FLIGHT.get());
     }
 
     private void onRegisterCapabilities(final RegisterCapabilitiesEvent evt) {

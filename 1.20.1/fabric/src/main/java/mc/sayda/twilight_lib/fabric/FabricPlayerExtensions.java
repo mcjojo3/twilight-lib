@@ -15,4 +15,6 @@ public interface FabricPlayerExtensions {
     IModelVariant twilight_lib$getModelVariant();
 
     CompoundTag twilight_lib$getPersistentData();
+
+    void twilight_lib$copyFrom(net.minecraft.world.entity.player.Player other);
 }

@@ -17,6 +17,15 @@ public class PlayerMiningMixin {
 
     private static volatile net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> AQUA_AFFINITY_CACHE = null;
     private static boolean AQUA_AFFINITY_FAILED = false;
+    private static final java.util.concurrent.atomic.AtomicBoolean LOG_ONCE = new java.util.concurrent.atomic.AtomicBoolean(
+            false);
+
+    @Inject(method = "getDigSpeed", // NeoForge-added method
+            at = @At("RETURN"), cancellable = true, remap = false, require = 0)
+    private void twilightlib$onGetDigSpeed(BlockState state, net.minecraft.core.BlockPos pos,
+            CallbackInfoReturnable<Float> cir) {
+        twilightlib$onGetDestroySpeed(state, cir);
+    }
 
     @Inject(method = "getDestroySpeed", at = @At("RETURN"), cancellable = true)
     private void twilightlib$onGetDestroySpeed(BlockState state, CallbackInfoReturnable<Float> cir) {

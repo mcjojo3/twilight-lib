@@ -19,12 +19,13 @@ import java.util.Set;
 public class CosmeticManager {
 
     /**
-     * Re-syncs all cosmetics for a player, including supporter grants and network
-     * packets.
-     * 
-     * @param player The player to sync
+     * Re-syncs all cosmetics for a player.
+     *
+     * @param player              The player to sync
+     * @param triggerSpawnEffects Whether to trigger spawn effects
+     *                            (particles/sounds)
      */
-    public static void resyncAll(ServerPlayer player) {
+    public static void resyncAll(ServerPlayer player, boolean triggerSpawnEffects) {
         if (player == null || player.isRemoved())
             return;
 
@@ -58,7 +59,8 @@ public class CosmeticManager {
         // 5. Sync Effects
         IEffects effects = DataUtils.getEffectsData(player);
         if (effects != null) {
-            NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects(), true));
+            NetworkHandler.sendEffectsToAll(
+                    new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects(), triggerSpawnEffects));
             DataUtils.getPersistentData(player).put(TwilightConstants.NBT_EFFECTS, effects.serialize());
         }
 
@@ -68,6 +70,17 @@ public class CosmeticManager {
             NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
             DataUtils.getPersistentData(player).put(TwilightConstants.NBT_MODEL_VARIANT, modelVariant.serialize());
         }
+
+        // 7. Sync OTHERS to SELF (Catch-up sync for others' cosmetics)
+        NetworkHandler.sendAllMorphsToPlayer(player);
+        NetworkHandler.sendAllAddonsToPlayer(player);
+        NetworkHandler.sendAllTrailsToPlayer(player);
+        NetworkHandler.sendAllEffectsToPlayer(player);
+        NetworkHandler.sendAllModelVariantsToPlayer(player);
+    }
+
+    public static void resyncAll(ServerPlayer player) {
+        resyncAll(player, true);
     }
 
     /**

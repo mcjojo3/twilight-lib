@@ -24,7 +24,6 @@ import mc.sayda.twilight_lib.supporter.SupporterService;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 
@@ -195,48 +194,48 @@ public class TwilightLib {
     private static void onPlayerClone(ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean wasDeath) {
         CompoundTag oldData = DataUtils.getPersistentData(oldPlayer);
 
-        if (oldData.contains(TwilightConstants.NBT_MORPH, CompoundTag.TAG_COMPOUND)) {
+        if (oldData.contains(TwilightConstants.NBT_MORPH, 10)) {
             IMorph newMorph = DataUtils.getMorphData(newPlayer);
             if (newMorph != null) {
-                newMorph.deserialize(oldData.getCompound(TwilightConstants.NBT_MORPH));
-                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_MORPH,
-                        oldData.getCompound(TwilightConstants.NBT_MORPH));
+                CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_MORPH);
+                newMorph.deserialize(tag);
+                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_MORPH, tag.copy());
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_ADDONS, CompoundTag.TAG_COMPOUND)) {
+        if (oldData.contains(TwilightConstants.NBT_ADDONS, 10)) {
             IAddons newAddons = DataUtils.getAddonsData(newPlayer);
             if (newAddons != null) {
-                newAddons.deserialize(oldData.getCompound(TwilightConstants.NBT_ADDONS));
-                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_ADDONS,
-                        oldData.getCompound(TwilightConstants.NBT_ADDONS));
+                CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_ADDONS);
+                newAddons.deserialize(tag);
+                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_ADDONS, tag.copy());
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_TRAILS, CompoundTag.TAG_COMPOUND)) {
+        if (oldData.contains(TwilightConstants.NBT_TRAILS, 10)) {
             ITrails newTrails = DataUtils.getTrailsData(newPlayer);
             if (newTrails != null) {
-                newTrails.deserialize(oldData.getCompound(TwilightConstants.NBT_TRAILS));
-                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_TRAILS,
-                        oldData.getCompound(TwilightConstants.NBT_TRAILS));
+                CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_TRAILS);
+                newTrails.deserialize(tag);
+                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_TRAILS, tag.copy());
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_EFFECTS, CompoundTag.TAG_COMPOUND)) {
+        if (oldData.contains(TwilightConstants.NBT_EFFECTS, 10)) {
             IEffects newEffects = DataUtils.getEffectsData(newPlayer);
             if (newEffects != null) {
-                newEffects.deserialize(oldData.getCompound(TwilightConstants.NBT_EFFECTS));
-                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_EFFECTS,
-                        oldData.getCompound(TwilightConstants.NBT_EFFECTS));
+                CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_EFFECTS);
+                newEffects.deserialize(tag);
+                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_EFFECTS, tag.copy());
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_MODEL_VARIANT, CompoundTag.TAG_COMPOUND)) {
+        if (oldData.contains(TwilightConstants.NBT_MODEL_VARIANT, 10)) {
             IModelVariant newModelVariant = DataUtils.getModelVariantData(newPlayer);
             if (newModelVariant != null) {
-                newModelVariant.deserialize(oldData.getCompound(TwilightConstants.NBT_MODEL_VARIANT));
-                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_MODEL_VARIANT,
-                        oldData.getCompound(TwilightConstants.NBT_MODEL_VARIANT));
+                CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_MODEL_VARIANT);
+                newModelVariant.deserialize(tag);
+                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_MODEL_VARIANT, tag.copy());
             }
         }
     }
@@ -282,17 +281,8 @@ public class TwilightLib {
         }
     }
 
-    private static void onPlayerChangedDimension(ServerPlayer player,
-            net.minecraft.resources.ResourceKey<Level> oldLevel, net.minecraft.resources.ResourceKey<Level> newLevel) {
-        // Dimension change handled same as respawn for syncing
-        mc.sayda.twilight_lib.cosmetics.CosmeticManager.resyncAll(player);
-    }
-
     private static void onServerTick(MinecraftServer server) {
         long currentTick = serverTicks.incrementAndGet();
-
-        if (pendingTasks.isEmpty())
-            return;
 
         Iterator<Map.Entry<UUID, DelayedSyncTask>> iterator = pendingTasks.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -302,16 +292,25 @@ public class TwilightLib {
             if (currentTick >= task.executeAtTick) {
                 ServerPlayer player = server.getPlayerList().getPlayer(task.playerUUID);
                 if (player != null && !player.isRemoved()) {
-                    NetworkHandler.sendAllMorphsToPlayer(player);
-                    NetworkHandler.sendAllAddonsToPlayer(player);
-                    NetworkHandler.sendAllTrailsToPlayer(player);
-                    NetworkHandler.sendAllEffectsToPlayer(player);
-                    NetworkHandler.sendAllModelVariantsToPlayer(player);
-                    LOGGER.debug("Here you go! Delayed cosmetics sync complete for {}",
-                            player.getGameProfile().getName());
+                    // Delayed sync: Ensure persistence without re-triggering effects
+                    mc.sayda.twilight_lib.cosmetics.CosmeticManager.resyncAll(player, false);
+                    LOGGER.debug("Twilight Lib: Executed delayed sync for {}", player.getGameProfile().getName());
                 }
                 iterator.remove();
             }
         }
+    }
+
+    private static void onPlayerChangedDimension(ServerPlayer player,
+            net.minecraft.resources.ResourceKey<Level> oldLevel,
+            net.minecraft.resources.ResourceKey<Level> newLevel) {
+        // 1. Immediate Sync (Triggers Spawn Effects + Attempts Data Sync)
+        mc.sayda.twilight_lib.cosmetics.CosmeticManager.resyncAll(player, true);
+
+        // 2. Schedule Delayed Sync (Ensures Persistence if client wasn't ready)
+        long delayTicks = TwilightConfig.LOGIN_SYNC_DELAY_TICKS.get();
+        pendingTasks.put(player.getUUID(), new DelayedSyncTask(player.getUUID(), serverTicks.get() + delayTicks));
+
+        LOGGER.debug("Twilight Lib: Scheduled dimension sync for {}", player.getGameProfile().getName());
     }
 }

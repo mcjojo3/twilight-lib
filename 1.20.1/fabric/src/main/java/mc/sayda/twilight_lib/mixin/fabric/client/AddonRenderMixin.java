@@ -1,4 +1,4 @@
-package mc.sayda.twilight_lib.mixin;
+package mc.sayda.twilight_lib.mixin.fabric.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import mc.sayda.twilight_lib.client.renderer.AddonRenderHandler;
@@ -12,16 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(PlayerRenderer.class)
 public class AddonRenderMixin {
-
-    @Inject(method = "render(Lnet/minecraft/client/player/AbstractClientPlayer;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
-    private void twilightlib$onMorphRenderPre(AbstractClientPlayer player, float entityYaw, float partialTicks,
-            PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
-        if (mc.sayda.twilight_lib.client.renderer.MorphRenderHandler.onRenderPlayerPre(player,
-                (PlayerRenderer) (Object) this, partialTicks, poseStack, buffer, packedLight)) {
-            ci.cancel();
-            return;
-        }
-    }
 
     @Inject(method = "render(Lnet/minecraft/client/player/AbstractClientPlayer;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/player/PlayerRenderer;setModelProperties(Lnet/minecraft/client/player/AbstractClientPlayer;)V", shift = At.Shift.AFTER))
     private void twilightlib$onAddonRenderPre(AbstractClientPlayer player, float entityYaw, float partialTicks,

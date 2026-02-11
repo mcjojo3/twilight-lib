@@ -6,7 +6,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * Handles player model visibility for addons that want to hide the base player
@@ -26,6 +28,12 @@ import java.util.Set;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 
 public class AddonRenderHandler {
+    // ThreadLocal prevents race conditions if multiple render threads are used
+    // (unlikely but safe)
+    // and WeakHashMap handles multiple renderer instances (default/slim)
+    private static final ThreadLocal<Map<PlayerRenderer, VisibilityState>> STASH = ThreadLocal
+            .withInitial(WeakHashMap::new);
+
     public static void init() {
         // Registered via AddonRenderMixin in common
     }
@@ -37,6 +45,9 @@ public class AddonRenderHandler {
         }
 
         var playerModel = renderer.getModel();
+
+        // Stash current visibility state to restore it accurately in Post
+        STASH.get().put(renderer, new VisibilityState(playerModel));
 
         // Collect all body parts that should be hidden from ALL active addons
         Set<BodyPart> allHiddenParts = new HashSet<>();
@@ -122,19 +133,48 @@ public class AddonRenderHandler {
     }
 
     public static void onRenderPlayerPost(PlayerRenderer renderer) {
-        // Always restore visibility after rendering (in case it was modified)
-        var playerModel = renderer.getModel();
-        playerModel.head.visible = true;
-        playerModel.hat.visible = true;
-        playerModel.body.visible = true;
-        playerModel.rightArm.visible = true;
-        playerModel.leftArm.visible = true;
-        playerModel.rightLeg.visible = true;
-        playerModel.leftLeg.visible = true;
-        playerModel.rightSleeve.visible = true;
-        playerModel.leftSleeve.visible = true;
-        playerModel.rightPants.visible = true;
-        playerModel.leftPants.visible = true;
-        playerModel.jacket.visible = true;
+        // Restore previous visibility state captured in Pre
+        VisibilityState stashed = STASH.get().remove(renderer);
+        if (stashed != null) {
+            stashed.apply(renderer.getModel());
+        }
+    }
+
+    /**
+     * Captures the visibility state of all player model parts.
+     */
+    private static class VisibilityState {
+        final boolean head, hat, body, rightArm, leftArm, rightLeg, leftLeg;
+        final boolean rightSleeve, leftSleeve, rightPants, leftPants, jacket;
+
+        VisibilityState(net.minecraft.client.model.PlayerModel<?> model) {
+            this.head = model.head.visible;
+            this.hat = model.hat.visible;
+            this.body = model.body.visible;
+            this.rightArm = model.rightArm.visible;
+            this.leftArm = model.leftArm.visible;
+            this.rightLeg = model.rightLeg.visible;
+            this.leftLeg = model.leftLeg.visible;
+            this.rightSleeve = model.rightSleeve.visible;
+            this.leftSleeve = model.leftSleeve.visible;
+            this.rightPants = model.rightPants.visible;
+            this.leftPants = model.leftPants.visible;
+            this.jacket = model.jacket.visible;
+        }
+
+        void apply(net.minecraft.client.model.PlayerModel<?> model) {
+            model.head.visible = head;
+            model.hat.visible = hat;
+            model.body.visible = body;
+            model.rightArm.visible = rightArm;
+            model.leftArm.visible = leftArm;
+            model.rightLeg.visible = rightLeg;
+            model.leftLeg.visible = leftLeg;
+            model.rightSleeve.visible = rightSleeve;
+            model.leftSleeve.visible = leftSleeve;
+            model.rightPants.visible = rightPants;
+            model.leftPants.visible = leftPants;
+            model.jacket.visible = jacket;
+        }
     }
 }

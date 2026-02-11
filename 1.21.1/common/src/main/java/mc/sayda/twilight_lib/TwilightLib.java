@@ -195,48 +195,48 @@ public class TwilightLib {
     private static void onPlayerClone(ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean wasDeath) {
         CompoundTag oldData = DataUtils.getPersistentData(oldPlayer);
 
-        if (oldData.contains(TwilightConstants.NBT_MORPH, CompoundTag.TAG_COMPOUND)) {
+        if (oldData.contains(TwilightConstants.NBT_MORPH, 10)) {
             IMorph newMorph = DataUtils.getMorphData(newPlayer);
             if (newMorph != null) {
-                newMorph.deserialize(oldData.getCompound(TwilightConstants.NBT_MORPH));
-                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_MORPH,
-                        oldData.getCompound(TwilightConstants.NBT_MORPH));
+                CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_MORPH);
+                newMorph.deserialize(tag);
+                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_MORPH, tag.copy());
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_ADDONS, CompoundTag.TAG_COMPOUND)) {
+        if (oldData.contains(TwilightConstants.NBT_ADDONS, 10)) {
             IAddons newAddons = DataUtils.getAddonsData(newPlayer);
             if (newAddons != null) {
-                newAddons.deserialize(oldData.getCompound(TwilightConstants.NBT_ADDONS));
-                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_ADDONS,
-                        oldData.getCompound(TwilightConstants.NBT_ADDONS));
+                CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_ADDONS);
+                newAddons.deserialize(tag);
+                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_ADDONS, tag.copy());
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_TRAILS, CompoundTag.TAG_COMPOUND)) {
+        if (oldData.contains(TwilightConstants.NBT_TRAILS, 10)) {
             ITrails newTrails = DataUtils.getTrailsData(newPlayer);
             if (newTrails != null) {
-                newTrails.deserialize(oldData.getCompound(TwilightConstants.NBT_TRAILS));
-                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_TRAILS,
-                        oldData.getCompound(TwilightConstants.NBT_TRAILS));
+                CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_TRAILS);
+                newTrails.deserialize(tag);
+                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_TRAILS, tag.copy());
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_EFFECTS, CompoundTag.TAG_COMPOUND)) {
+        if (oldData.contains(TwilightConstants.NBT_EFFECTS, 10)) {
             IEffects newEffects = DataUtils.getEffectsData(newPlayer);
             if (newEffects != null) {
-                newEffects.deserialize(oldData.getCompound(TwilightConstants.NBT_EFFECTS));
-                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_EFFECTS,
-                        oldData.getCompound(TwilightConstants.NBT_EFFECTS));
+                CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_EFFECTS);
+                newEffects.deserialize(tag);
+                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_EFFECTS, tag.copy());
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_MODEL_VARIANT, CompoundTag.TAG_COMPOUND)) {
+        if (oldData.contains(TwilightConstants.NBT_MODEL_VARIANT, 10)) {
             IModelVariant newModelVariant = DataUtils.getModelVariantData(newPlayer);
             if (newModelVariant != null) {
-                newModelVariant.deserialize(oldData.getCompound(TwilightConstants.NBT_MODEL_VARIANT));
-                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_MODEL_VARIANT,
-                        oldData.getCompound(TwilightConstants.NBT_MODEL_VARIANT));
+                CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_MODEL_VARIANT);
+                newModelVariant.deserialize(tag);
+                DataUtils.getPersistentData(newPlayer).put(TwilightConstants.NBT_MODEL_VARIANT, tag.copy());
             }
         }
     }

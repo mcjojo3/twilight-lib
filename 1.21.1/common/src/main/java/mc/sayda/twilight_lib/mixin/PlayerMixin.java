@@ -1,9 +1,9 @@
 package mc.sayda.twilight_lib.mixin;
 
-import mc.sayda.twilight_lib.ModAttributes;
-import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,14 +18,10 @@ public abstract class PlayerMixin extends LivingEntity {
         super(p_20966_, p_20967_);
     }
 
-    @Inject(method = "tryToStartFallFlying", at = @At("HEAD"), cancellable = true, remap = false)
-    private void twilight_lib$onTryToStartFallFlying(CallbackInfoReturnable<Boolean> cir) {
-        if (this.getAttributeValue(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT)) > 0) {
-            boolean canFly = !this.onGround() && !this.hasEffect(MobEffects.LEVITATION);
-            if (canFly) {
-                this.setSharedFlag(7, true); // FLAG_FALL_FLYING is 7
-                cir.setReturnValue(true);
-            }
+    @Inject(method = "tryToStartFallFlying", at = @At("HEAD"), cancellable = true)
+    public void twilight_lib$tryToStartFallFlying(CallbackInfoReturnable<Boolean> cir) {
+        if (mc.sayda.twilight_lib.TwilightEventHandler.onTryToStartFallFlying((Player) (Object) this)) {
+            cir.setReturnValue(true);
         }
     }
 }

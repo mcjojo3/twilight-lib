@@ -40,6 +40,8 @@ public class SpawnEffectHandler {
     // Thread-safe map to prevent ConcurrentModificationException from network
     // thread
     private static final Map<UUID, Integer> PENDING_EFFECTS = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> RETRY_COUNTS = new ConcurrentHashMap<>();
+    private static final int MAX_RETRIES = 20;
 
     public static void init() {
         ClientTickEvent.CLIENT_POST.register(mc -> {
@@ -53,6 +55,7 @@ public class SpawnEffectHandler {
      */
     public static void clear() {
         PENDING_EFFECTS.clear();
+        RETRY_COUNTS.clear();
         LOGGER.debug("Goodbye, my new friend! Cleared pending spawn effects from cache.");
     }
 
@@ -95,92 +98,93 @@ public class SpawnEffectHandler {
             return;
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null)
+        if (mc.level == null)
             return;
 
         // Process pending effects using computeIfPresent for thread-safe atomic updates
-        // Create snapshot of keys to avoid modification during iteration
         List<UUID> keys = new ArrayList<>(PENDING_EFFECTS.keySet());
 
         for (UUID playerId : keys) {
             PENDING_EFFECTS.computeIfPresent(playerId, (id, ticksLeft) -> {
                 if (ticksLeft <= 0) {
-                    // Time to trigger effect
                     Player player = mc.level.getPlayerByUUID(id);
-                    if (player != null && !player.isInvisible()) {
-                        var effects = DataUtils.getEffectsData(player);
-                        if (effects == null)
-                            return null; // Remove entry if no effects data
+                    if (player == null) {
+                        // Retry logic for dimension transitions/loading delays
+                        int retries = RETRY_COUNTS.getOrDefault(id, 0);
+                        if (retries < MAX_RETRIES) {
+                            RETRY_COUNTS.put(id, retries + 1);
+                            return 5; // Wait 5 ticks before retrying
+                        }
+                        RETRY_COUNTS.remove(id);
+                        return null; // Give up
+                    }
 
-                        // Check which spawn effects are active and trigger them
-                        // Wrap each effect in try-catch to prevent crashes from particle system
-                        // failures
-                        if (effects.isEffectActive("spawn_ethereal")) {
-                            try {
-                                spawnEtherealEffect(player);
-                                LOGGER.debug("More sparkles, now! Triggered spawn_ethereal effect for player {}",
-                                        player.getName().getString());
-                            } catch (Exception e) {
-                                LOGGER.error("How did I?! Uuuughh! Failed to spawn ethereal effect for player {}",
-                                        player.getName().getString(), e);
-                            }
-                        }
-                        if (effects.isEffectActive("spawn_rainbow")) {
-                            try {
-                                spawnRainbowEffect(player);
-                                LOGGER.debug("More sparkles, now! Triggered spawn_rainbow effect for player {}",
-                                        player.getName().getString());
-                            } catch (Exception e) {
-                                LOGGER.error("How did I?! Uuuughh! Failed to spawn rainbow effect for player {}",
-                                        player.getName().getString(), e);
-                            }
-                        }
-                        if (effects.isEffectActive("spawn_portal")) {
-                            try {
-                                spawnPortalEffect(player);
-                                LOGGER.debug("More sparkles, now! Triggered spawn_portal effect for player {}",
-                                        player.getName().getString());
-                            } catch (Exception e) {
-                                LOGGER.error("How did I?! Uuuughh! Failed to spawn portal effect for player {}",
-                                        player.getName().getString(), e);
-                            }
-                        }
-                        if (effects.isEffectActive("spawn_frost")) {
-                            try {
-                                spawnFrostEffect(player);
-                                LOGGER.debug("More sparkles, now! Triggered spawn_frost effect for player {}",
-                                        player.getName().getString());
-                            } catch (Exception e) {
-                                LOGGER.error("How did I?! Uuuughh! Failed to spawn frost effect for player {}",
-                                        player.getName().getString(), e);
-                            }
-                        }
-                        if (effects.isEffectActive("spawn_flame")) {
-                            try {
-                                spawnFlameEffect(player);
-                                LOGGER.debug("More sparkles, now! Triggered spawn_flame effect for player {}",
-                                        player.getName().getString());
-                            } catch (Exception e) {
-                                LOGGER.error("How did I?! Uuuughh! Failed to spawn flame effect for player {}",
-                                        player.getName().getString(), e);
-                            }
-                        }
-                        if (effects.isEffectActive("spawn_nature")) {
-                            try {
-                                spawnNatureEffect(player);
-                                LOGGER.debug("More sparkles, now! Triggered spawn_nature effect for player {}",
-                                        player.getName().getString());
-                            } catch (Exception e) {
-                                LOGGER.error("How did I?! Uuuughh! Failed to spawn nature effect for player {}",
-                                        player.getName().getString(), e);
-                            }
-                        }
+                    // Found player, trigger and cleanup
+                    RETRY_COUNTS.remove(id);
+                    if (!player.isInvisible()) {
+                        triggerSpawnEffects(player);
                     }
                     return null; // Remove this entry
                 } else {
                     return ticksLeft - 1; // Decrement counter atomically
                 }
             });
+        }
+    }
+
+    private static void triggerSpawnEffects(Player player) {
+        var effects = DataUtils.getEffectsData(player);
+        if (effects == null)
+            return;
+
+        // Check which spawn effects are active and trigger them
+        if (effects.isEffectActive("spawn_ethereal")) {
+            try {
+                spawnEtherealEffect(player);
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to spawn ethereal effect for {}",
+                        player.getName().getString(), e);
+            }
+        }
+        if (effects.isEffectActive("spawn_rainbow")) {
+            try {
+                spawnRainbowEffect(player);
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to spawn rainbow effect for {}",
+                        player.getName().getString(), e);
+            }
+        }
+        if (effects.isEffectActive("spawn_portal")) {
+            try {
+                spawnPortalEffect(player);
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to spawn portal effect for {}",
+                        player.getName().getString(), e);
+            }
+        }
+        if (effects.isEffectActive("spawn_frost")) {
+            try {
+                spawnFrostEffect(player);
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to spawn frost effect for {}",
+                        player.getName().getString(), e);
+            }
+        }
+        if (effects.isEffectActive("spawn_flame")) {
+            try {
+                spawnFlameEffect(player);
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to spawn flame effect for {}",
+                        player.getName().getString(), e);
+            }
+        }
+        if (effects.isEffectActive("spawn_nature")) {
+            try {
+                spawnNatureEffect(player);
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to spawn nature effect for {}",
+                        player.getName().getString(), e);
+            }
         }
     }
 

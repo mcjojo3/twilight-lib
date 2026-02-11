@@ -104,25 +104,25 @@ public class WolfPrintParticle extends TextureSheetParticle {
         float x0 = QUAD_OFFSETS[0][0] * quadSize;
         float z0 = QUAD_OFFSETS[0][1] * quadSize;
         buffer.vertex(x + (x0 * cos - z0 * sin), y, z + (x0 * sin + z0 * cos))
-                .color(this.rCol, this.gCol, this.bCol, this.alpha).uv(minU, maxV).uv2(light).endVertex();
+                .uv(minU, maxV).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
 
         // Corner 1: front-left
         float x1 = QUAD_OFFSETS[1][0] * quadSize;
         float z1 = QUAD_OFFSETS[1][1] * quadSize;
         buffer.vertex(x + (x1 * cos - z1 * sin), y, z + (x1 * sin + z1 * cos))
-                .color(this.rCol, this.gCol, this.bCol, this.alpha).uv(minU, minV).uv2(light).endVertex();
+                .uv(minU, minV).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
 
         // Corner 2: front-right
         float x2 = QUAD_OFFSETS[2][0] * quadSize;
         float z2 = QUAD_OFFSETS[2][1] * quadSize;
         buffer.vertex(x + (x2 * cos - z2 * sin), y, z + (x2 * sin + z2 * cos))
-                .color(this.rCol, this.gCol, this.bCol, this.alpha).uv(maxU, minV).uv2(light).endVertex();
+                .uv(maxU, minV).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
 
         // Corner 3: back-right
         float x3 = QUAD_OFFSETS[3][0] * quadSize;
         float z3 = QUAD_OFFSETS[3][1] * quadSize;
         buffer.vertex(x + (x3 * cos - z3 * sin), y, z + (x3 * sin + z3 * cos))
-                .color(this.rCol, this.gCol, this.bCol, this.alpha).uv(maxU, maxV).uv2(light).endVertex();
+                .uv(maxU, maxV).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
     }
 
     @Override

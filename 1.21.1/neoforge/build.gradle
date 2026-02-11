@@ -48,6 +48,7 @@ processResources {
             mod_license: rootProject.mod_license,
             mod_version: rootProject.mod_version,
             mod_authors: rootProject.mod_authors,
+            architectury_version: rootProject.property('1_21_1_architectury_version'),
             mod_description: rootProject.mod_description,
     ]
     inputs.properties replaceProperties

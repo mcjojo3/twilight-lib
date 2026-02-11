@@ -38,23 +38,53 @@ public class SyncModelVariantPacket {
         var context = contextSupplier.get();
         context.queue(() -> {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> {
+                net.minecraft.resources.ResourceLocation validatedVariant;
+                if (this.variant.equalsIgnoreCase("steve") || this.variant.equalsIgnoreCase("alex")) {
+                    validatedVariant = new net.minecraft.resources.ResourceLocation("twilight_lib",
+                            this.variant.toLowerCase());
+                } else if (this.variant.equalsIgnoreCase("none")) {
+                    validatedVariant = null;
+                } else {
+                    try {
+                        validatedVariant = new net.minecraft.resources.ResourceLocation(this.variant);
+                    } catch (Exception e) {
+                        validatedVariant = null;
+                    }
+                }
+
+                if (validatedVariant != null
+                        && !mc.sayda.twilight_lib.api.model_variant.IModelVariantRegistry.getInstance()
+                                .get(validatedVariant)
+                                .isPresent()) {
+                    validatedVariant = new net.minecraft.resources.ResourceLocation("twilight_lib", "steve");
+                }
+
+                // 1. Always update the client-side cache (essential for other players and self
+                // fallback)
+                if (this.variant.equalsIgnoreCase("none")) {
+                    mc.sayda.twilight_lib.client.ClientModelVariantCache.setModelVariant(this.playerId, null);
+                } else {
+                    mc.sayda.twilight_lib.client.ClientModelVariantCache.setModelVariant(this.playerId,
+                            validatedVariant);
+                }
+
+                // 2. Try to update the capability on the player entity if it's currently loaded
                 var player = context.getPlayer();
                 var level = (player != null) ? player.level() : net.minecraft.client.Minecraft.getInstance().level;
                 if (level == null)
                     return;
+
                 var entity = level.getPlayerByUUID(this.playerId);
                 if (entity == null)
                     return;
-                String validatedVariant = this.variant;
-                if (!mc.sayda.twilight_lib.api.model_variant.IModelVariantRegistry.getInstance()
-                        .get(new net.minecraft.resources.ResourceLocation(validatedVariant))
-                        .isPresent()) {
-                    validatedVariant = "none";
-                }
 
                 var data = DataUtils.getModelVariantData(entity);
                 if (data != null) {
-                    data.setModelVariant(validatedVariant);
+                    if (this.variant.equalsIgnoreCase("none")) {
+                        data.clearCustomVariant();
+                    } else {
+                        data.setModelVariant(this.variant);
+                    }
                 }
             });
         });

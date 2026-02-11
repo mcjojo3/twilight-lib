@@ -1,4 +1,4 @@
-package mc.sayda.twilight_lib.mixin;
+package mc.sayda.twilight_lib.mixin.fabric;
 
 import mc.sayda.twilight_lib.ModAttributes;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -9,8 +9,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Player.class)
-public class PlayerAttributesMixin {
-    @Inject(method = { "createAttributes", "m_36323_" }, at = @At("RETURN"), remap = false)
+public abstract class FabricPlayerAttributeMixin {
+    @Inject(method = "createAttributes", at = @At("RETURN"))
     private static void twilight_lib$addAttributes(CallbackInfoReturnable<AttributeSupplier.Builder> cir) {
         cir.getReturnValue().add(ModAttributes.MINING_PENALTY.get())
                 .add(ModAttributes.FOV_MODIFIER.get())

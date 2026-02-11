@@ -2,6 +2,8 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
+group = rootProject.mod_group_id
+
 architectury {
     platformSetupLoomIde()
     fabric()

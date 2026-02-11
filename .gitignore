@@ -15,6 +15,7 @@ Thumbs.db
 /build/
 /out/
 /bin/
+**/bin/
 /target/
 /run/
 /run-data/

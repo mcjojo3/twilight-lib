@@ -9,6 +9,8 @@ subprojects {
         silentMojangMappingsLicense()
     }
 
+    archivesBaseName = "twilight_lib-1.20.1-${project.name}"
+
     dependencies {
         minecraft "com.mojang:minecraft:${rootProject.property('1_20_1_minecraft_version')}"
         mappings loom.officialMojangMappings()

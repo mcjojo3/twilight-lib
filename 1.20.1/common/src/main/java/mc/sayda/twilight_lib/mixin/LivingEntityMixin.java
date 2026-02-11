@@ -4,12 +4,11 @@ import mc.sayda.twilight_lib.ModAttributes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ElytraItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.item.ElytraItem;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -57,8 +56,7 @@ public abstract class LivingEntityMixin extends Entity {
         super(p_20966_, p_20967_);
     }
 
-    @Redirect(method = { "updateFallFlying",
-            "m_21323_" }, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;is(Lnet/minecraft/world/item/Item;)Z"), require = 0, remap = false)
+    @Redirect(method = "updateFallFlying", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;is(Lnet/minecraft/world/item/Item;)Z"), require = 0)
     private boolean twilight_lib$redirectIsElytra(ItemStack stack, Item item) {
         if (item == Items.ELYTRA && ((LivingEntity) (Object) this)
                 .getAttributeValue(ModAttributes.ELYTRA_FLIGHT.get()) > 0) {
@@ -67,8 +65,7 @@ public abstract class LivingEntityMixin extends Entity {
         return stack.is(item);
     }
 
-    @Redirect(method = { "updateFallFlying",
-            "m_21323_" }, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ElytraItem;isFlyEnabled(Lnet/minecraft/world/item/ItemStack;)Z"), require = 0, remap = false)
+    @Redirect(method = "updateFallFlying", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ElytraItem;isFlyEnabled(Lnet/minecraft/world/item/ItemStack;)Z"), require = 0)
     private boolean twilight_lib$redirectIsFlyEnabled(ItemStack stack) {
         if (((LivingEntity) (Object) this)
                 .getAttributeValue(ModAttributes.ELYTRA_FLIGHT.get()) > 0) {
@@ -77,8 +74,7 @@ public abstract class LivingEntityMixin extends Entity {
         return ElytraItem.isFlyEnabled(stack);
     }
 
-    @Redirect(method = { "updateFallFlying",
-            "m_21323_" }, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;hurtAndBreak(ILnet/minecraft/world/entity/LivingEntity;Ljava/util/function/Consumer;)V"), require = 0, remap = false)
+    @Redirect(method = "updateFallFlying", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;hurtAndBreak(ILnet/minecraft/world/entity/LivingEntity;Ljava/util/function/Consumer;)V"), require = 0)
     private void twilight_lib$redirectHurtAndBreak(ItemStack stack, int amount, LivingEntity entity,
             java.util.function.Consumer<LivingEntity> onBroken) {
         if (entity.getAttributeValue(mc.sayda.twilight_lib.ModAttributes.ELYTRA_FLIGHT.get()) > 0) {
@@ -125,7 +121,7 @@ public abstract class LivingEntityMixin extends Entity {
         return false;
     }
 
-    @Inject(method = { "travel", "m_7023_" }, at = @At("HEAD"), remap = false)
+    @Inject(method = "travel", at = @At("HEAD"))
     private void twilight_lib$onTravel(Vec3 input, CallbackInfo ci) {
         LivingEntity self = (LivingEntity) (Object) this;
         if (self.isFallFlying()
@@ -141,21 +137,15 @@ public abstract class LivingEntityMixin extends Entity {
         }
     }
 
-    @Inject(method = "getDimensions", at = @At("RETURN"), cancellable = true)
-    private void twilight_lib$modifyDimensions(net.minecraft.world.entity.Pose pose,
-            CallbackInfoReturnable<net.minecraft.world.entity.EntityDimensions> cir) {
-        if ((Object) this instanceof Player player) {
-            cir.setReturnValue(
-                    mc.sayda.twilight_lib.TwilightEventHandler.getMorphDimensions(player, pose, cir.getReturnValue()));
+    @Inject(method = "getEyeHeight", at = @At("RETURN"), cancellable = true)
+    private void twilight_lib$getEyeHeight(net.minecraft.world.entity.Pose pose,
+            net.minecraft.world.entity.EntityDimensions dimensions, CallbackInfoReturnable<Float> cir) {
+        if ((Object) this instanceof net.minecraft.world.entity.player.Player player) {
+            Float eyeHeight = mc.sayda.twilight_lib.TwilightEventHandler.getMorphEyeHeight(player, pose);
+            if (eyeHeight != null) {
+                cir.setReturnValue(eyeHeight);
+            }
         }
     }
 
-    @Inject(method = "getEyeHeight", at = @At("RETURN"), cancellable = true)
-    private void twilight_lib$modifyEyeHeight(net.minecraft.world.entity.Pose pose,
-            net.minecraft.world.entity.EntityDimensions dimensions, CallbackInfoReturnable<Float> cir) {
-        if ((Object) this instanceof Player player) {
-            cir.setReturnValue(mc.sayda.twilight_lib.TwilightEventHandler.getMorphEyeHeight(player, pose,
-                    cir.getReturnValue()));
-        }
-    }
 }

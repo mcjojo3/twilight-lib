@@ -3,7 +3,12 @@
     "package": "mc.sayda.twilight_lib.mixin.fabric",
     "compatibilityLevel": "JAVA_17",
     "mixins": [
-        "PlayerMixin"
+        "PlayerMixin",
+        "ServerPlayerMixin",
+        "PlayerModelVariantMixin",
+        "FabricPlayerAttributeMixin",
+        "client.PlayerRendererMixin",
+        "client.AddonRenderMixin"
     ],
     "injectors": {
         "defaultRequire": 1

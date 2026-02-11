@@ -5,7 +5,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ElytraItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -18,6 +17,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.player.Player;
 
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin extends Entity {
@@ -69,11 +71,12 @@ public abstract class LivingEntityMixin extends Entity {
     }
 
     @Inject(method = "getDimensions", at = @At("RETURN"), cancellable = true)
-    private void twilight_lib$modifyDimensions(net.minecraft.world.entity.Pose pose,
-            CallbackInfoReturnable<net.minecraft.world.entity.EntityDimensions> cir) {
+    private void twilight_lib$getDimensions(Pose pose, CallbackInfoReturnable<EntityDimensions> cir) {
         if ((Object) this instanceof Player player) {
             cir.setReturnValue(
-                    mc.sayda.twilight_lib.TwilightEventHandler.getMorphDimensions(player, pose, cir.getReturnValue()));
+                    mc.sayda.twilight_lib.TwilightEventHandler.getMorphDimensions(player, pose,
+                            cir.getReturnValue()));
         }
     }
+
 }

@@ -123,3 +123,4 @@ local.properties
 *.txt
 !LICENSE.txt
 !CREDITS.txt
+*.java

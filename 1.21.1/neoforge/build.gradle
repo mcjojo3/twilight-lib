@@ -2,15 +2,17 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
+archivesBaseName = "twilight_lib-1.21.1-neoforge"
+
 architectury {
     platformSetupLoomIde()
     neoForge()
 }
 
 loom {
+    accessWidenerPath = project(":1.21.1:common").loom.accessWidenerPath
     mixin {
-        useLegacyMixinAp = true
-        defaultRefmapName = "twilight_lib-neoforge-refmap.json"
+        defaultRefmapName = "twilight_lib-neoforge.refmap.json"
     }
 }
 

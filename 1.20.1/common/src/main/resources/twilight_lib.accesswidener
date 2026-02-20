@@ -1,1 +1,19 @@
-accessWidener v1 named
+accessWidener v2 named
+
+# Expose sound methods for morphs
+transitive-accessible method net/minecraft/world/entity/LivingEntity getHurtSound (Lnet/minecraft/world/damagesource/DamageSource;)Lnet/minecraft/sounds/SoundEvent;
+transitive-accessible method net/minecraft/world/entity/LivingEntity getDeathSound ()Lnet/minecraft/sounds/SoundEvent;
+
+# Expose slot manipulation for armor blocking
+transitive-accessible method net/minecraft/world/inventory/AbstractContainerMenu addSlot (Lnet/minecraft/world/inventory/Slot;)Lnet/minecraft/world/inventory/Slot;
+
+# Expose empty slot textures for UI
+transitive-accessible field net/minecraft/world/inventory/InventoryMenu TEXTURE_EMPTY_SLOTS [Lnet/minecraft/resources/ResourceLocation;
+
+# Expose entity internals for scaling
+transitive-accessible method net/minecraft/world/entity/Entity setSharedFlag (IZ)V
+
+# Attribute system internals
+transitive-accessible field net/minecraft/world/entity/ai/attributes/DefaultAttributes SUPPLIERS Ljava/util/Map;
+transitive-accessible field net/minecraft/world/entity/ai/attributes/AttributeSupplier instances Ljava/util/Map;
+transitive-accessible method net/minecraft/world/entity/ai/attributes/AttributeInstance <init> (Lnet/minecraft/world/entity/ai/attributes/Attribute;Ljava/util/function/Consumer;)V

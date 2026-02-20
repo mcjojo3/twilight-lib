@@ -36,11 +36,11 @@ public class PlayerMorphSoundMixin {
             return;
 
         // Validate that morphType is a LivingEntity
-        if (!LivingEntity.class.isAssignableFrom(morphType.create(player.level()).getClass())) {
-            // We'll stick to legacy logic but adjusted for compilation correctness.
+        net.minecraft.world.entity.Entity testEntity = morphType.create(player.level());
+        if (testEntity != null && !(testEntity instanceof LivingEntity)) {
+            return;
         }
 
-        // Re-implementing parity logic
         try {
             Level level = player.level();
             LivingEntity morphEntity = SOUND_PROXY_CACHE.computeIfAbsent(morphType, type -> {
@@ -49,13 +49,14 @@ public class PlayerMorphSoundMixin {
             });
 
             if (morphEntity != null) {
-                SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).invokeGetHurtSound(source);
+                // Use invoker to bypass protected access on Forge
+                SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).twilight_lib$callGetHurtSound(source);
                 if (morphSound != null) {
                     cir.setReturnValue(morphSound);
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("How did I?! Uuuughh! Failed to get morph hurt sound", e);
+            LOGGER.error("Failed to get morph hurt sound", e);
         }
     }
 
@@ -71,6 +72,12 @@ public class PlayerMorphSoundMixin {
         if (morphType == null)
             return;
 
+        // Validate that morphType is a LivingEntity
+        net.minecraft.world.entity.Entity testEntity = morphType.create(player.level());
+        if (testEntity != null && !(testEntity instanceof LivingEntity)) {
+            return;
+        }
+
         try {
             Level level = player.level();
             LivingEntity morphEntity = SOUND_PROXY_CACHE.computeIfAbsent(morphType, type -> {
@@ -79,13 +86,14 @@ public class PlayerMorphSoundMixin {
             });
 
             if (morphEntity != null) {
-                SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).invokeGetDeathSound();
+                // Use invoker to bypass protected access on Forge
+                SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).twilight_lib$callGetDeathSound();
                 if (morphSound != null) {
                     cir.setReturnValue(morphSound);
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("How did I?! Uuuughh! Failed to get morph death sound", e);
+            LOGGER.error("Failed to get morph death sound", e);
         }
     }
 }

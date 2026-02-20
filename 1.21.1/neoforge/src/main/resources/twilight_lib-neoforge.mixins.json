@@ -1,13 +1,13 @@
 {
   "required": true,
   "minVersion": "0.8",
+  "refMap": "twilight_lib-neoforge.refmap.json",
   "package": "mc.sayda.twilight_lib.neoforge.mixin",
   "compatibilityLevel": "JAVA_21",
   "priority": 1000,
   "mixins": [
     "NeoForgeLivingEntityMixin",
-    "NeoForgeLocalPlayerMixin",
-    "NeoForgePlayerMiningMixin"
+    "NeoForgeLocalPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

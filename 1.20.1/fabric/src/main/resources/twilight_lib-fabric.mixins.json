@@ -1,12 +1,14 @@
 {
     "required": true,
+    "refMap": "twilight_lib-fabric.refmap.json",
     "package": "mc.sayda.twilight_lib.mixin.fabric",
     "compatibilityLevel": "JAVA_17",
     "mixins": [
         "PlayerMixin",
         "ServerPlayerMixin",
+        "PlayerMiningMixin",
         "PlayerModelVariantMixin",
-        "FabricPlayerAttributeMixin",
+        "FabricLocalPlayerMixin",
         "client.PlayerRendererMixin",
         "client.AddonRenderMixin"
     ],

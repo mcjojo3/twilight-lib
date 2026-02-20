@@ -36,13 +36,9 @@ public class PlayerMorphSoundMixin {
             return;
 
         // Validate that morphType is a LivingEntity
-        if (!LivingEntity.class.isAssignableFrom(morphType.create(player.level()).getClass())) {
-            // Avoid creating entity just for class check if possible, but create is safest
-            // for exact class
-            // Optimization: Use getBaseClass() logic if available, but for now create() is
-            // parity with legacy
-            // Actually legacy used .getBaseClass() which needs EntityType generics.
-            // We'll stick to legacy logic but adjusted for compilation correctness.
+        net.minecraft.world.entity.Entity testEntity = morphType.create(player.level());
+        if (testEntity != null && !(testEntity instanceof LivingEntity)) {
+            return;
         }
 
         // Re-implementing parity logic
@@ -54,7 +50,8 @@ public class PlayerMorphSoundMixin {
             });
 
             if (morphEntity != null) {
-                SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).invokeGetHurtSound(source);
+                // Use invoker to bypass protected access on Forge/NeoForge
+                SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).twilight_lib$callGetHurtSound(source);
                 if (morphSound != null) {
                     cir.setReturnValue(morphSound);
                 }
@@ -84,7 +81,8 @@ public class PlayerMorphSoundMixin {
             });
 
             if (morphEntity != null) {
-                SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).invokeGetDeathSound();
+                // Use invoker to bypass protected access on Forge/NeoForge
+                SoundEvent morphSound = ((LivingEntityAccessor) morphEntity).twilight_lib$callGetDeathSound();
                 if (morphSound != null) {
                     cir.setReturnValue(morphSound);
                 }

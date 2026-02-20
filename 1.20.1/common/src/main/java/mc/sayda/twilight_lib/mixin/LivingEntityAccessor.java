@@ -9,8 +9,8 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(LivingEntity.class)
 public interface LivingEntityAccessor {
     @Invoker("getHurtSound")
-    SoundEvent invokeGetHurtSound(DamageSource source);
+    SoundEvent twilight_lib$callGetHurtSound(DamageSource source);
 
     @Invoker("getDeathSound")
-    SoundEvent invokeGetDeathSound();
+    SoundEvent twilight_lib$callGetDeathSound();
 }

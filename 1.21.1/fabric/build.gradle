@@ -2,6 +2,8 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
+archivesBaseName = "twilight_lib-1.21.1-fabric"
+
 architectury {
     platformSetupLoomIde()
     fabric()
@@ -10,8 +12,7 @@ architectury {
 loom {
     accessWidenerPath = project(":1.21.1:common").loom.accessWidenerPath
     mixin {
-        useLegacyMixinAp = true
-        defaultRefmapName = "twilight_lib-fabric-refmap.json"
+        defaultRefmapName = "twilight_lib-fabric.refmap.json"
     }
 }
 

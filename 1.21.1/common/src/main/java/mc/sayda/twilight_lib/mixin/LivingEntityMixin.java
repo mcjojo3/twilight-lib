@@ -16,10 +16,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import net.minecraft.world.entity.EntityDimensions;
-import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.player.Player;
 
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin extends Entity {
@@ -30,17 +26,22 @@ public abstract class LivingEntityMixin extends Entity {
 
     @Redirect(method = "updateFallFlying", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;is(Lnet/minecraft/world/item/Item;)Z"), require = 0)
     private boolean twilight_lib$redirectIsElytra(ItemStack stack, Item item) {
-        if (item == Items.ELYTRA && ((LivingEntity) (Object) this)
-                .getAttributeValue(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT)) > 0) {
-            return true;
+        if (item == Items.ELYTRA) {
+            LivingEntity entity = (LivingEntity) (Object) this;
+            var attr = entity.getAttribute(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT));
+            if (attr != null && attr.getValue() > 0
+                    && !entity.isInWater()) {
+                return true;
+            }
         }
         return stack.is(item);
     }
 
     @Redirect(method = "updateFallFlying", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ElytraItem;isFlyEnabled(Lnet/minecraft/world/item/ItemStack;)Z"), require = 0)
     private boolean twilight_lib$redirectIsFlyEnabled(ItemStack stack) {
-        if (((LivingEntity) (Object) this)
-                .getAttributeValue(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT)) > 0) {
+        LivingEntity entity = (LivingEntity) (Object) this;
+        var attr = entity.getAttribute(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT));
+        if (attr != null && attr.getValue() > 0 && !entity.isInWater()) {
             return true;
         }
         return ElytraItem.isFlyEnabled(stack);
@@ -49,7 +50,8 @@ public abstract class LivingEntityMixin extends Entity {
     @Redirect(method = "updateFallFlying", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;hurtAndBreak(ILnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/entity/EquipmentSlot;)V"), require = 0)
     private void twilight_lib$redirectHurtAndBreak(ItemStack stack, int amount, LivingEntity entity,
             EquipmentSlot slot) {
-        if (entity.getAttributeValue(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT)) > 0) {
+        var attr = entity.getAttribute(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT));
+        if (attr != null && attr.getValue() > 0) {
             return; // Don't damage "phantom" elytra
         }
         stack.hurtAndBreak(amount, entity, slot);
@@ -58,24 +60,22 @@ public abstract class LivingEntityMixin extends Entity {
     @Inject(method = "travel", at = @At("HEAD"))
     private void twilight_lib$onTravel(Vec3 input, CallbackInfo ci) {
         LivingEntity self = (LivingEntity) (Object) this;
-        if (self.isFallFlying() && self.getAttributeValue(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT)) > 0) {
-            // input.z > 0 means forward input
-            if (input.z > 0) {
-                Vec3 look = this.getLookAngle();
-                Vec3 move = this.getDeltaMovement();
-                double attributeValue = self.getAttributeValue(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT));
-                double boost = attributeValue * 0.001;
-                this.setDeltaMovement(move.add(look.x * boost, look.y * boost, look.z * boost));
+        if (self.isFallFlying()) {
+            var attr = self.getAttribute(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT));
+            double flightValue = attr != null ? attr.getValue() : 0;
+            if (flightValue > 0) {
+                // input.z > 0 means forward input (W), input.z < 0 means backward input (S)
+                if (input.z > 0) {
+                    Vec3 look = this.getLookAngle();
+                    Vec3 move = this.getDeltaMovement();
+                    double boost = flightValue * 0.001;
+                    this.setDeltaMovement(move.add(look.x * boost, look.y * boost, look.z * boost));
+                } else if (input.z < 0) {
+                    // Brake effect: scale velocity down smoothly
+                    Vec3 move = this.getDeltaMovement();
+                    this.setDeltaMovement(move.scale(0.95));
+                }
             }
-        }
-    }
-
-    @Inject(method = "getDimensions", at = @At("RETURN"), cancellable = true)
-    private void twilight_lib$getDimensions(Pose pose, CallbackInfoReturnable<EntityDimensions> cir) {
-        if ((Object) this instanceof Player player) {
-            cir.setReturnValue(
-                    mc.sayda.twilight_lib.TwilightEventHandler.getMorphDimensions(player, pose,
-                            cir.getReturnValue()));
         }
     }
 

@@ -1,11 +1,7 @@
 package mc.sayda.twilight_lib.mixin;
 
-import mc.sayda.twilight_lib.TwilightEventHandler;
-
-import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,13 +21,6 @@ public abstract class PlayerMixin extends LivingEntity {
         if (mc.sayda.twilight_lib.TwilightEventHandler.onTryToStartFallFlying((Player) (Object) this)) {
             cir.setReturnValue(true);
         }
-    }
-
-    @Inject(method = "getDimensions", at = @At("RETURN"), cancellable = true)
-    private void twilight_lib$getDimensions(Pose pose, CallbackInfoReturnable<EntityDimensions> cir) {
-        cir.setReturnValue(
-                mc.sayda.twilight_lib.TwilightEventHandler.getMorphDimensions((Player) (Object) this, pose,
-                        cir.getReturnValue()));
     }
 
 }

@@ -12,8 +12,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import mc.sayda.twilight_lib.entity.ModEntities;
-import net.minecraft.world.entity.animal.Fox;
 
 @EventBusSubscriber(modid = TwilightLib.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class NeoForgeEventHandler {
@@ -32,13 +30,6 @@ public class NeoForgeEventHandler {
         }
     }
 
-    @SubscribeEvent
-    public static void onEntitySize(net.neoforged.neoforge.event.entity.EntityEvent.Size evt) {
-        if (evt.getEntity() instanceof net.minecraft.world.entity.player.Player player) {
-            evt.setNewSize(mc.sayda.twilight_lib.TwilightEventHandler.getMorphDimensions(player, evt.getPose(),
-                    evt.getNewSize()));
-        }
-    }
 }
 
 @EventBusSubscriber(modid = TwilightLib.MODID, bus = EventBusSubscriber.Bus.MOD)

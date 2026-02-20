@@ -1,9 +1,14 @@
 {
     "required": true,
+    "refMap": "twilight_lib-forge.refmap.json",
     "package": "mc.sayda.twilight_lib.mixin.forge",
     "compatibilityLevel": "JAVA_17",
+    "minVersion": "0.8",
     "mixins": [
-        "PlayerModelVariantMixin"
+        "PlayerMiningMixin",
+        "PlayerModelVariantMixin",
+        "ForgeLivingEntityMixin",
+        "ForgeLocalPlayerMixin"
     ],
     "client": [
         "client.AddonRenderMixin"

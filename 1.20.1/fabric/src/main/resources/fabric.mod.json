@@ -20,7 +20,7 @@
         ]
     },
     "mixins": [
-        "twilight_lib.mixins.json",
+        "twilight_lib-common.mixins.json",
         "twilight_lib-fabric.mixins.json"
     ],
     "depends": {

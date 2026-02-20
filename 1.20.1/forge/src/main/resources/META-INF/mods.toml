@@ -8,7 +8,7 @@ version="${mod_version}"
 displayName="${mod_name}"
 authors="${mod_authors}"
 description='''${mod_description}'''
-mixinConfigs = "twilight_lib.mixins.json,twilight_lib-forge.mixins.json"
+mixinConfigs = "twilight_lib-common.mixins.json,twilight_lib-forge.mixins.json"
 
 [[dependencies.${mod_id}]]
 modId="forge"

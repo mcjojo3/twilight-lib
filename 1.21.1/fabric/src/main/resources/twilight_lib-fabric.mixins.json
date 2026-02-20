@@ -1,5 +1,6 @@
 {
   "required": true,
+  "refMap": "twilight_lib-fabric.refmap.json",
   "minVersion": "0.8",
   "package": "mc.sayda.twilight_lib.fabric.mixin",
   "compatibilityLevel": "JAVA_21",

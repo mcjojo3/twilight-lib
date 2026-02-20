@@ -10,17 +10,19 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(LivingEntity.class)
 public abstract class NeoForgeLivingEntityMixin {
 
-    @Redirect(method = "updateFallFlying", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;canElytraFly(Lnet/minecraft/world/entity/LivingEntity;)Z"), remap = false)
+    @Redirect(method = "updateFallFlying", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;canElytraFly(Lnet/minecraft/world/entity/LivingEntity;)Z"), remap = false, require = 0)
     private boolean twilight_lib$redirectCanElytraFly(ItemStack stack, LivingEntity entity) {
-        if (entity.getAttributeValue(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT)) > 0) {
+        var attr = entity.getAttribute(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT));
+        if (attr != null && attr.getValue() > 0) {
             return true;
         }
         return stack.canElytraFly(entity);
     }
 
-    @Redirect(method = "updateFallFlying", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;elytraFlightTick(Lnet/minecraft/world/entity/LivingEntity;I)Z"), remap = false)
+    @Redirect(method = "updateFallFlying", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;elytraFlightTick(Lnet/minecraft/world/entity/LivingEntity;I)Z"), remap = false, require = 0)
     private boolean twilight_lib$redirectElytraFlightTick(ItemStack stack, LivingEntity entity, int flightTicks) {
-        if (entity.getAttributeValue(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT)) > 0) {
+        var attr = entity.getAttribute(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT));
+        if (attr != null && attr.getValue() > 0) {
             return true;
         }
         return stack.elytraFlightTick(entity, flightTicks);

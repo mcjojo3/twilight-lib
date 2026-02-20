@@ -5,7 +5,7 @@ architectury {
 loom {
     accessWidenerPath = file("src/main/resources/twilight_lib.accesswidener")
     mixin {
-        useLegacyMixinAp = true
+        defaultRefmapName = "twilight_lib-common.refmap.json"
     }
 }
 

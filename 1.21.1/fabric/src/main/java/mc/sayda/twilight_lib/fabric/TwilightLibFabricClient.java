@@ -14,21 +14,24 @@ import mc.sayda.twilight_lib.particle.SilentHoneyParticle;
 import mc.sayda.twilight_lib.particle.WolfPrintParticle;
 
 public class TwilightLibFabricClient implements ClientModInitializer {
-    @Override
-    public void onInitializeClient() {
-        TwilightLibClient.init();
+        @Override
+        public void onInitializeClient() {
+                TwilightLibClient.init();
 
-        // Native Fabric particle registration (fallback for Architectury)
-        ParticleFactoryRegistry.getInstance().register(ModParticles.BRONZE_HEART.get(),
-                BronzeHeartParticle.Provider::new);
-        ParticleFactoryRegistry.getInstance().register(ModParticles.SILVER_HEART.get(),
-                SilverHeartParticle.Provider::new);
-        ParticleFactoryRegistry.getInstance().register(ModParticles.GOLD_HEART.get(), GoldHeartParticle.Provider::new);
-        ParticleFactoryRegistry.getInstance().register(ModParticles.PLATINUM_HEART.get(),
-                PlatinumHeartParticle.Provider::new);
-        ParticleFactoryRegistry.getInstance().register(ModParticles.RATVENOM.get(), RatvenomParticle.Provider::new);
-        ParticleFactoryRegistry.getInstance().register(ModParticles.SILENT_HONEY.get(),
-                SilentHoneyParticle.Provider::new);
-        ParticleFactoryRegistry.getInstance().register(ModParticles.WOLF_PRINT.get(), WolfPrintParticle.Provider::new);
-    }
+                // Native Fabric particle registration (fallback for Architectury)
+                ParticleFactoryRegistry.getInstance().register(ModParticles.BRONZE_HEART.get(),
+                                BronzeHeartParticle.Provider::new);
+                ParticleFactoryRegistry.getInstance().register(ModParticles.SILVER_HEART.get(),
+                                SilverHeartParticle.Provider::new);
+                ParticleFactoryRegistry.getInstance().register(ModParticles.GOLD_HEART.get(),
+                                GoldHeartParticle.Provider::new);
+                ParticleFactoryRegistry.getInstance().register(ModParticles.PLATINUM_HEART.get(),
+                                PlatinumHeartParticle.Provider::new);
+                ParticleFactoryRegistry.getInstance().register(ModParticles.RATVENOM.get(),
+                                RatvenomParticle.Provider::new);
+                ParticleFactoryRegistry.getInstance().register(ModParticles.SILENT_HONEY.get(),
+                                SilentHoneyParticle.Provider::new);
+                ParticleFactoryRegistry.getInstance().register(ModParticles.WOLF_PRINT.get(),
+                                WolfPrintParticle.Provider::new);
+        }
 }

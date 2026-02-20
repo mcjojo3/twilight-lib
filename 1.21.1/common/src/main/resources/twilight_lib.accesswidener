@@ -1,1 +1,16 @@
-accessWidener v1 named
+accessWidener v2 named
+
+# LivingEntity sounds
+transitive-accessible method net/minecraft/world/entity/LivingEntity getHurtSound (Lnet/minecraft/world/damagesource/DamageSource;)Lnet/minecraft/sounds/SoundEvent;
+transitive-accessible method net/minecraft/world/entity/LivingEntity getDeathSound ()Lnet/minecraft/sounds/SoundEvent;
+
+# Entity shared flags
+transitive-accessible method net/minecraft/world/entity/Entity setSharedFlag (IZ)V
+
+# Attribute system internals
+transitive-accessible field net/minecraft/world/entity/ai/attributes/DefaultAttributes SUPPLIERS Ljava/util/Map;
+transitive-accessible field net/minecraft/world/entity/ai/attributes/AttributeSupplier instances Ljava/util/Map;
+transitive-accessible method net/minecraft/world/entity/ai/attributes/AttributeInstance <init> (Lnet/minecraft/core/Holder;Ljava/util/function/Consumer;)V
+
+# Armor Slot and inventory
+transitive-accessible class net/minecraft/world/inventory/ArmorSlot

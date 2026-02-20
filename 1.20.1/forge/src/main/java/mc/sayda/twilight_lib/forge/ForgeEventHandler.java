@@ -3,24 +3,12 @@ package mc.sayda.twilight_lib.forge;
 import mc.sayda.twilight_lib.TwilightLib;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.event.entity.EntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = TwilightLib.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeEventHandler {
-
-    @SubscribeEvent
-    public static void onEntitySize(EntityEvent.Size event) {
-        if (event.getEntity() instanceof Player player) {
-            Float eyeHeight = mc.sayda.twilight_lib.TwilightEventHandler.getMorphEyeHeight(player, event.getPose());
-            if (eyeHeight != null) {
-                event.setNewEyeHeight(eyeHeight);
-            }
-        }
-    }
 
     @SubscribeEvent
     public static void onStartTracking(PlayerEvent.StartTracking event) {
@@ -51,16 +39,45 @@ public class ForgeEventHandler {
 
             // Architectury's event also fires, but this native one ensures Forge capsules
             // are ready
-            mc.sayda.twilight_lib.capabilities.DataUtils.getMorphData(newPlayer).deserialize(
-                    mc.sayda.twilight_lib.capabilities.DataUtils.getMorphData(oldPlayer).serialize());
-            mc.sayda.twilight_lib.capabilities.DataUtils.getAddonsData(newPlayer).deserialize(
-                    mc.sayda.twilight_lib.capabilities.DataUtils.getAddonsData(oldPlayer).serialize());
-            mc.sayda.twilight_lib.capabilities.DataUtils.getTrailsData(newPlayer).deserialize(
-                    mc.sayda.twilight_lib.capabilities.DataUtils.getTrailsData(oldPlayer).serialize());
-            mc.sayda.twilight_lib.capabilities.DataUtils.getEffectsData(newPlayer).deserialize(
-                    mc.sayda.twilight_lib.capabilities.DataUtils.getEffectsData(oldPlayer).serialize());
-            mc.sayda.twilight_lib.capabilities.DataUtils.getModelVariantData(newPlayer).deserialize(
-                    mc.sayda.twilight_lib.capabilities.DataUtils.getModelVariantData(oldPlayer).serialize());
+            mc.sayda.twilight_lib.capabilities.IMorph oldMorph = mc.sayda.twilight_lib.capabilities.DataUtils
+                    .getMorphData(oldPlayer);
+            mc.sayda.twilight_lib.capabilities.IMorph newMorph = mc.sayda.twilight_lib.capabilities.DataUtils
+                    .getMorphData(newPlayer);
+            if (oldMorph != null && newMorph != null) {
+                newMorph.deserialize(oldMorph.serialize());
+            }
+
+            mc.sayda.twilight_lib.capabilities.IAddons oldAddons = mc.sayda.twilight_lib.capabilities.DataUtils
+                    .getAddonsData(oldPlayer);
+            mc.sayda.twilight_lib.capabilities.IAddons newAddons = mc.sayda.twilight_lib.capabilities.DataUtils
+                    .getAddonsData(newPlayer);
+            if (oldAddons != null && newAddons != null) {
+                newAddons.deserialize(oldAddons.serialize());
+            }
+
+            mc.sayda.twilight_lib.capabilities.ITrails oldTrails = mc.sayda.twilight_lib.capabilities.DataUtils
+                    .getTrailsData(oldPlayer);
+            mc.sayda.twilight_lib.capabilities.ITrails newTrails = mc.sayda.twilight_lib.capabilities.DataUtils
+                    .getTrailsData(newPlayer);
+            if (oldTrails != null && newTrails != null) {
+                newTrails.deserialize(oldTrails.serialize());
+            }
+
+            mc.sayda.twilight_lib.capabilities.IEffects oldEffects = mc.sayda.twilight_lib.capabilities.DataUtils
+                    .getEffectsData(oldPlayer);
+            mc.sayda.twilight_lib.capabilities.IEffects newEffects = mc.sayda.twilight_lib.capabilities.DataUtils
+                    .getEffectsData(newPlayer);
+            if (oldEffects != null && newEffects != null) {
+                newEffects.deserialize(oldEffects.serialize());
+            }
+
+            mc.sayda.twilight_lib.capabilities.IModelVariant oldMV = mc.sayda.twilight_lib.capabilities.DataUtils
+                    .getModelVariantData(oldPlayer);
+            mc.sayda.twilight_lib.capabilities.IModelVariant newMV = mc.sayda.twilight_lib.capabilities.DataUtils
+                    .getModelVariantData(newPlayer);
+            if (oldMV != null && newMV != null) {
+                newMV.deserialize(oldMV.serialize());
+            }
 
             TwilightLib.LOGGER.debug("Twilight Lib: (Forge) Cloned persistent data and capabilities for {}",
                     newPlayer.getGameProfile().getName());

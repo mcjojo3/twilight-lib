@@ -10,7 +10,7 @@ authors="${mod_authors}"
 description='''${mod_description}'''
 
 [[mixins]]
-config="twilight_lib_common.mixins.json"
+config="twilight_lib-common.mixins.json"
 
 [[mixins]]
 config="twilight_lib-neoforge.mixins.json"

@@ -1,9 +1,7 @@
 package mc.sayda.twilight_lib.mixin;
 
-import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,10 +16,11 @@ public abstract class PlayerMixin extends LivingEntity {
         super(p_20966_, p_20967_);
     }
 
-    @Inject(method = "tryToStartFallFlying", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "tryToStartFallFlying()Z", at = @At("HEAD"), cancellable = true)
     public void twilight_lib$tryToStartFallFlying(CallbackInfoReturnable<Boolean> cir) {
         if (mc.sayda.twilight_lib.TwilightEventHandler.onTryToStartFallFlying((Player) (Object) this)) {
             cir.setReturnValue(true);
         }
     }
+
 }

@@ -44,13 +44,6 @@ public class TwilightConstants {
     public static final String NBT_MODEL_VARIANT = "TwilightLibModelVariant";
 
     /**
-     * ID for the morph step height modifier.
-     * Used to dynamically adjust player step height when morphed.
-     */
-    public static final net.minecraft.resources.ResourceLocation MORPH_STEP_HEIGHT_MODIFIER_ID = net.minecraft.resources.ResourceLocation
-            .fromNamespaceAndPath(TwilightLib.MODID, "morph_step_height");
-
-    /**
      * Animation constants for cosmetic addons.
      *
      * <p>

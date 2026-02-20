@@ -4,13 +4,8 @@ architectury {
 
 loom {
     accessWidenerPath = file("src/main/resources/twilight_lib.accesswidener")
-    mixin {
-        useLegacyMixinAp = true
-    }
+    mixin.defaultRefmapName = "twilight_lib-common.refmap.json"
 }
-
-// archivesBaseName = "twilight-lib-common"
-group = rootProject.mod_group_id
 
 dependencies {
     // We depend on fabric loader here to use the fabric @Environment annotations and get the mixin json properties

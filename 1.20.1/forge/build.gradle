@@ -3,6 +3,7 @@ plugins {
 }
 
 group = rootProject.mod_group_id
+archivesBaseName = "twilight_lib-1.20.1-forge"
 
 architectury {
     platformSetupLoomIde()
@@ -10,8 +11,10 @@ architectury {
 }
 
 loom {
+    accessWidenerPath = project(":1.20.1:common").loom.accessWidenerPath
+    mixin.defaultRefmapName = "twilight_lib-forge.refmap.json"
     forge {
-        mixinConfig "twilight_lib.mixins.json"
+        mixinConfig "twilight_lib-common.mixins.json"
         mixinConfig "twilight_lib-forge.mixins.json"
     }
 }
@@ -30,6 +33,7 @@ dependencies {
 
     common(project(path: ":1.20.1:common", configuration: "namedElements")) { transitive = false }
     shadowCommon(project(path: ":1.20.1:common", configuration: "transformProductionForge")) { transitive = false }
+
 }
 
 processResources {

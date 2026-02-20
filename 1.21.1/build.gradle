@@ -7,6 +7,9 @@ subprojects {
 
     loom {
         silentMojangMappingsLicense()
+        mixin {
+            useLegacyMixinAp = true
+        }
     }
 
     archivesBaseName = "twilight_lib-1.21.1-${project.name}"

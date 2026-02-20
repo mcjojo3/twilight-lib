@@ -5,14 +5,11 @@
     "compatibilityLevel": "JAVA_17",
     "minVersion": "0.8",
     "mixins": [
-        "PlayerMiningMixin",
-        "PlayerModelVariantMixin",
         "ForgeLivingEntityMixin",
-        "ForgeLocalPlayerMixin"
+        "ForgeLocalPlayerMixin",
+        "PlayerMiningMixin"
     ],
-    "client": [
-        "client.AddonRenderMixin"
-    ],
+    "client": [],
     "injectors": {
         "defaultRequire": 1
     }

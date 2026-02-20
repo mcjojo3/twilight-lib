@@ -7,10 +7,8 @@
         "PlayerMixin",
         "ServerPlayerMixin",
         "PlayerMiningMixin",
-        "PlayerModelVariantMixin",
         "FabricLocalPlayerMixin",
-        "client.PlayerRendererMixin",
-        "client.AddonRenderMixin"
+        "FabricLivingEntityMixin"
     ],
     "injectors": {
         "defaultRequire": 1

@@ -7,9 +7,6 @@ transitive-accessible method net/minecraft/world/entity/LivingEntity getDeathSou
 # Expose slot manipulation for armor blocking
 transitive-accessible method net/minecraft/world/inventory/AbstractContainerMenu addSlot (Lnet/minecraft/world/inventory/Slot;)Lnet/minecraft/world/inventory/Slot;
 
-# Expose empty slot textures for UI
-transitive-accessible field net/minecraft/world/inventory/InventoryMenu TEXTURE_EMPTY_SLOTS [Lnet/minecraft/resources/ResourceLocation;
-
 # Expose entity internals for scaling
 transitive-accessible method net/minecraft/world/entity/Entity setSharedFlag (IZ)V
 

@@ -18,8 +18,6 @@ subprojects {
     dependencies {
         minecraft "com.mojang:minecraft:${rootProject.property('1_20_1_minecraft_version')}"
         mappings loom.officialMojangMappings()
-        annotationProcessor "io.github.llamalad7:mixinextras-common:0.5.3"
-        compileOnly "io.github.llamalad7:mixinextras-common:0.5.3"
     }
 
     tasks.withType(JavaCompile) {

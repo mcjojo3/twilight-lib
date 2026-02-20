@@ -29,8 +29,7 @@ public abstract class LivingEntityMixin extends Entity {
         if (item == Items.ELYTRA) {
             LivingEntity entity = (LivingEntity) (Object) this;
             var attr = entity.getAttribute(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT));
-            if (attr != null && attr.getValue() > 0
-                    && !entity.isInWater()) {
+            if (attr != null && attr.getValue() > 0 && !entity.isInWater()) {
                 return true;
             }
         }
@@ -63,7 +62,7 @@ public abstract class LivingEntityMixin extends Entity {
         if (self.isFallFlying()) {
             var attr = self.getAttribute(ModAttributes.getHolder(ModAttributes.ELYTRA_FLIGHT));
             double flightValue = attr != null ? attr.getValue() : 0;
-            if (flightValue > 0) {
+            if (flightValue > 0 && !self.isInWater()) {
                 // input.z > 0 means forward input (W), input.z < 0 means backward input (S)
                 if (input.z > 0) {
                     Vec3 look = this.getLookAngle();

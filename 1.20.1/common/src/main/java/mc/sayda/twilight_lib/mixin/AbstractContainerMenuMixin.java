@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.mixin;
 
 import mc.sayda.twilight_lib.ModAttributes;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.player.Inventory;
@@ -33,13 +34,22 @@ public abstract class AbstractContainerMenuMixin {
         slot.set(stack);
     }
 
+    @Redirect(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/inventory/Slot;setByPlayer(Lnet/minecraft/world/item/ItemStack;)V"))
+    private void twilight$redirectSetByPlayer(Slot slot, ItemStack stack) {
+        if (twilight$isForbidden(slot, stack)) {
+            return;
+        }
+        slot.setByPlayer(stack);
+    }
+
     @Unique
     private boolean twilight$isForbidden(Slot slot, ItemStack stack) {
         if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem armorItem)) {
             return false;
         }
 
-        if (slot.container instanceof Inventory inventory && slot.getContainerSlot() >= 36
+        Container container = ((SlotAccessor) slot).twilight$getContainer();
+        if (container instanceof Inventory inventory && slot.getContainerSlot() >= 36
                 && slot.getContainerSlot() <= 39) {
             Player player = inventory.player;
             if (player == null) {

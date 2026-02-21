@@ -8,6 +8,7 @@
         "ArmorSlotMixin",
         "InventoryMenuMixin",
         "LivingEntityAccessor",
+        "SlotAccessor",
         "PlayerAttributesMixin",
         "PlayerMixin",
         "PlayerModelVariantMixin",

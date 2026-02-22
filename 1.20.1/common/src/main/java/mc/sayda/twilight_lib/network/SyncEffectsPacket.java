@@ -46,7 +46,7 @@ public class SyncEffectsPacket {
         context.queue(() -> {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> {
                 var player = context.getPlayer();
-                var level = (player != null) ? player.level() : net.minecraft.client.Minecraft.getInstance().level;
+                var level = (player != null) ? player.level() : mc.sayda.twilight_lib.client.ClientAccess.getLevel();
                 if (level == null)
                     return;
                 var entity = level.getPlayerByUUID(this.playerId);

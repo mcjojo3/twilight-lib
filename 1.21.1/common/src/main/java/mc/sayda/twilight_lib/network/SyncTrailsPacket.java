@@ -70,13 +70,15 @@ public record SyncTrailsPacket(UUID playerId, Set<String> trails) implements Cus
                         return;
                     }
 
-                    var level = context.getPlayer().level();
-                    if (level == null) {
-                        LOGGER.warn("How did I?! Uuuughh! Cannot sync trails - level is null");
-                        return;
+                    // Try the local player directly first (valid even before entity tracking on
+                    // join)
+                    net.minecraft.world.entity.player.Player entity = null;
+                    net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+                    if (minecraft.player != null && minecraft.player.getUUID().equals(msg.playerId())) {
+                        entity = minecraft.player;
+                    } else if (minecraft.level != null) {
+                        entity = minecraft.level.getPlayerByUUID(msg.playerId());
                     }
-
-                    var entity = level.getPlayerByUUID(msg.playerId());
                     if (entity == null) {
                         LOGGER.warn("Or, what. Player {} not found in level (might be out of range)", msg.playerId());
                         return;

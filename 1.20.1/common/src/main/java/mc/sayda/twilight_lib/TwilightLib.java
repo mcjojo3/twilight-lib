@@ -79,8 +79,7 @@ public class TwilightLib {
         mc.sayda.twilight_lib.model_variant.ModelVariantRegistry.getInstance();
 
         // Network
-        NetworkHandler.register();
-        LOGGER.info("Twilight Lib: Network handler registered.");
+        // S2C registration moved to TwilightLibClient
 
         // Register Commands
         CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {

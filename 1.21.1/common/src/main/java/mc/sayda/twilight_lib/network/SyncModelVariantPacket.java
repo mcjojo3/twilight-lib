@@ -105,11 +105,15 @@ public record SyncModelVariantPacket(UUID playerId, net.minecraft.resources.Reso
                                 validatedVariant);
                     }
 
-                    var level = context.getPlayer().level();
-                    if (level == null)
-                        return;
-
-                    var entity = level.getPlayerByUUID(msg.playerId());
+                    // Try the local player directly first (valid even before entity tracking on
+                    // join)
+                    net.minecraft.world.entity.player.Player entity = null;
+                    net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+                    if (minecraft.player != null && minecraft.player.getUUID().equals(msg.playerId())) {
+                        entity = minecraft.player;
+                    } else if (minecraft.level != null) {
+                        entity = minecraft.level.getPlayerByUUID(msg.playerId());
+                    }
                     if (entity == null) {
                         LOGGER.debug("This will be fine! Player {} not found in level (cached anyway)", msg.playerId());
                         return;

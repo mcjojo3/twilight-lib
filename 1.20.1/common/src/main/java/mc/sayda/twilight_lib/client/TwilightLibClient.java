@@ -23,6 +23,7 @@ public class TwilightLibClient {
 
     public static void init() {
         mc.sayda.twilight_lib.TwilightLib.LOGGER.info("This is the precipice of a new reality! Client Initializing...");
+        mc.sayda.twilight_lib.network.NetworkHandler.registerS2C();
 
         boolean isNeoForge = dev.architectury.platform.Platform.isModLoaded("neoforge");
 

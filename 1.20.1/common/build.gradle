@@ -2,6 +2,8 @@ architectury {
     common(rootProject.property('1_20_1_enabled_platforms').split(","))
 }
 
+archivesBaseName = "twilight_lib-1.20.1-common"
+
 loom {
     accessWidenerPath = file("src/main/resources/twilight_lib.accesswidener")
     mixin.defaultRefmapName = "twilight_lib-common.refmap.json"

@@ -7,10 +7,11 @@
     "mixins": [
         "ForgeArmorItemMixin",
         "ForgeLivingEntityMixin",
-        "ForgeLocalPlayerMixin",
         "PlayerMiningMixin"
     ],
-    "client": [],
+    "client": [
+        "ForgeLocalPlayerMixin"
+    ],
     "injectors": {
         "defaultRequire": 1
     }

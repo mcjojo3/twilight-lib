@@ -58,7 +58,8 @@ public class SyncMorphPacket {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> {
                 try {
                     var player = context.getPlayer();
-                    var level = (player != null) ? player.level() : net.minecraft.client.Minecraft.getInstance().level;
+                    var level = (player != null) ? player.level()
+                            : mc.sayda.twilight_lib.client.ClientAccess.getLevel();
                     if (level == null)
                         return;
 

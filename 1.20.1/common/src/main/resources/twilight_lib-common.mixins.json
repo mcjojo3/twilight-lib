@@ -11,13 +11,14 @@
         "SlotAccessor",
         "PlayerAttributesMixin",
         "PlayerMixin",
-        "PlayerModelVariantMixin",
+        "PlayerMixin",
         "PlayerMorphSoundMixin"
     ],
     "client": [
         "client.AbstractClientPlayerMixin",
         "client.AddonRenderMixin",
-        "client.PlayerRendererMixin"
+        "client.PlayerRendererMixin",
+        "PlayerModelVariantMixin"
     ],
     "injectors": {
         "defaultRequire": 1

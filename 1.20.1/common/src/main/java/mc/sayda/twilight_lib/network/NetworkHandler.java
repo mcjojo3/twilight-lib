@@ -13,7 +13,7 @@ import java.util.Optional;
 public class NetworkHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public static void register() {
+    public static void registerS2C() {
         // Register client-bound packets
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncMorphPacket.ID, (buf, context) -> {
             var pkt = new SyncMorphPacket(buf);
@@ -40,7 +40,7 @@ public class NetworkHandler {
             pkt.handle(() -> context);
         });
 
-        LOGGER.debug("Network payloads registered for 1.20.1.");
+        LOGGER.info("Twilight Lib: Client network payloads registered.");
     }
 
     public static void sendMorphToAll(SyncMorphPacket pkt) {

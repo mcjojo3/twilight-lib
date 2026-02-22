@@ -70,7 +70,7 @@ public class SyncModelVariantPacket {
 
                 // 2. Try to update the capability on the player entity if it's currently loaded
                 var player = context.getPlayer();
-                var level = (player != null) ? player.level() : net.minecraft.client.Minecraft.getInstance().level;
+                var level = (player != null) ? player.level() : mc.sayda.twilight_lib.client.ClientAccess.getLevel();
                 if (level == null)
                     return;
 

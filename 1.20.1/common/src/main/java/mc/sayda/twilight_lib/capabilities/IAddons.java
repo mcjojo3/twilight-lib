@@ -92,6 +92,15 @@ public interface IAddons {
      */
     void clearActiveAddons();
 
+    /**
+     * Get all external grants (addons activated by mod/race logic, not by the
+     * player).
+     * These are the addons set via setActiveAddon(id, true, true).
+     *
+     * @return Set of addon IDs that are externally granted (race cosmetics etc.)
+     */
+    Set<String> getExternalGrants();
+
     // Tint color methods
     /**
      * Get the RGB tint color for an addon.

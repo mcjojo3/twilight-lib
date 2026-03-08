@@ -4,6 +4,13 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import dev.architectury.registry.registries.Registrar;
 
+/**
+ * Central registry for mod-added attributes.
+ * 
+ * TODO: Implement a fix for dispensers bypassing armor equipping restrictions.
+ * Dispensers currently use ArmorItem.dispenseArmor which bypasses standard
+ * inventory hooks.
+ */
 public class ModAttributes {
         public static final Registrar<Attribute> ATTRIBUTES = dev.architectury.registry.registries.RegistrarManager
                         .get(TwilightLib.MODID).get(net.minecraft.core.registries.Registries.ATTRIBUTE);

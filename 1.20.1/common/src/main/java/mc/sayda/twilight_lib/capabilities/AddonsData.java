@@ -174,6 +174,15 @@ public class AddonsData implements IAddons, ISerializableData {
     }
 
     /**
+     * Get a snapshot of all external grants (race/mod-applied cosmetics).
+     * Does NOT include player-chosen cosmetics from /tlcosmetics.
+     */
+    @Override
+    public synchronized Set<String> getExternalGrants() {
+        return new HashSet<>(externalGrants);
+    }
+
+    /**
      * Force-sync equipped addons from network packet with registry validation.
      * Used by SyncAddonsPacket to apply server state directly on client.
      * Invalid addon IDs are filtered out to prevent malicious packets.

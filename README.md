@@ -13,8 +13,7 @@
 ### 🎭 Advanced Morph System
 Transform into any supported Minecraft entity. The system automatically handles:
 - **Visual Transforms**: Accurate entity rendering.
-- **Hitbox Synchronization**: Server-side hitbox updates to match the morphed entity.
-- **Perspective Adjustment**: Eye height shifts based on entity size.
+- **Custom Sounds**: When Morphed the player will mimic the current Morph's death and hit sounds.
 
 ### 👒 Cosmetic Addon System
 Attach custom 3D models directly to the player rig:

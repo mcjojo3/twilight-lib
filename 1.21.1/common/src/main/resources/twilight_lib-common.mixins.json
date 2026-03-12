@@ -17,8 +17,7 @@
         "LocalPlayerMixin",
         "PlayerModelVariantMixin",
         "client.AbstractClientPlayerMixin",
-        "client.PlayerRendererMixin",
-        "client.GameRendererMixin"
+        "client.PlayerRendererMixin"
     ],
     "injectors": {
         "defaultRequire": 1

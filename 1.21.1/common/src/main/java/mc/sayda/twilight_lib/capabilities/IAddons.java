@@ -141,6 +141,20 @@ public interface IAddons extends ISerializableData {
     void syncEquippedFromPacket(Set<String> activeAddons);
 
     /**
+     * Get a snapshot of all external grants (race/mod-applied cosmetics).
+     * 
+     * @return Set of addon IDs granted externally
+     */
+    Set<String> getExternalGrants();
+
+    /**
+     * Force-sync external grants from network packet.
+     * 
+     * @param external Set of addon IDs granted externally
+     */
+    void syncExternalGrantsFromPacket(Set<String> external);
+
+    /**
      * Force-sync tint colors from network packet.
      * 
      * @param tints Map of addon ID to RGB color

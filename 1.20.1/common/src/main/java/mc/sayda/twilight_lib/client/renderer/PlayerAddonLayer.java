@@ -245,12 +245,15 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
 
                                 // Render with armor texture
                                 String name = armorItem.getMaterial().getName();
-                                ResourceLocation armorTexture = new ResourceLocation("minecraft",
-                                        "textures/models/armor/" + name + "_layer_1.png");
-                                // Basic logic - in 1.20.1, many mods use a different way but this is the
-                                // simplest
-                                // fallback
-                                // that doesn't involve complex mod-specific logic.
+                                ResourceLocation armorTexture;
+                                if (name.contains(":")) {
+                                    ResourceLocation res = new ResourceLocation(name);
+                                    armorTexture = new ResourceLocation(res.getNamespace(),
+                                            "textures/models/armor/" + res.getPath() + "_layer_1.png");
+                                } else {
+                                    armorTexture = new ResourceLocation("minecraft",
+                                            "textures/models/armor/" + name + "_layer_1.png");
+                                }
 
                                 @SuppressWarnings("null")
                                 RenderType armorRenderType = RenderType.entityCutoutNoCull(armorTexture);

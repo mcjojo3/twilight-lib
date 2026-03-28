@@ -3,6 +3,7 @@
     "refMap": "twilight_lib-fabric.refmap.json",
     "package": "mc.sayda.twilight_lib.mixin.fabric",
     "compatibilityLevel": "JAVA_17",
+    "minVersion": "0.8",
     "mixins": [
         "FabricArmorBlockMixin",
         "FabricInventoryArmorMixin",

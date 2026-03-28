@@ -102,7 +102,7 @@ public class NetworkHandler {
             var addons = DataUtils.getAddonsData(p);
             if (addons != null && !addons.getActiveAddons().isEmpty()) {
                 sendAddonsToPlayer(recipient,
-                        new SyncAddonsPacket(p.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                        new SyncAddonsPacket(p.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
             }
         }
     }

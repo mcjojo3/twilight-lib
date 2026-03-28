@@ -171,7 +171,7 @@ public class CreracesCommand {
 
             DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
             NetworkHandler.sendAddonsToAll(
-                    new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                    new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
         }
 
         // 3. Clear Model Variant
@@ -209,7 +209,7 @@ public class CreracesCommand {
                 addons.setActiveAddon("chest", true);
                 DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
                 NetworkHandler.sendAddonsToAll(
-                        new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                        new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
             }
         }
     }

@@ -261,7 +261,7 @@ public class TwilightLib {
         if (addons != null) {
             NetworkHandler.sendAddonsToPlayer(tracker,
                     new SyncAddonsPacket(targetPlayer.getUUID(), addons.getActiveAddons(),
-                            addons.getAllAddonTints()));
+                            addons.getExternalGrants(), addons.getAllAddonTints()));
         }
 
         ITrails trails = DataUtils.getTrailsData(targetPlayer);

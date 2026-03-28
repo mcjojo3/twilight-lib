@@ -146,6 +146,13 @@ public interface IAddons {
      * @param activeAddons Set of addon IDs to activate
      */
     void syncEquippedFromPacket(Set<String> activeAddons);
+    
+    /**
+     * Force-sync external grants from network packet.
+     * 
+     * @param externalGrants Set of addon IDs to mark as external grants
+     */
+    void syncExternalGrantsFromPacket(Set<String> externalGrants);
 
     /**
      * Force-sync tint colors from network packet.

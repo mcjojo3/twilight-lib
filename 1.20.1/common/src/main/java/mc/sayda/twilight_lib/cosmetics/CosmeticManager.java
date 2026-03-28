@@ -43,7 +43,6 @@ public class CosmeticManager {
         if (morph != null) {
             NetworkHandler.sendMorphToAll(
                     SyncMorphPacket.of(player.getUUID(), morph.getEntityType(), morph.isNametagHidden()));
-            player.refreshDimensions(); // Ensure hitbox is correct
             DataUtils.getPersistentData(player).put(TwilightConstants.NBT_MORPH, morph.serialize());
         }
 
@@ -51,7 +50,7 @@ public class CosmeticManager {
         IAddons addons = DataUtils.getAddonsData(player);
         if (addons != null) {
             NetworkHandler.sendAddonsToAll(
-                    new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                    new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
             DataUtils.getPersistentData(player).put(TwilightConstants.NBT_ADDONS, addons.serialize());
         }
 

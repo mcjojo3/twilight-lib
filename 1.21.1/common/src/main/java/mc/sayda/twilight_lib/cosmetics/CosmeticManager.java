@@ -45,7 +45,7 @@ public class CosmeticManager {
         IAddons addons = DataUtils.getAddonsData(player);
         if (addons != null) {
             NetworkHandler.sendAddonsToAll(
-                    new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                    new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
             DataUtils.getPersistentData(player).put(TwilightConstants.NBT_ADDONS, addons.serialize());
         }
 

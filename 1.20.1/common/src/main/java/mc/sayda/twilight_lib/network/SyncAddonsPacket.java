@@ -16,11 +16,13 @@ public class SyncAddonsPacket {
 
     private final UUID playerId;
     private final Set<String> addons;
+    private final Set<String> externalGrants;
     private final Map<String, Integer> tints;
 
-    public SyncAddonsPacket(UUID playerId, Set<String> addons, Map<String, Integer> tints) {
+    public SyncAddonsPacket(UUID playerId, Set<String> addons, Set<String> externalGrants, Map<String, Integer> tints) {
         this.playerId = java.util.Objects.requireNonNull(playerId, "playerId");
         this.addons = addons != null ? addons : java.util.Collections.emptySet();
+        this.externalGrants = externalGrants != null ? externalGrants : java.util.Collections.emptySet();
         this.tints = tints != null ? tints : java.util.Collections.emptyMap();
     }
 
@@ -31,6 +33,9 @@ public class SyncAddonsPacket {
         int maxStr = mc.sayda.twilight_lib.config.TwilightConfig.NETWORK_MAX_STRING_LENGTH.get();
 
         this.addons = buf.readCollection(s -> new java.util.HashSet<>(Math.min(s, maxColl)), b -> b.readUtf(maxStr));
+        this.externalGrants = buf.readCollection(s -> new java.util.HashSet<>(Math.min(s, maxColl)),
+                b -> b.readUtf(maxStr));
+
         int tintSize = Math.min(buf.readVarInt(), maxColl);
         this.tints = new HashMap<>();
         for (int i = 0; i < tintSize; i++) {
@@ -41,6 +46,7 @@ public class SyncAddonsPacket {
     public void encode(FriendlyByteBuf buf) {
         buf.writeUUID(this.playerId);
         buf.writeCollection(this.addons, (b, s) -> b.writeUtf(s != null ? s : ""));
+        buf.writeCollection(this.externalGrants, (b, s) -> b.writeUtf(s != null ? s : ""));
         buf.writeVarInt(this.tints.size());
         this.tints.forEach((k, v) -> {
             buf.writeUtf(k != null ? k : "unknown");
@@ -62,6 +68,7 @@ public class SyncAddonsPacket {
                 var data = DataUtils.getAddonsData(entity);
                 if (data != null) {
                     data.syncEquippedFromPacket(this.addons);
+                    data.syncExternalGrantsFromPacket(this.externalGrants);
                     data.syncTintsFromPacket(this.tints);
                 }
             });

@@ -200,6 +200,20 @@ public class AddonsData implements IAddons, ISerializableData {
         }
     }
 
+    @Override
+    public synchronized void syncExternalGrantsFromPacket(Set<String> external) {
+        this.externalGrants.clear();
+        Set<String> externalCopy = new java.util.HashSet<>(external);
+        for (String addonId : externalCopy) {
+            if (AddonRegistry.exists(addonId)) {
+                this.externalGrants.add(addonId);
+            } else {
+                // TODO: Update quote
+                LOGGER.warn("Wait... what. Filtered invalid external grant ID from sync packet: {}", addonId);
+            }
+        }
+    }
+
     // Tint color methods
     @Override
     public synchronized int getAddonTint(String addonId) {

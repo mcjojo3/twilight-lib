@@ -129,54 +129,10 @@ public class TwilightLib {
         LOGGER.info("I wanna have fun and chat with someone besides myself! Syncing morphs and addons for {}",
                 loggedInPlayer.getGameProfile().getName());
 
-        // Load persisted data from NBT FIRST
-        CompoundTag persistentData = DataUtils.getPersistentData(loggedInPlayer);
-
-        if (persistentData.contains(TwilightConstants.NBT_MORPH, CompoundTag.TAG_COMPOUND)) {
-            IMorph morph = DataUtils.getMorphData(loggedInPlayer);
-            if (morph != null) {
-                morph.deserialize(persistentData.getCompound(TwilightConstants.NBT_MORPH));
-                LOGGER.debug("Come on, this is gonna be fun! Restored morph from NBT for {}",
-                        loggedInPlayer.getGameProfile().getName());
-            }
-        }
-
-        if (persistentData.contains(TwilightConstants.NBT_ADDONS, CompoundTag.TAG_COMPOUND)) {
-            IAddons addons = DataUtils.getAddonsData(loggedInPlayer);
-            if (addons != null) {
-                addons.deserialize(persistentData.getCompound(TwilightConstants.NBT_ADDONS));
-            }
-        }
-
-        if (persistentData.contains(TwilightConstants.NBT_TRAILS, CompoundTag.TAG_COMPOUND)) {
-            ITrails trails = DataUtils.getTrailsData(loggedInPlayer);
-            if (trails != null) {
-                trails.deserialize(persistentData.getCompound(TwilightConstants.NBT_TRAILS));
-            }
-        }
-
-        if (persistentData.contains(TwilightConstants.NBT_EFFECTS, CompoundTag.TAG_COMPOUND)) {
-            IEffects effects = DataUtils.getEffectsData(loggedInPlayer);
-            if (effects != null) {
-                effects.deserialize(persistentData.getCompound(TwilightConstants.NBT_EFFECTS));
-            }
-        }
-
-        if (persistentData.contains(TwilightConstants.NBT_MODEL_VARIANT, CompoundTag.TAG_COMPOUND)) {
-            IModelVariant modelVariant = DataUtils.getModelVariantData(loggedInPlayer);
-            if (modelVariant != null) {
-                modelVariant.deserialize(persistentData.getCompound(TwilightConstants.NBT_MODEL_VARIANT));
-            }
-        }
-
-        // Supporter checks (Async, non-blocking)
-        processSupporterCosmetics(loggedInPlayer);
-
-        // Schedule sync
-        long delayTicks = TwilightConfig.LOGIN_SYNC_DELAY_TICKS.get();
-        pendingTasks.put(loggedInPlayer.getUUID(),
-                new DelayedSyncTask(loggedInPlayer.getUUID(), serverTicks.get() + delayTicks));
-
+        // Platform handling (Forge capabilities or Fabric Mixins) already restored 
+        // the capability data into the player object before this event fires.
+        // We just need to trigger a fresh sync to clients.
+        
         // Initial Sync (Morph, Addons, Trails, Effects, ModelVariant)
         mc.sayda.twilight_lib.cosmetics.CosmeticManager.resyncAll(loggedInPlayer);
     }
@@ -259,7 +215,7 @@ public class TwilightLib {
         if (addons != null) {
             NetworkHandler.sendAddonsToPlayer(tracker,
                     new SyncAddonsPacket(targetPlayer.getUUID(), addons.getActiveAddons(),
-                            addons.getAllAddonTints()));
+                            addons.getExternalGrants(), addons.getAllAddonTints()));
         }
 
         ITrails trails = DataUtils.getTrailsData(targetPlayer);

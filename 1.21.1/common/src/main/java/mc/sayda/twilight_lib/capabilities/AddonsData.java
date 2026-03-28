@@ -176,6 +176,15 @@ public class AddonsData implements IAddons {
     }
 
     /**
+     * Get a snapshot of all external grants (race/mod-applied cosmetics).
+     * Does NOT include player-chosen cosmetics from /tlcosmetics.
+     */
+    @Override
+    public synchronized Set<String> getExternalGrants() {
+        return new HashSet<>(externalGrants);
+    }
+
+    /**
      * Force-sync equipped addons from network packet with registry validation.
      * Used by SyncAddonsPacket to apply server state directly on client.
      * Invalid addon IDs are filtered out to prevent malicious packets.
@@ -189,6 +198,19 @@ public class AddonsData implements IAddons {
                 this.equippedAddons.add(addonId);
             } else {
                 LOGGER.warn("Or, what. Filtered invalid addon ID from sync packet: {}", addonId);
+            }
+        }
+    }
+
+    @Override
+    public synchronized void syncExternalGrantsFromPacket(Set<String> external) {
+        this.externalGrants.clear();
+        Set<String> externalCopy = new java.util.HashSet<>(external);
+        for (String addonId : externalCopy) {
+            if (AddonRegistry.exists(addonId)) {
+                this.externalGrants.add(addonId);
+            } else {
+                LOGGER.warn("Wait... what. Filtered invalid external grant ID from sync packet: {}", addonId);
             }
         }
     }

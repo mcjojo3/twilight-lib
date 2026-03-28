@@ -16,11 +16,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public record SyncAddonsPacket(UUID playerId, Set<String> addons, Map<String, Integer> tints)
+public record SyncAddonsPacket(UUID playerId, Set<String> addons, Set<String> externalGrants, Map<String, Integer> tints)
         implements CustomPacketPayload {
     public SyncAddonsPacket {
         java.util.Objects.requireNonNull(playerId, "playerId");
         addons = addons != null ? addons : java.util.Collections.emptySet();
+        externalGrants = externalGrants != null ? externalGrants : java.util.Collections.emptySet();
         tints = tints != null ? tints : java.util.Collections.emptyMap();
     }
 
@@ -60,6 +61,8 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons, Map<String, In
             // initialize
             ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8, 128),
             SyncAddonsPacket::addons,
+            ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8, 128),
+            SyncAddonsPacket::externalGrants,
             ByteBufCodecs.map(HashMap::new, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.VAR_INT, 128),
             SyncAddonsPacket::tints,
             SyncAddonsPacket::new);
@@ -95,6 +98,7 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons, Map<String, In
                         return;
 
                     addons.syncEquippedFromPacket(msg.addons());
+                    addons.syncExternalGrantsFromPacket(msg.externalGrants());
                     addons.syncTintsFromPacket(msg.tints());
 
                     LOGGER.debug("Time to change! Synced {} active addons for {}", msg.addons().size(),

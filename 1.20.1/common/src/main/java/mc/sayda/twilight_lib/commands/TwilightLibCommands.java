@@ -1014,7 +1014,8 @@ public class TwilightLibCommands {
 
             DataUtils.getPersistentData(player).put(TwilightConstants.NBT_ADDONS, addons.serialize());
             NetworkHandler.sendAddonsToAll(
-                    new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                    new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(),
+                            addons.getExternalGrants(), addons.getAllAddonTints()));
 
             // Sync effects
             var effects = DataUtils.getEffectsData(player);
@@ -1080,7 +1081,7 @@ public class TwilightLibCommands {
         DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
         // Sync to all clients
         NetworkHandler.sendAddonsToAll(
-                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
         LOGGER.debug("Time to change! {} activated addon: {} (persistent: {})",
                 target.getGameProfile().getName(), addonId, persistent);
 
@@ -1104,7 +1105,7 @@ public class TwilightLibCommands {
         DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
         // Sync to all clients
         NetworkHandler.sendAddonsToAll(
-                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
         LOGGER.debug("Time to change! {} deactivated addon: {}", target.getGameProfile().getName(), addonId);
 
         // Only send feedback if source is NOT the target player (admin, command block,
@@ -1125,7 +1126,7 @@ public class TwilightLibCommands {
         DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
         // Sync to all clients
         NetworkHandler.sendAddonsToAll(
-                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
         LOGGER.debug("Time to change! Cleared all active addons for {}", target.getGameProfile().getName());
 
         // Only send feedback if source is NOT the target player (admin, command block,
@@ -1243,7 +1244,7 @@ public class TwilightLibCommands {
 
                 DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
                 NetworkHandler.sendAddonsToAll(
-                        new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                        new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
                 LOGGER.debug("Bulk tint set for {} active addons to #{}", activeAddons.size(), hexString.toUpperCase());
 
                 if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
@@ -1257,7 +1258,7 @@ public class TwilightLibCommands {
                 addons.setAddonTint(addonId, color);
                 DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
                 NetworkHandler.sendAddonsToAll(
-                        new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getAllAddonTints()));
+                        new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
                 LOGGER.debug("Oooooh! Pretty! {} set tint for addon '{}' to #{}", target.getGameProfile().getName(),
                         addonId, hexString.toUpperCase());
 

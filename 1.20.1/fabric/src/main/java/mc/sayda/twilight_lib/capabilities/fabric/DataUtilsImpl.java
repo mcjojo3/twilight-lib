@@ -27,6 +27,10 @@ public class DataUtilsImpl {
     }
 
     public static CompoundTag getPersistentData(Player player) {
-        return ((FabricPlayerExtensions) player).twilight_lib$getPersistentData();
+        CompoundTag data = ((FabricPlayerExtensions) player).twilight_lib$getPersistentData();
+        if (!data.contains("TwilightLibPersistence", 10)) {
+            data.put("TwilightLibPersistence", new CompoundTag());
+        }
+        return data.getCompound("TwilightLibPersistence");
     }
 }

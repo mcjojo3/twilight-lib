@@ -808,7 +808,7 @@ public class CosmeticsCommand {
                 // Sync to all clients
                 NetworkHandler.sendAddonsToAll(
                                 new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(),
-                                                addons.getAllAddonTints()));
+                                                addons.getExternalGrants(), addons.getAllAddonTints()));
 
                 player.sendSystemMessage(Component.literal("Addon '" + addonId + "' equipped")
                                 .withStyle(ChatFormatting.GREEN));
@@ -850,7 +850,7 @@ public class CosmeticsCommand {
                 // Sync to all clients
                 NetworkHandler.sendAddonsToAll(
                                 new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(),
-                                                addons.getAllAddonTints()));
+                                                addons.getExternalGrants(), addons.getAllAddonTints()));
 
                 player.sendSystemMessage(Component.literal("Addon '" + addonId + "' unequipped")
                                 .withStyle(ChatFormatting.GREEN));

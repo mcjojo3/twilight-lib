@@ -255,6 +255,11 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                                             "textures/models/armor/" + name + "_layer_1.png");
                                 }
 
+                                // Check if the texture exists before rendering
+                                if (Minecraft.getInstance().getResourceManager().getResource(armorTexture).isEmpty()) {
+                                    return; // Fallback: skip armor extension if texture is missing
+                                }
+
                                 @SuppressWarnings("null")
                                 RenderType armorRenderType = RenderType.entityCutoutNoCull(armorTexture);
                                 @SuppressWarnings("null")

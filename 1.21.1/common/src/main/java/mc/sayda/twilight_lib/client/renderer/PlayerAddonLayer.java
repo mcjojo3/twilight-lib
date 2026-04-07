@@ -250,6 +250,11 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                                     var layer = layers.get(0);
                                     ResourceLocation armorTexture = layer.texture(false); // false = not dying overlay
 
+                                    // Check if the texture exists before rendering
+                                    if (Minecraft.getInstance().getResourceManager().getResource(armorTexture).isEmpty()) {
+                                            return; // Fallback: skip armor extension if texture is missing
+                                    }
+
                                     @SuppressWarnings("null")
                                     RenderType armorRenderType = RenderType.entityCutoutNoCull(armorTexture);
                                     @SuppressWarnings("null")

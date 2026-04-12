@@ -18,14 +18,13 @@ import mc.sayda.twilight_lib.capabilities.IModelVariant;
 import mc.sayda.twilight_lib.cosmetics.TrailType;
 import mc.sayda.twilight_lib.cosmetics.EffectType;
 import mc.sayda.twilight_lib.network.SyncAddonsPacket;
-import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncMorphPacket;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
 import mc.sayda.twilight_lib.network.SyncEffectsPacket;
 import mc.sayda.twilight_lib.network.SyncModelVariantPacket;
+import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.TwilightConstants;
 import mc.sayda.twilight_lib.config.TwilightConfig;
-import dev.architectury.event.events.common.CommandRegistrationEvent;
 import mc.sayda.twilight_lib.supporter.SupporterData;
 import mc.sayda.twilight_lib.supporter.SupporterService;
 
@@ -43,13 +42,12 @@ import net.minecraft.world.entity.LivingEntity;
 
 import org.slf4j.Logger;
 import com.mojang.brigadier.CommandDispatcher;
+import net.minecraft.ChatFormatting;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class TwilightLibCommands {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -80,29 +78,44 @@ public class TwilightLibCommands {
         // Synchronize on the set itself for iteration (per
         // Collections.synchronizedSet() contract)
         synchronized (VALID_LIVING_ENTITIES) {
-            return SharedSuggestionProvider.suggestResource(VALID_LIVING_ENTITIES.stream(), builder);
+            com.mojang.brigadier.suggestion.SuggestionsBuilder nonNullBuilder = java.util.Objects
+                    .requireNonNull(builder, "builder");
+            return SharedSuggestionProvider.suggestResource(
+                    (java.util.stream.Stream<net.minecraft.resources.ResourceLocation>) VALID_LIVING_ENTITIES.stream(),
+                    nonNullBuilder);
         }
     };
 
     // Suggestion provider for trail types
     private static final SuggestionProvider<CommandSourceStack> TRAIL_SUGGESTIONS = (context, builder) -> {
+        com.mojang.brigadier.suggestion.SuggestionsBuilder nonNullBuilder = java.util.Objects.requireNonNull(builder,
+                "builder");
         for (TrailType type : TrailType.values()) {
-            builder.suggest(type.getId());
+            nonNullBuilder.suggest(type.getId());
         }
-        return builder.buildFuture();
+        return nonNullBuilder.buildFuture();
     };
 
     // Suggestion provider for effect types
     private static final SuggestionProvider<CommandSourceStack> EFFECT_SUGGESTIONS = (context, builder) -> {
+        com.mojang.brigadier.suggestion.SuggestionsBuilder nonNullBuilder = java.util.Objects.requireNonNull(builder,
+                "builder");
         for (EffectType type : EffectType.values()) {
-            builder.suggest(type.getId());
+            nonNullBuilder.suggest(type.getId());
         }
-        return builder.buildFuture();
+        return nonNullBuilder.buildFuture();
     };
 
     // Suggestion provider for addon types
-    private static final SuggestionProvider<CommandSourceStack> ADDON_SUGGESTIONS = (context,
-            builder) -> SharedSuggestionProvider.suggest(AddonRegistry.getAllAddonIds(), builder);
+    public static final SuggestionProvider<CommandSourceStack> ADDON_SUGGESTIONS = (ctx, builder) -> {
+        Iterable<String> allAddons = AddonRegistry.getAllAddonIds();
+        for (String id : (Iterable<String>) allAddons) {
+            if (id.toLowerCase().startsWith(builder.getRemaining().toLowerCase())) {
+                builder.suggest(id);
+            }
+        }
+        return builder.buildFuture();
+    };
 
     // Suggestion provider for model variants (steve/alex)
     private static final SuggestionProvider<CommandSourceStack> MODEL_VARIANT_SUGGESTIONS = (context,
@@ -142,9 +155,14 @@ public class TwilightLibCommands {
         if (cacheInitialized) {
             VALID_LIVING_ENTITIES.clear();
         }
+        if (level == null) {
+            return;
+        }
 
         LOGGER.debug("Hi! My name is Zoe. Initializing entity type cache...");
         for (ResourceLocation rl : BuiltInRegistries.ENTITY_TYPE.keySet()) {
+            if (rl == null)
+                continue;
             // Safety check: prevent unbounded cache growth
             if (VALID_LIVING_ENTITIES.size() >= TwilightConfig.MAX_ENTITY_CACHE_SIZE.get()) {
                 LOGGER.warn(
@@ -158,8 +176,7 @@ public class TwilightLibCommands {
                 continue;
 
             // Optimization: Filter by category first
-            net.minecraft.world.entity.MobCategory category = type.getCategory();
-            if (category != net.minecraft.world.entity.MobCategory.MISC) {
+            if (type.getCategory() != net.minecraft.world.entity.MobCategory.MISC) {
                 VALID_LIVING_ENTITIES.add(rl);
                 continue;
             }
@@ -184,7 +201,7 @@ public class TwilightLibCommands {
         }
         cachedRegistrySize = BuiltInRegistries.ENTITY_TYPE.size();
         cacheInitialized = true;
-        LOGGER.info("Yes! This'll be fun! Right? Entity type cache initialized with {} living entities",
+        LOGGER.info("What's your name? Entity type cache initialized with {} living entities",
                 VALID_LIVING_ENTITIES.size());
     }
 
@@ -194,7 +211,6 @@ public class TwilightLibCommands {
         // new API
         // mc.sayda.twilight_lib.compat.legacy.creraces.CreracesCommand.register(dispatcher);
 
-        // Register base commands with all aliases
         for (String alias : new String[] { "twilightlib", "tl" }) {
             dispatcher.register(
                     Commands.literal(alias)
@@ -214,7 +230,6 @@ public class TwilightLibCommands {
                                                 return executeMorph(ctx.getSource(), target,
                                                         ResourceLocationArgument.getId(ctx, "entity"), false);
                                             })
-                                            // morph <entity> <hidenametag>
                                             .then(Commands.argument("hidenametag", BoolArgumentType.bool())
                                                     .executes(ctx -> {
                                                         ServerPlayer target = CommandUtils
@@ -228,14 +243,12 @@ public class TwilightLibCommands {
                                                                 ResourceLocationArgument.getId(ctx, "entity"),
                                                                 BoolArgumentType.getBool(ctx, "hidenametag"));
                                                     }))
-                                            // morph <entity> <target>
                                             .then(Commands.argument("target", EntityArgument.player())
                                                     .executes(ctx -> {
                                                         ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
                                                         return executeMorph(ctx.getSource(), target,
                                                                 ResourceLocationArgument.getId(ctx, "entity"), false);
                                                     })
-                                                    // morph <entity> <target> <hidenametag>
                                                     .then(Commands.argument("hidenametag", BoolArgumentType.bool())
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx,
@@ -257,7 +270,6 @@ public class TwilightLibCommands {
                                         setMorph(ctx.getSource(), target, Optional.empty(), false);
                                         return 1;
                                     })
-                                    // unmorph <target>
                                     .then(Commands.argument("target", EntityArgument.player())
                                             .executes(ctx -> {
                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
@@ -271,7 +283,6 @@ public class TwilightLibCommands {
                                             .then(Commands.argument("trail", StringArgumentType.string())
                                                     .suggests(TRAIL_SUGGESTIONS)
                                                     .executes(ctx -> {
-                                                        // Default: self, non-persistent
                                                         ServerPlayer target = CommandUtils
                                                                 .getTargetPlayer(ctx.getSource());
                                                         if (target == null) {
@@ -282,8 +293,6 @@ public class TwilightLibCommands {
                                                         return executeEquipTrail(ctx.getSource(), target,
                                                                 StringArgumentType.getString(ctx, "trail"), false);
                                                     })
-
-                                                    // trails equip <trail> <target>
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx,
@@ -292,8 +301,6 @@ public class TwilightLibCommands {
                                                                         StringArgumentType.getString(ctx, "trail"),
                                                                         false);
                                                             })
-
-                                                            // trails equip <trail> <target> <persistent>
                                                             .then(Commands
                                                                     .argument("persistent", BoolArgumentType.bool())
                                                                     .executes(ctx -> {
@@ -306,8 +313,6 @@ public class TwilightLibCommands {
                                                                                 BoolArgumentType.getBool(ctx,
                                                                                         "persistent"));
                                                                     })))))
-
-                                    // trails unequip <trail>
                                     .then(Commands.literal("unequip")
                                             .then(Commands.argument("trail", StringArgumentType.string())
                                                     .suggests(TRAIL_SUGGESTIONS)
@@ -322,8 +327,6 @@ public class TwilightLibCommands {
                                                         return executeUnequipTrail(ctx.getSource(), target,
                                                                 StringArgumentType.getString(ctx, "trail"));
                                                     })
-
-                                                    // trails unequip <trail> <target>
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx,
@@ -331,8 +334,6 @@ public class TwilightLibCommands {
                                                                 return executeUnequipTrail(ctx.getSource(), target,
                                                                         StringArgumentType.getString(ctx, "trail"));
                                                             }))))
-
-                                    // trails list
                                     .then(Commands.literal("list")
                                             .executes(ctx -> executeListTrails(ctx.getSource()))))
 
@@ -342,7 +343,6 @@ public class TwilightLibCommands {
                                             .then(Commands.argument("effect", StringArgumentType.string())
                                                     .suggests(EFFECT_SUGGESTIONS)
                                                     .executes(ctx -> {
-                                                        // Default: self, non-persistent
                                                         ServerPlayer target = CommandUtils
                                                                 .getTargetPlayer(ctx.getSource());
                                                         if (target == null) {
@@ -353,8 +353,6 @@ public class TwilightLibCommands {
                                                         return executeEquipEffect(ctx.getSource(), target,
                                                                 StringArgumentType.getString(ctx, "effect"), false);
                                                     })
-
-                                                    // effects equip <effect> <target>
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx,
@@ -363,8 +361,6 @@ public class TwilightLibCommands {
                                                                         StringArgumentType.getString(ctx, "effect"),
                                                                         false);
                                                             })
-
-                                                            // effects equip <effect> <target> <persistent>
                                                             .then(Commands
                                                                     .argument("persistent", BoolArgumentType.bool())
                                                                     .executes(ctx -> {
@@ -377,8 +373,6 @@ public class TwilightLibCommands {
                                                                                 BoolArgumentType.getBool(ctx,
                                                                                         "persistent"));
                                                                     })))))
-
-                                    // effects unequip <effect>
                                     .then(Commands.literal("unequip")
                                             .then(Commands.argument("effect", StringArgumentType.string())
                                                     .suggests(EFFECT_SUGGESTIONS)
@@ -393,8 +387,6 @@ public class TwilightLibCommands {
                                                         return executeUnequipEffect(ctx.getSource(), target,
                                                                 StringArgumentType.getString(ctx, "effect"));
                                                     })
-
-                                                    // effects unequip <effect> <target>
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx,
@@ -402,8 +394,6 @@ public class TwilightLibCommands {
                                                                 return executeUnequipEffect(ctx.getSource(), target,
                                                                         StringArgumentType.getString(ctx, "effect"));
                                                             }))))
-
-                                    // effects list
                                     .then(Commands.literal("list")
                                             .executes(ctx -> executeListEffects(ctx.getSource()))))
 
@@ -411,23 +401,21 @@ public class TwilightLibCommands {
                             .then(Commands.literal("addons")
                                     .then(Commands.literal("list")
                                             .executes(ctx -> {
-                                                var addons = AddonRegistry.getAllAddonIds();
-                                                if (addons.isEmpty()) {
+                                                var addonsList = AddonRegistry.getAllAddonIds();
+                                                if (addonsList.isEmpty()) {
                                                     ctx.getSource().sendSuccess(
                                                             () -> Component.literal("No addons registered"), false);
                                                 } else {
-                                                    ctx.getSource()
-                                                            .sendSuccess(() -> Component.literal(
-                                                                    "Available addons: " + String.join(", ", addons)),
-                                                                    false);
+                                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                                            "Available addons: " + String.join(", ", addonsList)),
+                                                            false);
                                                 }
                                                 return 1;
                                             }))
                                     .then(Commands.literal("equip")
-                                            .then(Commands.argument("addonId", StringArgumentType.string())
+                                            .then(Commands.argument("addon", StringArgumentType.string())
                                                     .suggests(ADDON_SUGGESTIONS)
                                                     .executes(ctx -> {
-                                                        String addonId = ctx.getArgument("addonId", String.class);
                                                         ServerPlayer target = CommandUtils
                                                                 .getTargetPlayer(ctx.getSource());
                                                         if (target == null) {
@@ -435,35 +423,33 @@ public class TwilightLibCommands {
                                                                     "This command can only be used by players or must specify a target."));
                                                             return 0;
                                                         }
-                                                        return executeEquipAddon(ctx.getSource(), target, addonId,
-                                                                false);
+                                                        return executeEquipAddon(ctx.getSource(), target,
+                                                                StringArgumentType.getString(ctx, "addon"), false);
                                                     })
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
-                                                                String addonId = ctx.getArgument("addonId",
-                                                                        String.class);
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx,
                                                                         "target");
                                                                 return executeEquipAddon(ctx.getSource(), target,
-                                                                        addonId, false);
+                                                                        StringArgumentType.getString(ctx, "addon"),
+                                                                        false);
                                                             })
                                                             .then(Commands
                                                                     .argument("persistent", BoolArgumentType.bool())
                                                                     .executes(ctx -> {
-                                                                        String addonId = ctx.getArgument("addonId",
-                                                                                String.class);
                                                                         ServerPlayer target = EntityArgument
                                                                                 .getPlayer(ctx, "target");
-                                                                        boolean persistent = BoolArgumentType
-                                                                                .getBool(ctx, "persistent");
                                                                         return executeEquipAddon(ctx.getSource(),
-                                                                                target, addonId, persistent);
+                                                                                target,
+                                                                                StringArgumentType.getString(ctx,
+                                                                                        "addon"),
+                                                                                BoolArgumentType.getBool(ctx,
+                                                                                        "persistent"));
                                                                     })))))
                                     .then(Commands.literal("unequip")
-                                            .then(Commands.argument("addonId", StringArgumentType.string())
+                                            .then(Commands.argument("addon", StringArgumentType.string())
                                                     .suggests(ADDON_SUGGESTIONS)
                                                     .executes(ctx -> {
-                                                        String addonId = ctx.getArgument("addonId", String.class);
                                                         ServerPlayer target = CommandUtils
                                                                 .getTargetPlayer(ctx.getSource());
                                                         if (target == null) {
@@ -471,16 +457,15 @@ public class TwilightLibCommands {
                                                                     "This command can only be used by players or must specify a target."));
                                                             return 0;
                                                         }
-                                                        return executeUnequipAddon(ctx.getSource(), target, addonId);
+                                                        return executeUnequipAddon(ctx.getSource(), target,
+                                                                StringArgumentType.getString(ctx, "addon"));
                                                     })
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
-                                                                String addonId = ctx.getArgument("addonId",
-                                                                        String.class);
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx,
                                                                         "target");
                                                                 return executeUnequipAddon(ctx.getSource(), target,
-                                                                        addonId);
+                                                                        StringArgumentType.getString(ctx, "addon"));
                                                             }))))
                                     .then(Commands.literal("clear")
                                             .executes(ctx -> {
@@ -498,14 +483,10 @@ public class TwilightLibCommands {
                                                         return executeClearAddons(ctx.getSource(), target);
                                                     })))
                                     .then(Commands.literal("tint")
-                                            .then(Commands.argument("addonId", StringArgumentType.string())
+                                            .then(Commands.argument("addon", StringArgumentType.string())
                                                     .suggests(ADDON_SUGGESTIONS)
                                                     .then(Commands.argument("color", StringArgumentType.string())
                                                             .executes(ctx -> {
-                                                                String addonId = ctx.getArgument("addonId",
-                                                                        String.class);
-                                                                String colorHex = ctx.getArgument("color",
-                                                                        String.class);
                                                                 ServerPlayer target = CommandUtils
                                                                         .getTargetPlayer(ctx.getSource());
                                                                 if (target == null) {
@@ -514,18 +495,19 @@ public class TwilightLibCommands {
                                                                     return 0;
                                                                 }
                                                                 return executeSetAddonTint(ctx.getSource(), target,
-                                                                        addonId, colorHex);
+                                                                        StringArgumentType.getString(ctx, "addon"),
+                                                                        StringArgumentType.getString(ctx, "color"));
                                                             })
                                                             .then(Commands.argument("target", EntityArgument.player())
                                                                     .executes(ctx -> {
-                                                                        String addonId = ctx.getArgument("addonId",
-                                                                                String.class);
-                                                                        String colorHex = ctx.getArgument("color",
-                                                                                String.class);
                                                                         ServerPlayer target = EntityArgument
                                                                                 .getPlayer(ctx, "target");
                                                                         return executeSetAddonTint(ctx.getSource(),
-                                                                                target, addonId, colorHex);
+                                                                                target,
+                                                                                StringArgumentType.getString(ctx,
+                                                                                        "addon"),
+                                                                                StringArgumentType.getString(ctx,
+                                                                                        "color"));
                                                                     }))))))
 
                             // model ...
@@ -544,7 +526,6 @@ public class TwilightLibCommands {
                                                         return executeSetModelVariant(ctx.getSource(), target,
                                                                 StringArgumentType.getString(ctx, "variant"));
                                                     })
-                                                    // model set <variant> <target>
                                                     .then(Commands.argument("target", EntityArgument.player())
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx,
@@ -562,7 +543,6 @@ public class TwilightLibCommands {
                                                 }
                                                 return executeClearModelVariant(ctx.getSource(), target);
                                             })
-                                            // model clear <target>
                                             .then(Commands.argument("target", EntityArgument.player())
                                                     .executes(ctx -> {
                                                         ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
@@ -577,18 +557,19 @@ public class TwilightLibCommands {
 
     private static int executeMorph(CommandSourceStack source, ServerPlayer target, ResourceLocation rl,
             boolean hideNametag) {
-        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(rl);
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get((net.minecraft.resources.ResourceLocation) rl);
 
         if (type == null || type == EntityType.PLAYER) {
-            source.sendFailure(Component.literal("Invalid entity type: " + rl));
+            source.sendFailure((net.minecraft.network.chat.Component) Component.literal("Invalid entity type: " + rl));
             LOGGER.warn("Or, what. {}", rl);
             return 0;
         }
 
         // Validate by creating a test entity
-        var testEntity = type.create(target.serverLevel());
+        var testEntity = type.create((net.minecraft.world.level.Level) target.serverLevel());
         if (testEntity == null) {
-            source.sendFailure(Component.literal("Failed to create entity: " + rl));
+            source.sendFailure(
+                    (net.minecraft.network.chat.Component) Component.literal("Failed to create entity: " + rl));
             LOGGER.error("How did I?! Uuuughh! Critical failure creating test entity for type: {}", rl);
             return 0;
         }
@@ -597,7 +578,8 @@ public class TwilightLibCommands {
             boolean isLiving = testEntity instanceof LivingEntity;
 
             if (!isLiving) {
-                source.sendFailure(Component.literal("Entity must be a LivingEntity."));
+                source.sendFailure(
+                        (net.minecraft.network.chat.Component) Component.literal("Entity must be a LivingEntity."));
                 LOGGER.warn("Is this the best physical representation you can manifest? {}", rl);
                 return 0;
             }
@@ -611,7 +593,7 @@ public class TwilightLibCommands {
         }
 
         setMorph(source, target, Optional.of(rl), hideNametag);
-        LOGGER.debug("Want to see something neat? {} morphed into {} (nametag hidden: {})",
+        LOGGER.debug("Here you go! {} morphed into {} (nametag hidden: {})",
                 target.getGameProfile().getName(), rl, hideNametag);
         return 1;
     }
@@ -621,7 +603,8 @@ public class TwilightLibCommands {
         IMorph morph = DataUtils.getMorphData(target);
         if (morph == null) {
             source.sendFailure(
-                    Component.literal("Or, what. Player " + target.getName().getString() + " has no morph data!"));
+                    (net.minecraft.network.chat.Component) Component
+                            .literal("Or, what. Player " + target.getName().getString() + " has no morph data!"));
             LOGGER.error("Or, what. Cannot set morph for {} - morph data not present", target.getName().getString());
             return;
         }
@@ -638,7 +621,8 @@ public class TwilightLibCommands {
 
         // Save to persistent NBT for death persistence
         if (morphType.isPresent()) {
-            DataUtils.getPersistentData(target).put(TwilightConstants.NBT_MORPH, morph.serialize());
+            DataUtils.getPersistentData(target).put(TwilightConstants.NBT_MORPH,
+                    (net.minecraft.nbt.Tag) morph.serialize());
         } else {
             DataUtils.getPersistentData(target).remove(TwilightConstants.NBT_MORPH);
             LOGGER.debug("Time to change! {} has been unmorphed", target.getGameProfile().getName());
@@ -651,11 +635,13 @@ public class TwilightLibCommands {
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             if (morphType.isPresent()) {
                 String nametagStatus = hideNametag ? " (nametag hidden)" : " (nametag visible)";
-                source.sendSuccess(() -> Component.literal(
+                source.sendSuccess(() -> (net.minecraft.network.chat.Component) Component.literal(
                         "Morph '" + morphType.get() + "' set for " + target.getGameProfile().getName() + nametagStatus),
                         true);
             } else {
-                source.sendSuccess(() -> Component.literal("Morph removed for " + target.getGameProfile().getName()),
+                source.sendSuccess(
+                        () -> (net.minecraft.network.chat.Component) Component
+                                .literal("Morph removed for " + target.getGameProfile().getName()),
                         true);
             }
         }
@@ -665,8 +651,9 @@ public class TwilightLibCommands {
             boolean persistent) {
         // Validate trail ID length (DoS protection)
         if (trailId == null || trailId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
-            source.sendFailure(Component.literal("Or, what. Trail ID too long (max "
-                    + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            source.sendFailure(
+                    (net.minecraft.network.chat.Component) Component.literal("Or, what. Trail ID too long (max "
+                            + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
             LOGGER.warn("Or, what. Rejected oversized trail ID (length: {}, max: {})",
                     trailId == null ? 0 : trailId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
             return 0;
@@ -675,14 +662,16 @@ public class TwilightLibCommands {
         // Validate trail type
         TrailType trailType = TrailType.fromId(trailId);
         if (trailType == null) {
-            source.sendFailure(Component.literal("Invalid trail type: " + trailId));
+            source.sendFailure(
+                    (net.minecraft.network.chat.Component) Component.literal("Invalid trail type: " + trailId));
             return 0;
         }
 
         var trails = DataUtils.getTrailsData(target);
         if (trails == null) {
             source.sendFailure(
-                    Component.literal("Or, what. Player " + target.getName().getString() + " has no trails data!"));
+                    (net.minecraft.network.chat.Component) Component
+                            .literal("Or, what. Player " + target.getName().getString() + " has no trails data!"));
             LOGGER.error("Or, what. Cannot equip trail for {} - trails data not present", target.getName().getString());
             return 0;
         }
@@ -700,7 +689,8 @@ public class TwilightLibCommands {
         ((TrailsData) trails).setActiveTrail(trailId, true, persistent);
 
         // Save to persistent NBT
-        DataUtils.getPersistentData(target).put(TwilightConstants.NBT_TRAILS, trails.serialize());
+        DataUtils.getPersistentData(target).put(TwilightConstants.NBT_TRAILS,
+                (net.minecraft.nbt.Tag) trails.serialize());
 
         // Sync to all clients (we only sync active trails now)
         NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(target.getUUID(), trails.getActiveTrails()));
@@ -709,7 +699,7 @@ public class TwilightLibCommands {
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             String persistMode = persistent ? " (persistent)" : " (temporary)";
             source.sendSuccess(
-                    () -> Component.literal(
+                    () -> (net.minecraft.network.chat.Component) Component.literal(
                             "Trail '" + trailId + "' equipped for " + target.getGameProfile().getName() + persistMode),
                     true);
         }
@@ -726,9 +716,11 @@ public class TwilightLibCommands {
         }
 
         if (trailIds.length == 0) {
-            source.sendSuccess(() -> Component.literal("No trails registered"), false);
+            source.sendSuccess(() -> (net.minecraft.network.chat.Component) Component.literal("No trails registered"),
+                    false);
         } else {
-            source.sendSuccess(() -> Component.literal("Available trails: " + String.join(", ", trailIds)), false);
+            source.sendSuccess(() -> (net.minecraft.network.chat.Component) Component
+                    .literal("Available trails: " + String.join(", ", trailIds)), false);
         }
 
         return 1;
@@ -737,8 +729,9 @@ public class TwilightLibCommands {
     private static int executeUnequipTrail(CommandSourceStack source, ServerPlayer target, String trailId) {
         // Validate trail ID length (DoS protection)
         if (trailId == null || trailId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
-            source.sendFailure(Component.literal("Or, what. Trail ID too long (max "
-                    + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            source.sendFailure(
+                    (net.minecraft.network.chat.Component) Component.literal("Or, what. Trail ID too long (max "
+                            + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
             LOGGER.warn("Or, what. Rejected oversized trail ID (length: {}, max: {})",
                     trailId == null ? 0 : trailId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
             return 0;
@@ -747,7 +740,8 @@ public class TwilightLibCommands {
         var trails = DataUtils.getTrailsData(target);
         if (trails == null) {
             source.sendFailure(
-                    Component.literal("Or, what. Player " + target.getName().getString() + " has no trails data!"));
+                    (net.minecraft.network.chat.Component) Component
+                            .literal("Or, what. Player " + target.getName().getString() + " has no trails data!"));
             LOGGER.error("Or, what. Cannot unequip trail for {} - trails data not present",
                     target.getName().getString());
             return 0;
@@ -757,7 +751,8 @@ public class TwilightLibCommands {
         ((TrailsData) trails).forceUnequipTrail(trailId);
 
         // Save to persistent NBT
-        DataUtils.getPersistentData(target).put(TwilightConstants.NBT_TRAILS, trails.serialize());
+        DataUtils.getPersistentData(target).put(TwilightConstants.NBT_TRAILS,
+                (net.minecraft.nbt.Tag) trails.serialize());
 
         // Sync to all clients
         NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(target.getUUID(), trails.getActiveTrails()));
@@ -765,7 +760,7 @@ public class TwilightLibCommands {
         // Send feedback only to admin/console (not when player targets self)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             source.sendSuccess(
-                    () -> Component
+                    () -> (net.minecraft.network.chat.Component) Component
                             .literal("Trail '" + trailId + "' unequipped for " + target.getGameProfile().getName()),
                     true);
         }
@@ -777,8 +772,9 @@ public class TwilightLibCommands {
             boolean persistent) {
         // Validate effect ID length (DoS protection)
         if (effectId == null || effectId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
-            source.sendFailure(Component.literal("Or, what. Effect ID too long (max "
-                    + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            source.sendFailure(
+                    (net.minecraft.network.chat.Component) Component.literal("Or, what. Effect ID too long (max "
+                            + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
             LOGGER.warn("Or, what. Rejected oversized effect ID (length: {}, max: {})",
                     effectId == null ? 0 : effectId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
             return 0;
@@ -787,7 +783,8 @@ public class TwilightLibCommands {
         // Validate effect type
         EffectType effectType = EffectType.fromId(effectId);
         if (effectType == null) {
-            source.sendFailure(Component.literal("Invalid effect type: " + effectId));
+            source.sendFailure(
+                    (net.minecraft.network.chat.Component) Component.literal("Invalid effect type: " + effectId));
             LOGGER.warn("Or, what. Unknown effect type requested: {}", effectId);
             return 0;
         }
@@ -795,7 +792,8 @@ public class TwilightLibCommands {
         var effects = DataUtils.getEffectsData(target);
         if (effects == null) {
             source.sendFailure(
-                    Component.literal("Or, what. Player " + target.getName().getString() + " has no effects data!"));
+                    (net.minecraft.network.chat.Component) Component
+                            .literal("Or, what. Player " + target.getName().getString() + " has no effects data!"));
             LOGGER.error("Or, what. Cannot equip effect for {} - effects data not present",
                     target.getName().getString());
             return 0;
@@ -814,7 +812,8 @@ public class TwilightLibCommands {
         ((EffectsData) effects).setActiveEffect(effectId, true, persistent);
 
         // Save to persistent NBT
-        DataUtils.getPersistentData(target).put(TwilightConstants.NBT_EFFECTS, effects.serialize());
+        DataUtils.getPersistentData(target).put(TwilightConstants.NBT_EFFECTS,
+                (net.minecraft.nbt.Tag) effects.serialize());
 
         // Sync to all clients (we only sync active effects now)
         NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(target.getUUID(), effects.getActiveEffects()));
@@ -822,7 +821,7 @@ public class TwilightLibCommands {
         // Send feedback only to admin/console (not when player targets self)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             String persistMode = persistent ? " (persistent)" : " (temporary)";
-            source.sendSuccess(() -> Component.literal(
+            source.sendSuccess(() -> (net.minecraft.network.chat.Component) Component.literal(
                     "Effect '" + effectId + "' equipped for " + target.getGameProfile().getName() + persistMode), true);
         }
 
@@ -832,8 +831,9 @@ public class TwilightLibCommands {
     private static int executeUnequipEffect(CommandSourceStack source, ServerPlayer target, String effectId) {
         // Validate effect ID length (DoS protection)
         if (effectId == null || effectId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
-            source.sendFailure(Component.literal("Or, what. Effect ID too long (max "
-                    + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
+            source.sendFailure(
+                    (net.minecraft.network.chat.Component) Component.literal("Or, what. Effect ID too long (max "
+                            + TwilightConfig.MAX_COSMETIC_ID_LENGTH.get() + " characters)"));
             LOGGER.warn("Or, what. Rejected oversized effect ID (length: {}, max: {})",
                     effectId == null ? 0 : effectId.length(), TwilightConfig.MAX_COSMETIC_ID_LENGTH.get());
             return 0;
@@ -842,7 +842,8 @@ public class TwilightLibCommands {
         var effects = DataUtils.getEffectsData(target);
         if (effects == null) {
             source.sendFailure(
-                    Component.literal("Or, what. Player " + target.getName().getString() + " has no effects data!"));
+                    (net.minecraft.network.chat.Component) Component
+                            .literal("Or, what. Player " + target.getName().getString() + " has no effects data!"));
             LOGGER.error("Or, what. Cannot unequip effect for {} - effects data not present",
                     target.getName().getString());
             return 0;
@@ -852,7 +853,8 @@ public class TwilightLibCommands {
         ((EffectsData) effects).forceUnequipEffect(effectId);
 
         // Save to persistent NBT
-        DataUtils.getPersistentData(target).put(TwilightConstants.NBT_EFFECTS, effects.serialize());
+        DataUtils.getPersistentData(target).put(TwilightConstants.NBT_EFFECTS,
+                (net.minecraft.nbt.Tag) effects.serialize());
 
         // Sync to all clients
         NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(target.getUUID(), effects.getActiveEffects()));
@@ -860,7 +862,7 @@ public class TwilightLibCommands {
         // Send feedback only to admin/console (not when player targets self)
         if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
             source.sendSuccess(
-                    () -> Component
+                    () -> (net.minecraft.network.chat.Component) Component
                             .literal("Effect '" + effectId + "' unequipped for " + target.getGameProfile().getName()),
                     true);
         }
@@ -877,23 +879,28 @@ public class TwilightLibCommands {
         }
 
         if (effectIds.length == 0) {
-            source.sendSuccess(() -> Component.literal("No effects registered"), false);
+            source.sendSuccess(() -> (net.minecraft.network.chat.Component) Component.literal("No effects registered"),
+                    false);
         } else {
-            source.sendSuccess(() -> Component.literal("Available effects: " + String.join(", ", effectIds)), false);
+            source.sendSuccess(() -> (net.minecraft.network.chat.Component) Component
+                    .literal("Available effects: " + String.join(", ", effectIds)), false);
         }
 
         return 1;
     }
 
     private static int executeReload(CommandSourceStack source) {
-        source.sendSuccess(() -> Component.literal("Reloading Twilight Lib..."), true);
+        source.sendSuccess(() -> (net.minecraft.network.chat.Component) Component.literal("Reloading Twilight Lib..."),
+                true);
         LOGGER.info("Hey, whatcha doing? Admin {} initiated reload command", source.getTextName());
 
         try {
             // Reload supporter data from GitHub (force refresh to bypass cache)
-            source.sendSuccess(() -> Component.literal("Fetching supporter data from GitHub..."), false);
+            source.sendSuccess(() -> (net.minecraft.network.chat.Component) Component
+                    .literal("Fetching supporter data from GitHub..."), false);
             SupporterService.forceRefresh().thenRun(() -> {
-                source.sendSuccess(() -> Component.literal("✁ESupporter data reloaded successfully!"), false);
+                source.sendSuccess(() -> (net.minecraft.network.chat.Component) Component
+                        .literal("✁ESupporter data reloaded successfully!"), false);
                 LOGGER.info("Gotcha! Now that was more sparkles. Supporter data reloaded via command");
 
                 // Re-sync cosmetics for all online players
@@ -909,18 +916,26 @@ public class TwilightLibCommands {
 
                     int finalCount = syncedPlayers;
                     source.sendSuccess(
-                            () -> Component.literal("✁ERe-synced cosmetics for " + finalCount + " online players"),
+                            () -> (net.minecraft.network.chat.Component) Component
+                                    .literal("✁ERe-synced cosmetics for " + finalCount + " online players"),
                             false);
                     LOGGER.info("Time to change! Re-synced cosmetics for {} online players", finalCount);
                 }
             }).exceptionally(ex -> {
-                source.sendFailure(Component.literal("✁EFailed to reload supporter data: " + ex.getMessage()));
-                LOGGER.error("Dang! Failed to reload supporter data via command: {}", ex.getMessage());
+                try {
+                    source.sendFailure((net.minecraft.network.chat.Component) Component
+                            .literal("✁EFailed to reload supporter data: " + ex.getMessage()));
+                    LOGGER.error("Dang! Failed to reload supporter data via command: {}", ex.getMessage());
+                } catch (Exception e) {
+                    // Ignore
+                }
                 return null;
             });
 
             // Clear and reinitialize entity cache
-            source.sendSuccess(() -> Component.literal("Refreshing entity cache..."), false);
+            source.sendSuccess(
+                    () -> (net.minecraft.network.chat.Component) Component.literal("Refreshing entity cache..."),
+                    false);
             synchronized (VALID_LIVING_ENTITIES) {
                 VALID_LIVING_ENTITIES.clear();
                 cacheInitialized = false;
@@ -929,16 +944,19 @@ public class TwilightLibCommands {
             if (source.getLevel() != null) {
                 initializeEntityCache(source.getLevel());
                 source.sendSuccess(
-                        () -> Component.literal(
+                        () -> (net.minecraft.network.chat.Component) Component.literal(
                                 "✁EEntity cache refreshed with " + VALID_LIVING_ENTITIES.size() + " living entities"),
                         false);
                 LOGGER.info("THAT WAS AWESOME-AWESOME! Right? Entity cache refreshed via command");
             }
 
-            source.sendSuccess(() -> Component.literal("Twilight Lib reload complete!"), true);
+            source.sendSuccess(
+                    () -> (net.minecraft.network.chat.Component) Component.literal("Twilight Lib reload complete!"),
+                    true);
             return 1;
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Reload failed: " + e.getMessage()));
+            source.sendFailure(
+                    (net.minecraft.network.chat.Component) Component.literal("Reload failed: " + e.getMessage()));
             LOGGER.error("Oh, farn it! Reload command failed: {}", e.getMessage(), e);
             return 0;
         }
@@ -949,6 +967,10 @@ public class TwilightLibCommands {
      * This mirrors the logic from TwilightLib.onPlayerLogin but for existing
      * players.
      */
+    private static void saveToPersistentData(ServerPlayer player, String key, net.minecraft.nbt.CompoundTag data) {
+        DataUtils.getPersistentData(player).put(key, (net.minecraft.nbt.Tag) data);
+    }
+
     private static void resyncPlayerCosmetics(ServerPlayer player) {
         String uuid = player.getStringUUID();
         Optional<SupporterData> supporterData = SupporterService.getSupporterData(uuid);
@@ -959,7 +981,8 @@ public class TwilightLibCommands {
             NetworkHandler
                     .sendMorphToAll(SyncMorphPacket.of(player.getUUID(), Optional.of(rl), morph.isNametagHidden()));
             player.refreshDimensions();
-            DataUtils.getPersistentData(player).put(TwilightConstants.NBT_MORPH, morph.serialize());
+            saveToPersistentData(player, TwilightConstants.NBT_MORPH,
+                    (net.minecraft.nbt.CompoundTag) morph.serialize());
             LOGGER.debug("Time to change! Re-synced morph {} for {}", rl, player.getGameProfile().getName());
         });
 
@@ -988,7 +1011,8 @@ public class TwilightLibCommands {
                 }
             }
 
-            DataUtils.getPersistentData(player).put(TwilightConstants.NBT_TRAILS, trails.serialize());
+            saveToPersistentData(player, TwilightConstants.NBT_TRAILS,
+                    (net.minecraft.nbt.CompoundTag) trails.serialize());
             if (!trails.getActiveTrails().isEmpty()) {
                 NetworkHandler.sendTrailsToAll(new SyncTrailsPacket(player.getUUID(), trails.getActiveTrails()));
             }
@@ -1012,7 +1036,8 @@ public class TwilightLibCommands {
                 }
             }
 
-            DataUtils.getPersistentData(player).put(TwilightConstants.NBT_ADDONS, addons.serialize());
+            saveToPersistentData(player, TwilightConstants.NBT_ADDONS,
+                    (net.minecraft.nbt.CompoundTag) addons.serialize());
             NetworkHandler.sendAddonsToAll(
                     new SyncAddonsPacket(player.getUUID(), addons.getActiveAddons(),
                             addons.getExternalGrants(), addons.getAllAddonTints()));
@@ -1036,7 +1061,8 @@ public class TwilightLibCommands {
                 }
             }
 
-            DataUtils.getPersistentData(player).put(TwilightConstants.NBT_EFFECTS, effects.serialize());
+            saveToPersistentData(player, TwilightConstants.NBT_EFFECTS,
+                    (net.minecraft.nbt.CompoundTag) effects.serialize());
             if (!effects.getActiveEffects().isEmpty()) {
                 NetworkHandler.sendEffectsToAll(new SyncEffectsPacket(player.getUUID(), effects.getActiveEffects()));
             }
@@ -1081,7 +1107,8 @@ public class TwilightLibCommands {
         DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
         // Sync to all clients
         NetworkHandler.sendAddonsToAll(
-                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
+                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(),
+                        addons.getAllAddonTints()));
         LOGGER.debug("Time to change! {} activated addon: {} (persistent: {})",
                 target.getGameProfile().getName(), addonId, persistent);
 
@@ -1105,7 +1132,8 @@ public class TwilightLibCommands {
         DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
         // Sync to all clients
         NetworkHandler.sendAddonsToAll(
-                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
+                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(),
+                        addons.getAllAddonTints()));
         LOGGER.debug("Time to change! {} deactivated addon: {}", target.getGameProfile().getName(), addonId);
 
         // Only send feedback if source is NOT the target player (admin, command block,
@@ -1126,7 +1154,8 @@ public class TwilightLibCommands {
         DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
         // Sync to all clients
         NetworkHandler.sendAddonsToAll(
-                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
+                new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(),
+                        addons.getAllAddonTints()));
         LOGGER.debug("Time to change! Cleared all active addons for {}", target.getGameProfile().getName());
 
         // Only send feedback if source is NOT the target player (admin, command block,
@@ -1244,7 +1273,8 @@ public class TwilightLibCommands {
 
                 DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
                 NetworkHandler.sendAddonsToAll(
-                        new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
+                        new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(),
+                                addons.getAllAddonTints()));
                 LOGGER.debug("Bulk tint set for {} active addons to #{}", activeAddons.size(), hexString.toUpperCase());
 
                 if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
@@ -1258,7 +1288,8 @@ public class TwilightLibCommands {
                 addons.setAddonTint(addonId, color);
                 DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
                 NetworkHandler.sendAddonsToAll(
-                        new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
+                        new SyncAddonsPacket(target.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(),
+                                addons.getAllAddonTints()));
                 LOGGER.debug("Oooooh! Pretty! {} set tint for addon '{}' to #{}", target.getGameProfile().getName(),
                         addonId, hexString.toUpperCase());
 

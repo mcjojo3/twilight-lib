@@ -2,6 +2,7 @@ package mc.sayda.twilight_lib.network;
 
 import com.mojang.logging.LogUtils;
 import io.netty.buffer.ByteBuf;
+import javax.annotation.Nonnull;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -15,44 +16,28 @@ import java.util.Set;
 import java.util.UUID;
 
 public record SyncTrailsPacket(UUID playerId, Set<String> trails) implements CustomPacketPayload {
-    public SyncTrailsPacket {
-        java.util.Objects.requireNonNull(playerId, "playerId");
-        trails = trails != null ? trails : java.util.Collections.emptySet();
-    }
+    public SyncTrailsPacket{java.util.Objects.requireNonNull(playerId,"playerId");trails=trails!=null?trails:java.util.Collections.emptySet();}
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final CustomPacketPayload.Type<SyncTrailsPacket> TYPE = new CustomPacketPayload.Type<>(
             ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "sync_trails"));
+    
+    private static final @Nonnull UUID SENTINEL_UUID = new UUID(0, 0);
 
-    // Sentinel UUID for malformed packets
-    private static final UUID SENTINEL_UUID = new UUID(0, 0);
+    private static final StreamCodec<ByteBuf, UUID> UUID_CODEC=new StreamCodec<>(){@Override public @Nonnull UUID decode(@Nonnull ByteBuf buf){try{return new UUID(buf.readLong(),buf.readLong());}catch(Exception e){LOGGER.warn("How did I?! Uuuughh! Failed to decode UUID in SyncTrailsPacket: {}",e.getMessage());return SENTINEL_UUID;}}
 
-    // Custom UUID codec (encodes as two longs)
-    private static final StreamCodec<ByteBuf, UUID> UUID_CODEC = new StreamCodec<>() {
-        @Override
-        public UUID decode(ByteBuf buf) {
-            try {
-                return new UUID(buf.readLong(), buf.readLong());
-            } catch (Exception e) {
-                LOGGER.warn("How did I?! Uuuughh! Failed to decode UUID in SyncTrailsPacket: {}", e.getMessage());
-                return SENTINEL_UUID; // Return sentinel on decode error
-            }
-        }
+    @Override public void encode(@Nonnull ByteBuf buf,@Nonnull UUID uuid){buf.writeLong(uuid.getMostSignificantBits());buf.writeLong(uuid.getLeastSignificantBits());}};
 
-        @Override
-        public void encode(ByteBuf buf, UUID uuid) {
-            buf.writeLong(uuid.getMostSignificantBits());
-            buf.writeLong(uuid.getLeastSignificantBits());
-        }
-    };
-
+    /**
+     * Map must be used because ByteBufCodecs.collection results in HashSet but
+     * record constructor and getter use Set interface.
+     */
     public static final StreamCodec<ByteBuf, SyncTrailsPacket> STREAM_CODEC = StreamCodec.composite(
             UUID_CODEC,
             SyncTrailsPacket::playerId,
-            // Hardcoded max size (128) to avoid NeoForge crash from config not being loaded
-            // at static init
-            ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8, 128),
+            ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8, 128)
+                    .map(java.util.function.Function.identity(), set -> (HashSet<String>) set),
             SyncTrailsPacket::trails,
             SyncTrailsPacket::new);
 
@@ -70,8 +55,6 @@ public record SyncTrailsPacket(UUID playerId, Set<String> trails) implements Cus
                         return;
                     }
 
-                    // Try the local player directly first (valid even before entity tracking on
-                    // join)
                     net.minecraft.world.entity.player.Player entity = null;
                     net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
                     if (minecraft.player != null && minecraft.player.getUUID().equals(msg.playerId())) {
@@ -79,8 +62,9 @@ public record SyncTrailsPacket(UUID playerId, Set<String> trails) implements Cus
                     } else if (minecraft.level != null) {
                         entity = minecraft.level.getPlayerByUUID(msg.playerId());
                     }
+                    
                     if (entity == null) {
-                        LOGGER.warn("Or, what. Player {} not found in level (might be out of range)", msg.playerId());
+                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", msg.playerId());
                         return;
                     }
 
@@ -91,7 +75,7 @@ public record SyncTrailsPacket(UUID playerId, Set<String> trails) implements Cus
                     }
 
                     trails.syncEquippedFromPacket(msg.trails());
-                    LOGGER.debug("Synced {} active trails for {}", msg.trails().size(), entity.getName().getString());
+                    LOGGER.debug("Want to see something neat? Synced {} active trails for {}", msg.trails().size(), entity.getName().getString());
                 } catch (Exception e) {
                     LOGGER.error("How did I?! Uuuughh! Failed to sync trails for player {}", msg.playerId(), e);
                 }

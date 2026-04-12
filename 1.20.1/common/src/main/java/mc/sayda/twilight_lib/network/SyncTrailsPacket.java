@@ -12,6 +12,9 @@ import java.util.function.Supplier;
 public class SyncTrailsPacket {
     public static final ResourceLocation ID = new ResourceLocation(TwilightLib.MODID, "sync_trails");
 
+    private static final @javax.annotation.Nonnull UUID SENTINEL_UUID = new UUID(0, 0);
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+
     private final UUID playerId;
     private final Set<String> trails;
 
@@ -21,8 +24,15 @@ public class SyncTrailsPacket {
     }
 
     public SyncTrailsPacket(FriendlyByteBuf buf) {
-        this.playerId = buf.readUUID();
-        // Use a reasonable limit to prevent memory exhaustion
+        UUID id;
+        try {
+            id = buf.readUUID();
+        } catch (Exception e) {
+            LOGGER.warn("How did I?! Uuuughh! Failed to decode UUID in SyncTrailsPacket: {}", e.getMessage());
+            id = SENTINEL_UUID;
+        }
+        this.playerId = id;
+        // Use config values for limits
         int maxColl = mc.sayda.twilight_lib.config.TwilightConfig.NETWORK_MAX_COLLECTION_SIZE.get();
         int maxStr = mc.sayda.twilight_lib.config.TwilightConfig.NETWORK_MAX_STRING_LENGTH.get();
         this.trails = buf.readCollection(s -> new java.util.HashSet<>(Math.min(s, maxColl)), b -> b.readUtf(maxStr));
@@ -37,16 +47,37 @@ public class SyncTrailsPacket {
         var context = contextSupplier.get();
         context.queue(() -> {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> {
-                var player = context.getPlayer();
-                var level = (player != null) ? player.level() : mc.sayda.twilight_lib.client.ClientAccess.getLevel();
-                if (level == null)
-                    return;
-                var entity = level.getPlayerByUUID(this.playerId);
-                if (entity == null)
-                    return;
-                var data = DataUtils.getTrailsData(entity);
-                if (data != null) {
+                try {
+                    if (this.playerId.equals(SENTINEL_UUID)) {
+                        LOGGER.warn("How did I?! Uuuughh! Received malformed sync_trails packet with invalid UUID");
+                        return;
+                    }
+
+                    net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+                    net.minecraft.world.entity.player.Player player = null;
+
+                    if (minecraft.player != null && minecraft.player.getUUID().equals(this.playerId)) {
+                        player = minecraft.player;
+                    } else if (minecraft.level != null) {
+                        player = minecraft.level.getPlayerByUUID(this.playerId);
+                    }
+
+                    if (player == null) {
+                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", this.playerId);
+                        return;
+                    }
+
+                    var data = DataUtils.getTrailsData(player);
+                    if (data == null) {
+                        LOGGER.error("How did I?! Uuuughh! Failed to get trails data for player {}", this.playerId);
+                        return;
+                    }
+
                     data.syncEquippedFromPacket(this.trails);
+                    LOGGER.debug("Want to see something neat? Synced {} active trails for {}", this.trails.size(),
+                            player.getName().getString());
+                } catch (Exception e) {
+                    LOGGER.error("How did I?! Uuuughh! Failed to sync trails for player {}", this.playerId, e);
                 }
             });
         });

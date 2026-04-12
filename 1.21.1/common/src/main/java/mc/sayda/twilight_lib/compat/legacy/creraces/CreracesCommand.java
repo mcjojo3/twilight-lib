@@ -257,13 +257,17 @@ public class CreracesCommand {
         performFullReset(target);
         CreRacesInterop.setRace(target, raceId);
 
-        source.sendSuccess(() -> Component.literal("Set race to ")
-                .append(Component.literal(raceName))
-                .append(Component.literal(" (").withStyle(ChatFormatting.GRAY))
-                .append(Component.literal(String.valueOf(raceId)).withStyle(ChatFormatting.GRAY))
-                .append(Component.literal(")").withStyle(ChatFormatting.GRAY))
-                .append(Component.literal(" for "))
-                .append(Component.literal(target.getGameProfile().getName())), true);
+        source.sendSuccess(() -> {
+            @SuppressWarnings("null")
+            Component component = Component.literal("Set race to ")
+                    .append(Component.literal(raceName))
+                    .append(Component.literal(" (").withStyle(ChatFormatting.GRAY))
+                    .append(Component.literal(String.valueOf(raceId)).withStyle(ChatFormatting.GRAY))
+                    .append(Component.literal(")").withStyle(ChatFormatting.GRAY))
+                    .append(Component.literal(" for "))
+                    .append(Component.literal(target.getGameProfile().getName()));
+            return component;
+        }, true);
         return 1;
     }
 

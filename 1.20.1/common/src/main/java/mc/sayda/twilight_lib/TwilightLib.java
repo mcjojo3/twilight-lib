@@ -62,7 +62,7 @@ public class TwilightLib {
                 mc.sayda.twilight_lib.cosmetics.ModRequirement.getLoadedMods().size());
 
         // Initialize Registries
-        // Registrars are initialized on class load
+        mc.sayda.twilight_lib.network.NetworkHandler.register();
         mc.sayda.twilight_lib.entity.ModEntities.register();
         mc.sayda.twilight_lib.particle.ModParticles.register();
         mc.sayda.twilight_lib.ModAttributes.register();
@@ -78,8 +78,7 @@ public class TwilightLib {
         mc.sayda.twilight_lib.morph.MorphRegistry.getInstance();
         mc.sayda.twilight_lib.model_variant.ModelVariantRegistry.getInstance();
 
-        // Network
-        // S2C registration moved to TwilightLibClient
+        // API registries initialized above
 
         // Register Commands
         CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
@@ -126,7 +125,7 @@ public class TwilightLib {
     }
 
     private static void onPlayerLogin(ServerPlayer loggedInPlayer) {
-        LOGGER.info("I wanna have fun and chat with someone besides myself! Syncing morphs and addons for {}",
+        LOGGER.info("We are going to be best friends! Player {} logged in",
                 loggedInPlayer.getGameProfile().getName());
 
         // Platform handling (Forge capabilities or Fabric Mixins) already restored 
@@ -196,7 +195,7 @@ public class TwilightLib {
     }
 
     public static void onPlayerRespawn(ServerPlayer player) {
-        LOGGER.debug("Here you go! Syncing all data for respawning player {}", player.getGameProfile().getName());
+        LOGGER.debug("Time to change! Syncing all data for respawning player {}", player.getGameProfile().getName());
         mc.sayda.twilight_lib.cosmetics.CosmeticManager.resyncAll(player);
     }
 
@@ -266,6 +265,6 @@ public class TwilightLib {
         long delayTicks = TwilightConfig.LOGIN_SYNC_DELAY_TICKS.get();
         pendingTasks.put(player.getUUID(), new DelayedSyncTask(player.getUUID(), serverTicks.get() + delayTicks));
 
-        LOGGER.debug("Twilight Lib: Scheduled dimension sync for {}", player.getGameProfile().getName());
+        LOGGER.debug("Time to change! Player {} changed dimensions from {} to {}", player.getGameProfile().getName(), oldLevel.location(), newLevel.location());
     }
 }

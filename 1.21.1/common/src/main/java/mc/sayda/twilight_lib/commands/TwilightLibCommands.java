@@ -25,7 +25,6 @@ import mc.sayda.twilight_lib.network.SyncEffectsPacket;
 import mc.sayda.twilight_lib.network.SyncModelVariantPacket;
 import mc.sayda.twilight_lib.TwilightConstants;
 import mc.sayda.twilight_lib.config.TwilightConfig;
-import dev.architectury.event.events.common.CommandRegistrationEvent;
 import mc.sayda.twilight_lib.supporter.SupporterService;
 
 import net.minecraft.commands.CommandSourceStack;
@@ -45,10 +44,8 @@ import com.mojang.brigadier.CommandDispatcher;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class TwilightLibCommands {
         private static final Logger LOGGER = LogUtils.getLogger();
@@ -79,7 +76,9 @@ public class TwilightLibCommands {
                 // Synchronize on the set itself for iteration (per
                 // Collections.synchronizedSet() contract)
                 synchronized (VALID_LIVING_ENTITIES) {
-                        return SharedSuggestionProvider.suggestResource(VALID_LIVING_ENTITIES.stream(), builder);
+                        return SharedSuggestionProvider.suggestResource(
+                                        (java.util.stream.Stream<ResourceLocation>) VALID_LIVING_ENTITIES.stream(),
+                                        builder);
                 }
         };
 
@@ -101,11 +100,13 @@ public class TwilightLibCommands {
 
         // Suggestion provider for addon types
         private static final SuggestionProvider<CommandSourceStack> ADDON_SUGGESTIONS = (context,
-                        builder) -> SharedSuggestionProvider.suggest(AddonRegistry.getAllAddonIds(), builder);
+                        builder) -> SharedSuggestionProvider.suggest((Iterable<String>) AddonRegistry.getAllAddonIds(),
+                                        builder);
 
         // Suggestion provider for model variants (steve/alex)
         private static final SuggestionProvider<CommandSourceStack> MODEL_VARIANT_SUGGESTIONS = (context,
-                        builder) -> SharedSuggestionProvider.suggest(new String[] { "steve", "alex" }, builder);
+                        builder) -> SharedSuggestionProvider
+                                        .suggest((Iterable<String>) java.util.Arrays.asList("steve", "alex"), builder);
 
         /**
          * Check if entity registry has changed (new mods loaded entities).
@@ -186,247 +187,143 @@ public class TwilightLibCommands {
                 }
                 cachedRegistrySize = BuiltInRegistries.ENTITY_TYPE.size();
                 cacheInitialized = true;
-                LOGGER.info("Yes! This'll be fun! Right? Entity type cache initialized with {} living entities",
+                LOGGER.info("What's your name? Entity type cache initialized with {} living entities",
                                 VALID_LIVING_ENTITIES.size());
         }
 
         public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
-                // Register CreRaces modernized command
-                // TODO: This command will be moved back to CreRaces once the rewrite uses the
-                // new API
-                // mc.sayda.twilight_lib.compat.legacy.creraces.CreracesCommand.register(dispatcher);
-
-                // Register base commands with all aliases
                 for (String alias : new String[] { "twilightlib", "tl" }) {
                         dispatcher.register(
                                         Commands.literal(alias)
                                                         .requires(src -> src.hasPermission(2))
-
-                                                        // morph <entity>...
                                                         .then(Commands.literal("morph")
                                                                         .then(Commands.argument("entity",
                                                                                         ResourceLocationArgument.id())
                                                                                         .suggests(ENTITY_SUGGESTIONS)
-                                                                                        .executes(ctx -> {
-                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                .getTargetPlayer(
-                                                                                                                                ctx.getSource());
-                                                                                                if (target == null) {
-                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                        Component.literal(
-                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                        return 0;
-                                                                                                }
-                                                                                                return executeMorph(ctx
-                                                                                                                .getSource(),
-                                                                                                                target,
-                                                                                                                ResourceLocationArgument
-                                                                                                                                .getId(ctx, "entity"),
-                                                                                                                false);
-                                                                                        })
-                                                                                        // morph <entity> <hidenametag>
+                                                                                        .executes(ctx -> executeMorph(
+                                                                                                        ctx.getSource(),
+                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                        ctx.getSource()),
+                                                                                                        ResourceLocationArgument
+                                                                                                                        .getId(ctx, "entity"),
+                                                                                                        false))
                                                                                         .then(Commands.argument(
                                                                                                         "hidenametag",
                                                                                                         BoolArgumentType.bool())
-                                                                                                        .executes(ctx -> {
-                                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                                .getTargetPlayer(
-                                                                                                                                                ctx.getSource());
-                                                                                                                if (target == null) {
-                                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                                        Component.literal(
-                                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                                        return 0;
-                                                                                                                }
-                                                                                                                return executeMorph(
-                                                                                                                                ctx.getSource(),
-                                                                                                                                target,
-                                                                                                                                ResourceLocationArgument
-                                                                                                                                                .getId(ctx, "entity"),
-                                                                                                                                BoolArgumentType.getBool(
-                                                                                                                                                ctx,
-                                                                                                                                                "hidenametag"));
-                                                                                                        }))
-                                                                                        // morph <entity> <target>
+                                                                                                        .executes(ctx -> executeMorph(
+                                                                                                                        ctx.getSource(),
+                                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                                        ctx.getSource()),
+                                                                                                                        ResourceLocationArgument
+                                                                                                                                        .getId(ctx, "entity"),
+                                                                                                                        BoolArgumentType.getBool(
+                                                                                                                                        ctx,
+                                                                                                                                        "hidenametag"))))
                                                                                         .then(Commands.argument(
                                                                                                         "target",
                                                                                                         EntityArgument.player())
-                                                                                                        .executes(ctx -> {
-                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                .getPlayer(ctx, "target");
-                                                                                                                return executeMorph(
-                                                                                                                                ctx.getSource(),
-                                                                                                                                target,
-                                                                                                                                ResourceLocationArgument
-                                                                                                                                                .getId(ctx, "entity"),
-                                                                                                                                false);
-                                                                                                        })
-                                                                                                        // morph
-                                                                                                        // <entity>
-                                                                                                        // <target>
-                                                                                                        // <hidenametag>
+                                                                                                        .executes(ctx -> executeMorph(
+                                                                                                                        ctx.getSource(),
+                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                        ctx,
+                                                                                                                                        "target"),
+                                                                                                                        ResourceLocationArgument
+                                                                                                                                        .getId(ctx, "entity"),
+                                                                                                                        false))
                                                                                                         .then(Commands.argument(
                                                                                                                         "hidenametag",
                                                                                                                         BoolArgumentType.bool())
-                                                                                                                        .executes(ctx -> {
-                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                .getPlayer(ctx,
-                                                                                                                                                                "target");
-                                                                                                                                return executeMorph(
-                                                                                                                                                ctx.getSource(),
-                                                                                                                                                target,
-                                                                                                                                                ResourceLocationArgument
-                                                                                                                                                                .getId(ctx, "entity"),
-                                                                                                                                                BoolArgumentType.getBool(
-                                                                                                                                                                ctx,
-                                                                                                                                                                "hidenametag"));
-                                                                                                                        })))))
-
-                                                        // unmorph
+                                                                                                                        .executes(ctx -> executeMorph(
+                                                                                                                                        ctx.getSource(),
+                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                        ctx,
+                                                                                                                                                        "target"),
+                                                                                                                                        ResourceLocationArgument
+                                                                                                                                                        .getId(ctx, "entity"),
+                                                                                                                                        BoolArgumentType.getBool(
+                                                                                                                                                        ctx,
+                                                                                                                                                        "hidenametag")))))))
                                                         .then(Commands.literal("unmorph")
                                                                         .executes(ctx -> {
-                                                                                ServerPlayer target = CommandUtils
+                                                                                setMorph(ctx.getSource(), CommandUtils
                                                                                                 .getTargetPlayer(ctx
-                                                                                                                .getSource());
-                                                                                if (target == null) {
-                                                                                        ctx.getSource().sendFailure(
-                                                                                                        Component.literal(
-                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                        return 0;
-                                                                                }
-                                                                                setMorph(ctx.getSource(), target,
+                                                                                                                .getSource()),
                                                                                                 Optional.empty(),
                                                                                                 false);
                                                                                 return 1;
                                                                         })
-                                                                        // unmorph <target>
                                                                         .then(Commands.argument("target",
                                                                                         EntityArgument.player())
                                                                                         .executes(ctx -> {
-                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                .getPlayer(ctx, "target");
                                                                                                 setMorph(ctx.getSource(),
-                                                                                                                target,
+                                                                                                                EntityArgument.getPlayer(
+                                                                                                                                ctx,
+                                                                                                                                "target"),
                                                                                                                 Optional.empty(),
                                                                                                                 false);
                                                                                                 return 1;
                                                                                         })))
-
-                                                        // trails ...
                                                         .then(Commands.literal("trails")
                                                                         .then(Commands.literal("equip")
                                                                                         .then(Commands.argument("trail",
                                                                                                         StringArgumentType
                                                                                                                         .string())
                                                                                                         .suggests(TRAIL_SUGGESTIONS)
-                                                                                                        .executes(ctx -> {
-                                                                                                                // Default:
-                                                                                                                // self,
-                                                                                                                // non-persistent
-                                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                                .getTargetPlayer(
-                                                                                                                                                ctx.getSource());
-                                                                                                                if (target == null) {
-                                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                                        Component.literal(
-                                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                                        return 0;
-                                                                                                                }
-                                                                                                                return executeEquipTrail(
-                                                                                                                                ctx.getSource(),
-                                                                                                                                target,
-                                                                                                                                StringArgumentType
-                                                                                                                                                .getString(ctx, "trail"),
-                                                                                                                                false);
-                                                                                                        })
-
-                                                                                                        // trails equip
-                                                                                                        // <trail>
-                                                                                                        // <target>
+                                                                                                        .executes(ctx -> executeEquipTrail(
+                                                                                                                        ctx.getSource(),
+                                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                                        ctx.getSource()),
+                                                                                                                        StringArgumentType
+                                                                                                                                        .getString(ctx, "trail"),
+                                                                                                                        false))
                                                                                                         .then(Commands.argument(
                                                                                                                         "target",
                                                                                                                         EntityArgument.player())
-                                                                                                                        .executes(ctx -> {
-                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                .getPlayer(ctx,
-                                                                                                                                                                "target");
-                                                                                                                                return executeEquipTrail(
-                                                                                                                                                ctx.getSource(),
-                                                                                                                                                target,
-                                                                                                                                                StringArgumentType
-                                                                                                                                                                .getString(ctx, "trail"),
-                                                                                                                                                false);
-                                                                                                                        })
-
-                                                                                                                        // trails
-                                                                                                                        // equip
-                                                                                                                        // <trail>
-                                                                                                                        // <target>
-                                                                                                                        // <persistent>
-                                                                                                                        .then(Commands
-                                                                                                                                        .argument("persistent",
-                                                                                                                                                        BoolArgumentType.bool())
-                                                                                                                                        .executes(ctx -> {
-                                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                                .getPlayer(ctx, "target");
-                                                                                                                                                return executeEquipTrail(
-                                                                                                                                                                ctx.getSource(),
-                                                                                                                                                                target,
-                                                                                                                                                                StringArgumentType
-                                                                                                                                                                                .getString(ctx,
-                                                                                                                                                                                                "trail"),
-                                                                                                                                                                BoolArgumentType.getBool(
-                                                                                                                                                                                ctx,
-                                                                                                                                                                                "persistent"));
-                                                                                                                                        })))))
-
-                                                                        // trails unequip <trail>
+                                                                                                                        .executes(ctx -> executeEquipTrail(
+                                                                                                                                        ctx.getSource(),
+                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                        ctx,
+                                                                                                                                                        "target"),
+                                                                                                                                        StringArgumentType
+                                                                                                                                                        .getString(ctx, "trail"),
+                                                                                                                                        false))
+                                                                                                                        .then(Commands.argument(
+                                                                                                                                        "persistent",
+                                                                                                                                        BoolArgumentType.bool())
+                                                                                                                                        .executes(ctx -> executeEquipTrail(
+                                                                                                                                                        ctx.getSource(),
+                                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                                        ctx,
+                                                                                                                                                                        "target"),
+                                                                                                                                                        StringArgumentType
+                                                                                                                                                                        .getString(ctx, "trail"),
+                                                                                                                                                        BoolArgumentType.getBool(
+                                                                                                                                                                        ctx,
+                                                                                                                                                                        "persistent")))))))
                                                                         .then(Commands.literal("unequip")
                                                                                         .then(Commands.argument("trail",
                                                                                                         StringArgumentType
                                                                                                                         .string())
                                                                                                         .suggests(TRAIL_SUGGESTIONS)
-                                                                                                        .executes(ctx -> {
-                                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                                .getTargetPlayer(
-                                                                                                                                                ctx.getSource());
-                                                                                                                if (target == null) {
-                                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                                        Component.literal(
-                                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                                        return 0;
-                                                                                                                }
-                                                                                                                return executeUnequipTrail(
-                                                                                                                                ctx.getSource(),
-                                                                                                                                target,
-                                                                                                                                StringArgumentType
-                                                                                                                                                .getString(ctx, "trail"));
-                                                                                                        })
-
-                                                                                                        // trails
-                                                                                                        // unequip
-                                                                                                        // <trail>
-                                                                                                        // <target>
+                                                                                                        .executes(ctx -> executeUnequipTrail(
+                                                                                                                        ctx.getSource(),
+                                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                                        ctx.getSource()),
+                                                                                                                        StringArgumentType
+                                                                                                                                        .getString(ctx, "trail")))
                                                                                                         .then(Commands.argument(
                                                                                                                         "target",
                                                                                                                         EntityArgument.player())
-                                                                                                                        .executes(ctx -> {
-                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                .getPlayer(ctx,
-                                                                                                                                                                "target");
-                                                                                                                                return executeUnequipTrail(
-                                                                                                                                                ctx.getSource(),
-                                                                                                                                                target,
-                                                                                                                                                StringArgumentType
-                                                                                                                                                                .getString(ctx, "trail"));
-                                                                                                                        }))))
-
-                                                                        // trails list
-                                                                        .then(Commands.literal("list")
-                                                                                        .executes(ctx -> executeListTrails(
-                                                                                                        ctx.getSource()))))
-
-                                                        // effects ...
+                                                                                                                        .executes(ctx -> executeUnequipTrail(
+                                                                                                                                        ctx.getSource(),
+                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                        ctx,
+                                                                                                                                                        "target"),
+                                                                                                                                        StringArgumentType
+                                                                                                                                                        .getString(ctx, "trail"))))))
+                                                                        .then(Commands.literal("list").executes(
+                                                                                        ctx -> executeListTrails(ctx
+                                                                                                        .getSource()))))
                                                         .then(Commands.literal("effects")
                                                                         .then(Commands.literal("equip")
                                                                                         .then(Commands.argument(
@@ -434,261 +331,153 @@ public class TwilightLibCommands {
                                                                                                         StringArgumentType
                                                                                                                         .string())
                                                                                                         .suggests(EFFECT_SUGGESTIONS)
-                                                                                                        .executes(ctx -> {
-                                                                                                                // Default:
-                                                                                                                // self,
-                                                                                                                // non-persistent
-                                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                                .getTargetPlayer(
-                                                                                                                                                ctx.getSource());
-                                                                                                                if (target == null) {
-                                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                                        Component.literal(
-                                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                                        return 0;
-                                                                                                                }
-                                                                                                                return executeEquipEffect(
-                                                                                                                                ctx.getSource(),
-                                                                                                                                target,
-                                                                                                                                StringArgumentType
-                                                                                                                                                .getString(ctx, "effect"),
-                                                                                                                                false);
-                                                                                                        })
-
-                                                                                                        // effects equip
-                                                                                                        // <effect>
-                                                                                                        // <target>
+                                                                                                        .executes(ctx -> executeEquipEffect(
+                                                                                                                        ctx.getSource(),
+                                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                                        ctx.getSource()),
+                                                                                                                        StringArgumentType
+                                                                                                                                        .getString(ctx, "effect"),
+                                                                                                                        false))
                                                                                                         .then(Commands.argument(
                                                                                                                         "target",
                                                                                                                         EntityArgument.player())
-                                                                                                                        .executes(ctx -> {
-                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                .getPlayer(ctx,
-                                                                                                                                                                "target");
-                                                                                                                                return executeEquipEffect(
-                                                                                                                                                ctx.getSource(),
-                                                                                                                                                target,
-                                                                                                                                                StringArgumentType
-                                                                                                                                                                .getString(ctx, "effect"),
-                                                                                                                                                false);
-                                                                                                                        })
-
-                                                                                                                        // effects
-                                                                                                                        // equip
-                                                                                                                        // <effect>
-                                                                                                                        // <target>
-                                                                                                                        // <persistent>
-                                                                                                                        .then(Commands
-                                                                                                                                        .argument("persistent",
-                                                                                                                                                        BoolArgumentType.bool())
-                                                                                                                                        .executes(ctx -> {
-                                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                                .getPlayer(ctx, "target");
-                                                                                                                                                return executeEquipEffect(
-                                                                                                                                                                ctx.getSource(),
-                                                                                                                                                                target,
-                                                                                                                                                                StringArgumentType
-                                                                                                                                                                                .getString(ctx,
-                                                                                                                                                                                                "effect"),
-                                                                                                                                                                BoolArgumentType.getBool(
-                                                                                                                                                                                ctx,
-                                                                                                                                                                                "persistent"));
-                                                                                                                                        })))))
-
-                                                                        // effects unequip <effect>
+                                                                                                                        .executes(ctx -> executeEquipEffect(
+                                                                                                                                        ctx.getSource(),
+                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                        ctx,
+                                                                                                                                                        "target"),
+                                                                                                                                        StringArgumentType
+                                                                                                                                                        .getString(ctx, "effect"),
+                                                                                                                                        false))
+                                                                                                                        .then(Commands.argument(
+                                                                                                                                        "persistent",
+                                                                                                                                        BoolArgumentType.bool())
+                                                                                                                                        .executes(ctx -> executeEquipEffect(
+                                                                                                                                                        ctx.getSource(),
+                                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                                        ctx,
+                                                                                                                                                                        "target"),
+                                                                                                                                                        StringArgumentType
+                                                                                                                                                                        .getString(ctx, "effect"),
+                                                                                                                                                        BoolArgumentType.getBool(
+                                                                                                                                                                        ctx,
+                                                                                                                                                                        "persistent")))))))
                                                                         .then(Commands.literal("unequip")
                                                                                         .then(Commands.argument(
                                                                                                         "effect",
                                                                                                         StringArgumentType
                                                                                                                         .string())
                                                                                                         .suggests(EFFECT_SUGGESTIONS)
-                                                                                                        .executes(ctx -> {
-                                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                                .getTargetPlayer(
-                                                                                                                                                ctx.getSource());
-                                                                                                                if (target == null) {
-                                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                                        Component.literal(
-                                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                                        return 0;
-                                                                                                                }
-                                                                                                                return executeUnequipEffect(
-                                                                                                                                ctx.getSource(),
-                                                                                                                                target,
-                                                                                                                                StringArgumentType
-                                                                                                                                                .getString(ctx, "effect"));
-                                                                                                        })
-
-                                                                                                        // effects
-                                                                                                        // unequip
-                                                                                                        // <effect>
-                                                                                                        // <target>
+                                                                                                        .executes(ctx -> executeUnequipEffect(
+                                                                                                                        ctx.getSource(),
+                                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                                        ctx.getSource()),
+                                                                                                                        StringArgumentType
+                                                                                                                                        .getString(ctx, "effect")))
                                                                                                         .then(Commands.argument(
                                                                                                                         "target",
                                                                                                                         EntityArgument.player())
-                                                                                                                        .executes(ctx -> {
-                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                .getPlayer(ctx,
-                                                                                                                                                                "target");
-                                                                                                                                return executeUnequipEffect(
-                                                                                                                                                ctx.getSource(),
-                                                                                                                                                target,
-                                                                                                                                                StringArgumentType
-                                                                                                                                                                .getString(ctx, "effect"));
-                                                                                                                        }))))
-
-                                                                        // effects list
-                                                                        .then(Commands.literal("list")
-                                                                                        .executes(ctx -> executeListEffects(
-                                                                                                        ctx.getSource()))))
-
-                                                        // addons ...
+                                                                                                                        .executes(ctx -> executeUnequipEffect(
+                                                                                                                                        ctx.getSource(),
+                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                        ctx,
+                                                                                                                                                        "target"),
+                                                                                                                                        StringArgumentType
+                                                                                                                                                        .getString(ctx, "effect"))))))
+                                                                        .then(Commands.literal("list").executes(
+                                                                                        ctx -> executeListEffects(ctx
+                                                                                                        .getSource()))))
                                                         .then(Commands.literal("addons")
-                                                                        .then(Commands.literal("list")
-                                                                                        .executes(ctx -> {
-                                                                                                var addons = AddonRegistry
-                                                                                                                .getAllAddonIds();
-                                                                                                if (addons.isEmpty()) {
-                                                                                                        ctx.getSource().sendSuccess(
-                                                                                                                        () -> Component.literal(
-                                                                                                                                        "No addons registered"),
-                                                                                                                        false);
-                                                                                                } else {
-                                                                                                        ctx.getSource()
-                                                                                                                        .sendSuccess(() -> Component
-                                                                                                                                        .literal(
-                                                                                                                                                        "Available addons: "
-                                                                                                                                                                        + String.join(", ",
-                                                                                                                                                                                        addons)),
-                                                                                                                                        false);
-                                                                                                }
-                                                                                                return 1;
-                                                                                        }))
+                                                                        .then(Commands.literal("list").executes(ctx -> {
+                                                                                var addons = AddonRegistry
+                                                                                                .getAllAddonIds();
+                                                                                if (addons.isEmpty()) {
+                                                                                        ctx.getSource().sendSuccess(
+                                                                                                        () -> Component.literal(
+                                                                                                                        "No addons registered"),
+                                                                                                        false);
+                                                                                } else {
+                                                                                        ctx.getSource().sendSuccess(
+                                                                                                        () -> Component.literal(
+                                                                                                                        "Available addons: "
+                                                                                                                                        + String.join(", ",
+                                                                                                                                                        addons)),
+                                                                                                        false);
+                                                                                }
+                                                                                return 1;
+                                                                        }))
                                                                         .then(Commands.literal("equip")
-                                                                                        .then(Commands.argument(
-                                                                                                        "addonId",
+                                                                                        .then(Commands.argument("addon",
                                                                                                         StringArgumentType
                                                                                                                         .string())
                                                                                                         .suggests(ADDON_SUGGESTIONS)
-                                                                                                        .executes(ctx -> {
-                                                                                                                String addonId = ctx
-                                                                                                                                .getArgument("addonId",
-                                                                                                                                                String.class);
-                                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                                .getTargetPlayer(
-                                                                                                                                                ctx.getSource());
-                                                                                                                if (target == null) {
-                                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                                        Component.literal(
-                                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                                        return 0;
-                                                                                                                }
-                                                                                                                return executeEquipAddon(
-                                                                                                                                ctx.getSource(),
-                                                                                                                                target,
-                                                                                                                                addonId,
-                                                                                                                                false);
-                                                                                                        })
+                                                                                                        .executes(ctx -> executeEquipAddon(
+                                                                                                                        ctx.getSource(),
+                                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                                        ctx.getSource()),
+                                                                                                                        StringArgumentType
+                                                                                                                                        .getString(ctx, "addon"),
+                                                                                                                        false))
                                                                                                         .then(Commands.argument(
                                                                                                                         "target",
                                                                                                                         EntityArgument.player())
-                                                                                                                        .executes(ctx -> {
-                                                                                                                                String addonId = ctx
-                                                                                                                                                .getArgument("addonId",
-                                                                                                                                                                String.class);
-                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                .getPlayer(ctx,
-                                                                                                                                                                "target");
-                                                                                                                                return executeEquipAddon(
-                                                                                                                                                ctx.getSource(),
-                                                                                                                                                target,
-                                                                                                                                                addonId,
-                                                                                                                                                false);
-                                                                                                                        })
-                                                                                                                        .then(Commands
-                                                                                                                                        .argument("persistent",
-                                                                                                                                                        BoolArgumentType.bool())
-                                                                                                                                        .executes(ctx -> {
-                                                                                                                                                String addonId = ctx
-                                                                                                                                                                .getArgument("addonId",
-                                                                                                                                                                                String.class);
-                                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                                .getPlayer(ctx, "target");
-                                                                                                                                                boolean persistent = BoolArgumentType
-                                                                                                                                                                .getBool(ctx, "persistent");
-                                                                                                                                                return executeEquipAddon(
-                                                                                                                                                                ctx.getSource(),
-                                                                                                                                                                target,
-                                                                                                                                                                addonId,
-                                                                                                                                                                persistent);
-                                                                                                                                        })))))
+                                                                                                                        .executes(ctx -> executeEquipAddon(
+                                                                                                                                        ctx.getSource(),
+                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                        ctx,
+                                                                                                                                                        "target"),
+                                                                                                                                        StringArgumentType
+                                                                                                                                                        .getString(ctx, "addon"),
+                                                                                                                                        false))
+                                                                                                                        .then(Commands.argument(
+                                                                                                                                        "persistent",
+                                                                                                                                        BoolArgumentType.bool())
+                                                                                                                                        .executes(ctx -> executeEquipAddon(
+                                                                                                                                                        ctx.getSource(),
+                                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                                        ctx,
+                                                                                                                                                                        "target"),
+                                                                                                                                                        StringArgumentType
+                                                                                                                                                                        .getString(ctx, "addon"),
+                                                                                                                                                        BoolArgumentType.getBool(
+                                                                                                                                                                        ctx,
+                                                                                                                                                                        "persistent")))))))
                                                                         .then(Commands.literal("unequip")
-                                                                                        .then(Commands.argument(
-                                                                                                        "addonId",
+                                                                                        .then(Commands.argument("addon",
                                                                                                         StringArgumentType
                                                                                                                         .string())
                                                                                                         .suggests(ADDON_SUGGESTIONS)
-                                                                                                        .executes(ctx -> {
-                                                                                                                String addonId = ctx
-                                                                                                                                .getArgument("addonId",
-                                                                                                                                                String.class);
-                                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                                .getTargetPlayer(
-                                                                                                                                                ctx.getSource());
-                                                                                                                if (target == null) {
-                                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                                        Component.literal(
-                                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                                        return 0;
-                                                                                                                }
-                                                                                                                return executeUnequipAddon(
-                                                                                                                                ctx.getSource(),
-                                                                                                                                target,
-                                                                                                                                addonId);
-                                                                                                        })
+                                                                                                        .executes(ctx -> executeUnequipAddon(
+                                                                                                                        ctx.getSource(),
+                                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                                        ctx.getSource()),
+                                                                                                                        StringArgumentType
+                                                                                                                                        .getString(ctx, "addon")))
                                                                                                         .then(Commands.argument(
                                                                                                                         "target",
                                                                                                                         EntityArgument.player())
-                                                                                                                        .executes(ctx -> {
-                                                                                                                                String addonId = ctx
-                                                                                                                                                .getArgument("addonId",
-                                                                                                                                                                String.class);
-                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                .getPlayer(ctx,
-                                                                                                                                                                "target");
-                                                                                                                                return executeUnequipAddon(
-                                                                                                                                                ctx.getSource(),
-                                                                                                                                                target,
-                                                                                                                                                addonId);
-                                                                                                                        }))))
+                                                                                                                        .executes(ctx -> executeUnequipAddon(
+                                                                                                                                        ctx.getSource(),
+                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                        ctx,
+                                                                                                                                                        "target"),
+                                                                                                                                        StringArgumentType
+                                                                                                                                                        .getString(ctx, "addon"))))))
                                                                         .then(Commands.literal("clear")
-                                                                                        .executes(ctx -> {
-                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                .getTargetPlayer(
-                                                                                                                                ctx.getSource());
-                                                                                                if (target == null) {
-                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                        Component.literal(
-                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                        return 0;
-                                                                                                }
-                                                                                                return executeClearAddons(
-                                                                                                                ctx.getSource(),
-                                                                                                                target);
-                                                                                        })
+                                                                                        .executes(ctx -> executeClearAddons(
+                                                                                                        ctx.getSource(),
+                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                        ctx.getSource())))
                                                                                         .then(Commands.argument(
                                                                                                         "target",
                                                                                                         EntityArgument.player())
-                                                                                                        .executes(ctx -> {
-                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                .getPlayer(ctx, "target");
-                                                                                                                return executeClearAddons(
-                                                                                                                                ctx.getSource(),
-                                                                                                                                target);
-                                                                                                        })))
+                                                                                                        .executes(ctx -> executeClearAddons(
+                                                                                                                        ctx.getSource(),
+                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                        ctx,
+                                                                                                                                        "target")))))
                                                                         .then(Commands.literal("tint")
-                                                                                        .then(Commands.argument(
-                                                                                                        "addonId",
+                                                                                        .then(Commands.argument("addon",
                                                                                                         StringArgumentType
                                                                                                                         .string())
                                                                                                         .suggests(ADDON_SUGGESTIONS)
@@ -696,48 +485,26 @@ public class TwilightLibCommands {
                                                                                                                         "color",
                                                                                                                         StringArgumentType
                                                                                                                                         .string())
-                                                                                                                        .executes(ctx -> {
-                                                                                                                                String addonId = ctx
-                                                                                                                                                .getArgument("addonId",
-                                                                                                                                                                String.class);
-                                                                                                                                String colorHex = ctx
-                                                                                                                                                .getArgument("color",
-                                                                                                                                                                String.class);
-                                                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                                                .getTargetPlayer(
-                                                                                                                                                                ctx.getSource());
-                                                                                                                                if (target == null) {
-                                                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                                                        Component.literal(
-                                                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                                                        return 0;
-                                                                                                                                }
-                                                                                                                                return executeSetAddonTint(
-                                                                                                                                                ctx.getSource(),
-                                                                                                                                                target,
-                                                                                                                                                addonId,
-                                                                                                                                                colorHex);
-                                                                                                                        })
+                                                                                                                        .executes(ctx -> executeSetAddonTint(
+                                                                                                                                        ctx.getSource(),
+                                                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                                                        ctx.getSource()),
+                                                                                                                                        StringArgumentType
+                                                                                                                                                        .getString(ctx, "addon"),
+                                                                                                                                        StringArgumentType
+                                                                                                                                                        .getString(ctx, "color")))
                                                                                                                         .then(Commands.argument(
                                                                                                                                         "target",
                                                                                                                                         EntityArgument.player())
-                                                                                                                                        .executes(ctx -> {
-                                                                                                                                                String addonId = ctx
-                                                                                                                                                                .getArgument("addonId",
-                                                                                                                                                                                String.class);
-                                                                                                                                                String colorHex = ctx
-                                                                                                                                                                .getArgument("color",
-                                                                                                                                                                                String.class);
-                                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                                .getPlayer(ctx, "target");
-                                                                                                                                                return executeSetAddonTint(
-                                                                                                                                                                ctx.getSource(),
-                                                                                                                                                                target,
-                                                                                                                                                                addonId,
-                                                                                                                                                                colorHex);
-                                                                                                                                        }))))))
-
-                                                        // model ...
+                                                                                                                                        .executes(ctx -> executeSetAddonTint(
+                                                                                                                                                        ctx.getSource(),
+                                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                                        ctx,
+                                                                                                                                                                        "target"),
+                                                                                                                                                        StringArgumentType
+                                                                                                                                                                        .getString(ctx, "addon"),
+                                                                                                                                                        StringArgumentType
+                                                                                                                                                                        .getString(ctx, "color"))))))))
                                                         .then(Commands.literal("model")
                                                                         .then(Commands.literal("set")
                                                                                         .then(Commands.argument(
@@ -745,66 +512,35 @@ public class TwilightLibCommands {
                                                                                                         StringArgumentType
                                                                                                                         .string())
                                                                                                         .suggests(MODEL_VARIANT_SUGGESTIONS)
-                                                                                                        .executes(ctx -> {
-                                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                                .getTargetPlayer(
-                                                                                                                                                ctx.getSource());
-                                                                                                                if (target == null) {
-                                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                                        Component.literal(
-                                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                                        return 0;
-                                                                                                                }
-                                                                                                                return executeSetModelVariant(
-                                                                                                                                ctx.getSource(),
-                                                                                                                                target,
-                                                                                                                                StringArgumentType
-                                                                                                                                                .getString(ctx, "variant"));
-                                                                                                        })
-                                                                                                        // model set
-                                                                                                        // <variant>
-                                                                                                        // <target>
+                                                                                                        .executes(ctx -> executeSetModelVariant(
+                                                                                                                        ctx.getSource(),
+                                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                                        ctx.getSource()),
+                                                                                                                        StringArgumentType
+                                                                                                                                        .getString(ctx, "variant")))
                                                                                                         .then(Commands.argument(
                                                                                                                         "target",
                                                                                                                         EntityArgument.player())
-                                                                                                                        .executes(ctx -> {
-                                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                                .getPlayer(ctx,
-                                                                                                                                                                "target");
-                                                                                                                                return executeSetModelVariant(
-                                                                                                                                                ctx.getSource(),
-                                                                                                                                                target,
-                                                                                                                                                StringArgumentType
-                                                                                                                                                                .getString(ctx, "variant"));
-                                                                                                                        }))))
+                                                                                                                        .executes(ctx -> executeSetModelVariant(
+                                                                                                                                        ctx.getSource(),
+                                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                                        ctx,
+                                                                                                                                                        "target"),
+                                                                                                                                        StringArgumentType
+                                                                                                                                                        .getString(ctx, "variant"))))))
                                                                         .then(Commands.literal("clear")
-                                                                                        .executes(ctx -> {
-                                                                                                ServerPlayer target = CommandUtils
-                                                                                                                .getTargetPlayer(
-                                                                                                                                ctx.getSource());
-                                                                                                if (target == null) {
-                                                                                                        ctx.getSource().sendFailure(
-                                                                                                                        Component.literal(
-                                                                                                                                        "This command can only be used by players or must specify a target."));
-                                                                                                        return 0;
-                                                                                                }
-                                                                                                return executeClearModelVariant(
-                                                                                                                ctx.getSource(),
-                                                                                                                target);
-                                                                                        })
-                                                                                        // model clear <target>
+                                                                                        .executes(ctx -> executeClearModelVariant(
+                                                                                                        ctx.getSource(),
+                                                                                                        CommandUtils.getTargetPlayer(
+                                                                                                                        ctx.getSource())))
                                                                                         .then(Commands.argument(
                                                                                                         "target",
                                                                                                         EntityArgument.player())
-                                                                                                        .executes(ctx -> {
-                                                                                                                ServerPlayer target = EntityArgument
-                                                                                                                                .getPlayer(ctx, "target");
-                                                                                                                return executeClearModelVariant(
-                                                                                                                                ctx.getSource(),
-                                                                                                                                target);
-                                                                                                        }))))
-
-                                                        // reload
+                                                                                                        .executes(ctx -> executeClearModelVariant(
+                                                                                                                        ctx.getSource(),
+                                                                                                                        EntityArgument.getPlayer(
+                                                                                                                                        ctx,
+                                                                                                                                        "target"))))))
                                                         .then(Commands.literal("reload")
                                                                         .executes(ctx -> executeReload(
                                                                                         ctx.getSource()))));
@@ -813,6 +549,11 @@ public class TwilightLibCommands {
 
         private static int executeMorph(CommandSourceStack source, ServerPlayer target, ResourceLocation rl,
                         boolean hideNametag) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return 0;
+                }
                 EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(rl);
 
                 if (type == null || type == EntityType.PLAYER) {
@@ -848,7 +589,7 @@ public class TwilightLibCommands {
                 }
 
                 setMorph(source, target, Optional.of(rl), hideNametag);
-                LOGGER.debug("Want to see something neat? {} morphed into {} (nametag hidden: {})",
+                LOGGER.debug("Here you go! {} morphed into {} (nametag hidden: {})",
                                 target.getGameProfile().getName(), rl, hideNametag);
                 return 1;
         }
@@ -856,6 +597,11 @@ public class TwilightLibCommands {
         private static void setMorph(CommandSourceStack source, ServerPlayer target,
                         Optional<ResourceLocation> morphType,
                         boolean hideNametag) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return;
+                }
                 IMorph morph = DataUtils.getMorphData(target);
                 if (morph == null) {
                         source.sendFailure(
@@ -907,6 +653,11 @@ public class TwilightLibCommands {
 
         private static int executeEquipTrail(CommandSourceStack source, ServerPlayer target, String trailId,
                         boolean persistent) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return 0;
+                }
                 // Validate trail ID length (DoS protection)
                 if (trailId == null || trailId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
                         source.sendFailure(Component.literal("Or, what. Trail ID too long (max "
@@ -985,6 +736,11 @@ public class TwilightLibCommands {
         }
 
         private static int executeUnequipTrail(CommandSourceStack source, ServerPlayer target, String trailId) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return 0;
+                }
                 // Validate trail ID length (DoS protection)
                 if (trailId == null || trailId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
                         source.sendFailure(Component.literal("Or, what. Trail ID too long (max "
@@ -1028,6 +784,11 @@ public class TwilightLibCommands {
 
         private static int executeEquipEffect(CommandSourceStack source, ServerPlayer target, String effectId,
                         boolean persistent) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return 0;
+                }
                 // Validate effect ID length (DoS protection)
                 if (effectId == null || effectId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
                         source.sendFailure(Component.literal("Or, what. Effect ID too long (max "
@@ -1087,6 +848,11 @@ public class TwilightLibCommands {
         }
 
         private static int executeUnequipEffect(CommandSourceStack source, ServerPlayer target, String effectId) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return 0;
+                }
                 // Validate effect ID length (DoS protection)
                 if (effectId == null || effectId.length() > TwilightConfig.MAX_COSMETIC_ID_LENGTH.get()) {
                         source.sendFailure(Component.literal("Or, what. Effect ID too long (max "
@@ -1218,6 +984,11 @@ public class TwilightLibCommands {
 
         private static int executeEquipAddon(CommandSourceStack source, ServerPlayer target, String addonId,
                         boolean persistent) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return 0;
+                }
                 // Use exists() instead of hasAddon() - server doesn't need to check mod
                 // requirements.
                 // The client decides whether to render based on its own mod availability.
@@ -1266,6 +1037,11 @@ public class TwilightLibCommands {
         }
 
         private static int executeUnequipAddon(CommandSourceStack source, ServerPlayer target, String addonId) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return 0;
+                }
                 var addons = DataUtils.getAddonsData(target);
                 // Admin command: Force unequip regardless of source (player selection or
                 // external grant)
@@ -1290,6 +1066,11 @@ public class TwilightLibCommands {
         }
 
         private static int executeClearAddons(CommandSourceStack source, ServerPlayer target) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return 0;
+                }
                 var addons = DataUtils.getAddonsData(target);
                 // Admin command: Clear all active addons
                 addons.clearActiveAddons();
@@ -1312,6 +1093,11 @@ public class TwilightLibCommands {
         }
 
         private static int executeSetModelVariant(CommandSourceStack source, ServerPlayer target, String variant) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return 0;
+                }
                 // Validate variant (should be "steve" or "alex")
                 String normalized = variant.toLowerCase();
                 if (!normalized.equals("steve") && !normalized.equals("alex")) {
@@ -1362,6 +1148,11 @@ public class TwilightLibCommands {
         }
 
         private static int executeClearModelVariant(CommandSourceStack source, ServerPlayer target) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return 0;
+                }
                 IModelVariant modelVariant = DataUtils.getModelVariantData(target);
                 modelVariant.clearCustomVariant();
                 DataUtils.getPersistentData(target).remove(TwilightConstants.NBT_MODEL_VARIANT);
@@ -1379,6 +1170,11 @@ public class TwilightLibCommands {
 
         private static int executeSetAddonTint(CommandSourceStack source, ServerPlayer target, String addonId,
                         String colorHex) {
+                if (target == null) {
+                        source.sendFailure(Component
+                                        .literal("This command can only be used by players or must specify a target."));
+                        return 0;
+                }
                 // Validate hex color length (DoS protection)
                 if (colorHex == null || colorHex.length() > TwilightConfig.MAX_HEX_COLOR_LENGTH.get()) {
                         source.sendFailure(Component.literal("Or, what. Hex color string too long (max "

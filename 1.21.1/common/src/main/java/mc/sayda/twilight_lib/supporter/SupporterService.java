@@ -63,13 +63,13 @@ public class SupporterService {
             try {
                 boolean primarySuccess = false;
                 try {
-                    LOGGER.info("Twilight Lib: Refreshing supporter data...");
+                    LOGGER.info("Here you go! Refreshing supporter data...");
                     if (fetchFromUrlWithRetries(SUPPORTERS_URL)) {
                         primarySuccess = true;
                         lastFetchTime = System.currentTimeMillis();
                     }
                 } catch (Exception e) {
-                    LOGGER.warn("Twilight Lib: Primary URL failed: {}", e.getMessage());
+                    LOGGER.warn("How did I?! Uuuughh! Primary URL failed: {}", e.getMessage());
                 }
 
                 if (!primarySuccess) {
@@ -79,7 +79,7 @@ public class SupporterService {
                             lastFetchTime = System.currentTimeMillis();
                         }
                     } catch (Exception e) {
-                        LOGGER.error("Twilight Lib: Both supporter URLs failed: {}", e.getMessage());
+                        LOGGER.error("How did I?! Uuuughh! Both supporter URLs failed: {}", e.getMessage());
                     }
                 }
             } finally {

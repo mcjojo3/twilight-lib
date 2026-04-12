@@ -2,6 +2,7 @@ package mc.sayda.twilight_lib.network;
 
 import com.mojang.logging.LogUtils;
 import io.netty.buffer.ByteBuf;
+import javax.annotation.Nonnull;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -31,12 +32,12 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons, Set<String> ex
             ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "sync_addons"));
 
     // Sentinel UUID for malformed packets
-    private static final UUID SENTINEL_UUID = new UUID(0, 0);
+    private static final @Nonnull UUID SENTINEL_UUID = new UUID(0, 0);
 
     // Custom UUID codec (encodes as two longs)
     private static final StreamCodec<ByteBuf, UUID> UUID_CODEC = new StreamCodec<>() {
         @Override
-        public UUID decode(ByteBuf buf) {
+        public @Nonnull UUID decode(@Nonnull ByteBuf buf) {
             try {
                 return new UUID(buf.readLong(), buf.readLong());
             } catch (Exception e) {
@@ -46,7 +47,7 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons, Set<String> ex
         }
 
         @Override
-        public void encode(ByteBuf buf, UUID uuid) {
+        public void encode(@Nonnull ByteBuf buf, @Nonnull UUID uuid) {
             buf.writeLong(uuid.getMostSignificantBits());
             buf.writeLong(uuid.getLeastSignificantBits());
         }
@@ -90,18 +91,22 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons, Set<String> ex
                     } else if (minecraft.level != null) {
                         entity = minecraft.level.getPlayerByUUID(msg.playerId());
                     }
-                    if (entity == null)
+                    if (entity == null) {
+                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", msg.playerId());
                         return;
+                    }
 
                     var addons = DataUtils.getAddonsData(entity);
-                    if (addons == null)
+                    if (addons == null) {
+                        LOGGER.error("How did I?! Uuuughh! Failed to get addons data for player {}", msg.playerId());
                         return;
+                    }
 
                     addons.syncEquippedFromPacket(msg.addons());
                     addons.syncExternalGrantsFromPacket(msg.externalGrants());
                     addons.syncTintsFromPacket(msg.tints());
 
-                    LOGGER.debug("Time to change! Synced {} active addons for {}", msg.addons().size(),
+                    LOGGER.debug("Want to see something neat? Synced {} active addons for {}", msg.addons().size(),
                             entity.getName().getString());
                 } catch (Exception e) {
                     LOGGER.error("How did I?! Uuuughh! Failed to sync addons for player {}", msg.playerId(), e);

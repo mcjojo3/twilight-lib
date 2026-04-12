@@ -4,7 +4,6 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import dev.architectury.event.events.common.CommandRegistrationEvent;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
 import mc.sayda.twilight_lib.capabilities.ITrails;
 import mc.sayda.twilight_lib.capabilities.IAddons;
@@ -27,7 +26,6 @@ import mc.sayda.twilight_lib.network.NetworkHandler;
 import mc.sayda.twilight_lib.network.SyncAddonsPacket;
 import mc.sayda.twilight_lib.network.SyncEffectsPacket;
 import mc.sayda.twilight_lib.network.SyncTrailsPacket;
-import mc.sayda.twilight_lib.network.SyncMorphPacket;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -46,7 +44,9 @@ public class CosmeticsCommand {
                         ITrails trails = DataUtils.getTrailsData(player);
                         if (trails != null) {
                                 Set<String> playerTrails = trails.getTrails();
-                                SharedSuggestionProvider.suggest(playerTrails.stream(), builder);
+                                com.mojang.brigadier.suggestion.SuggestionsBuilder nonNullBuilder = java.util.Objects
+                                                .requireNonNull(builder, "builder");
+                                SharedSuggestionProvider.suggest(playerTrails.stream(), nonNullBuilder);
                         }
                 }
                 return builder.buildFuture();
@@ -58,7 +58,9 @@ public class CosmeticsCommand {
                         IAddons addons = DataUtils.getAddonsData(player);
                         if (addons != null) {
                                 Set<String> playerAddons = addons.getAddons();
-                                SharedSuggestionProvider.suggest(playerAddons.stream(), builder);
+                                com.mojang.brigadier.suggestion.SuggestionsBuilder nonNullBuilder = java.util.Objects
+                                                .requireNonNull(builder, "builder");
+                                SharedSuggestionProvider.suggest(playerAddons.stream(), nonNullBuilder);
                         }
                 }
                 return builder.buildFuture();
@@ -70,7 +72,9 @@ public class CosmeticsCommand {
                         IEffects effects = DataUtils.getEffectsData(player);
                         if (effects != null) {
                                 Set<String> playerEffects = effects.getEffects();
-                                SharedSuggestionProvider.suggest(playerEffects.stream().map(String::toString), builder);
+                                com.mojang.brigadier.suggestion.SuggestionsBuilder nonNullBuilder = java.util.Objects
+                                                .requireNonNull(builder, "builder");
+                                SharedSuggestionProvider.suggest(playerEffects.stream(), nonNullBuilder);
                         }
                 }
                 return builder.buildFuture();
@@ -684,8 +688,11 @@ public class CosmeticsCommand {
 
                         // Show manual grants if any (reading from capabilities)
                         if (!data.isActiveSupporter()) {
+                                @SuppressWarnings("unchecked")
                                 final Set<String>[] manualTrails = new Set[] { Collections.emptySet() };
+                                @SuppressWarnings("unchecked")
                                 final Set<String>[] manualAddons = new Set[] { Collections.emptySet() };
+                                @SuppressWarnings("unchecked")
                                 final Set<String>[] manualEffects = new Set[] { Collections.emptySet() };
 
                                 // Reuse variables declared earlier in the method

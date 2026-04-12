@@ -62,7 +62,8 @@ public class TwilightLib {
                 mc.sayda.twilight_lib.cosmetics.ModRequirement.getLoadedMods().size());
 
         // Initialize Registries
-        // Registrars are initialized on class load
+        // Use the common registration method
+        mc.sayda.twilight_lib.network.NetworkHandler.register();
         mc.sayda.twilight_lib.entity.ModEntities.register();
         mc.sayda.twilight_lib.particle.ModParticles.register();
         mc.sayda.twilight_lib.ModAttributes.register();
@@ -77,10 +78,6 @@ public class TwilightLib {
         mc.sayda.twilight_lib.addon.AddonLogicalInit.init();
         mc.sayda.twilight_lib.morph.MorphRegistry.getInstance();
         mc.sayda.twilight_lib.model_variant.ModelVariantRegistry.getInstance();
-
-        // Network
-        NetworkHandler.register();
-        LOGGER.info("Twilight Lib: Network handler registered.");
 
         // Register Commands
         CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
@@ -122,13 +119,13 @@ public class TwilightLib {
                     return;
 
                 mc.sayda.twilight_lib.cosmetics.CosmeticManager.resyncAll(player);
-                LOGGER.info("Twilight Lib: Processed cosmetics for supporter {}", player.getGameProfile().getName());
+                LOGGER.debug("Twilight Lib: Processed cosmetics for supporter {}", player.getGameProfile().getName());
             });
         });
     }
 
     private static void onPlayerLogin(ServerPlayer loggedInPlayer) {
-        LOGGER.info("I wanna have fun and chat with someone besides myself! Syncing morphs and addons for {}",
+        LOGGER.debug("I wanna have fun and chat with someone besides myself! Syncing morphs and addons for {}",
                 loggedInPlayer.getGameProfile().getName());
 
         // Load persisted data from NBT FIRST
@@ -137,7 +134,8 @@ public class TwilightLib {
         if (persistentData.contains(TwilightConstants.NBT_MORPH, CompoundTag.TAG_COMPOUND)) {
             IMorph morph = DataUtils.getMorphData(loggedInPlayer);
             if (morph != null) {
-                morph.deserialize(persistentData.getCompound(TwilightConstants.NBT_MORPH));
+                CompoundTag tag = persistentData.getCompound(TwilightConstants.NBT_MORPH);
+                morph.deserialize(tag);
                 LOGGER.debug("Come on, this is gonna be fun! Restored morph from NBT for {}",
                         loggedInPlayer.getGameProfile().getName());
             }
@@ -242,7 +240,7 @@ public class TwilightLib {
     }
 
     public static void onPlayerRespawn(ServerPlayer player) {
-        LOGGER.debug("Here you go! Syncing all data for respawning player {}", player.getGameProfile().getName());
+        LOGGER.debug("Time to change! Syncing all data for respawning player {}", player.getGameProfile().getName());
         mc.sayda.twilight_lib.cosmetics.CosmeticManager.resyncAll(player);
     }
 
@@ -303,12 +301,9 @@ public class TwilightLib {
             if (currentTick >= task.executeAtTick) {
                 ServerPlayer player = server.getPlayerList().getPlayer(task.playerUUID);
                 if (player != null && !player.isRemoved()) {
-                    NetworkHandler.sendAllMorphsToPlayer(player);
-                    NetworkHandler.sendAllAddonsToPlayer(player);
-                    NetworkHandler.sendAllTrailsToPlayer(player);
-                    NetworkHandler.sendAllEffectsToPlayer(player);
-                    NetworkHandler.sendAllModelVariantsToPlayer(player);
-                    LOGGER.debug("Here you go! Delayed cosmetics sync complete for {}",
+                    // Delayed sync: Ensure persistence without re-triggering effects
+                    mc.sayda.twilight_lib.cosmetics.CosmeticManager.resyncAll(player, false);
+                    LOGGER.debug("Want to see something neat? Delayed cosmetics sync complete for {}",
                             player.getGameProfile().getName());
                 }
                 iterator.remove();

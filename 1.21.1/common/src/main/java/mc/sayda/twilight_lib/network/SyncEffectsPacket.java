@@ -2,6 +2,7 @@ package mc.sayda.twilight_lib.network;
 
 import com.mojang.logging.LogUtils;
 import io.netty.buffer.ByteBuf;
+import javax.annotation.Nonnull;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
 import mc.sayda.twilight_lib.cosmetics.SpawnEffectHandler;
@@ -28,12 +29,12 @@ public record SyncEffectsPacket(UUID playerId, Set<String> effects, boolean trig
             ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "sync_effects"));
 
     // Sentinel UUID for malformed packets
-    private static final UUID SENTINEL_UUID = new UUID(0, 0);
+    private static final @Nonnull UUID SENTINEL_UUID = new UUID(0, 0);
 
     // Custom UUID codec (encodes as two longs)
     private static final StreamCodec<ByteBuf, UUID> UUID_CODEC = new StreamCodec<>() {
         @Override
-        public UUID decode(ByteBuf buf) {
+        public @Nonnull UUID decode(@Nonnull ByteBuf buf) {
             try {
                 return new UUID(buf.readLong(), buf.readLong());
             } catch (Exception e) {
@@ -43,7 +44,7 @@ public record SyncEffectsPacket(UUID playerId, Set<String> effects, boolean trig
         }
 
         @Override
-        public void encode(ByteBuf buf, UUID uuid) {
+        public void encode(@Nonnull ByteBuf buf, @Nonnull UUID uuid) {
             buf.writeLong(uuid.getMostSignificantBits());
             buf.writeLong(uuid.getLeastSignificantBits());
         }
@@ -88,15 +89,19 @@ public record SyncEffectsPacket(UUID playerId, Set<String> effects, boolean trig
                     } else if (minecraft.level != null) {
                         entity = minecraft.level.getPlayerByUUID(msg.playerId());
                     }
-                    if (entity == null)
+                    if (entity == null) {
+                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", msg.playerId());
                         return;
+                    }
 
                     var effects = DataUtils.getEffectsData(entity);
-                    if (effects == null)
+                    if (effects == null) {
+                        LOGGER.error("How did I?! Uuuughh! Failed to get effects data for player {}", msg.playerId());
                         return;
+                    }
 
                     effects.syncEquippedFromPacket(msg.effects());
-                    LOGGER.debug("Time to change! Synced {} active effects for {}", msg.effects().size(),
+                    LOGGER.debug("Want to see something neat? Synced {} active effects for {}", msg.effects().size(),
                             entity.getName().getString());
 
                     if (msg.triggerSpawnEffect() && !msg.effects().isEmpty()) {

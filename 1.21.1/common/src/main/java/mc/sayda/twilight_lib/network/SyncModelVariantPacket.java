@@ -2,6 +2,7 @@ package mc.sayda.twilight_lib.network;
 
 import com.mojang.logging.LogUtils;
 import io.netty.buffer.ByteBuf;
+import javax.annotation.Nonnull;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.capabilities.IModelVariant;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
@@ -34,12 +35,12 @@ public record SyncModelVariantPacket(UUID playerId, net.minecraft.resources.Reso
             ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "sync_model_variant"));
 
     // Sentinel UUID for malformed packets
-    private static final UUID SENTINEL_UUID = new UUID(0, 0);
+    private static final @Nonnull UUID SENTINEL_UUID = new UUID(0, 0);
 
     // Custom UUID codec (encodes as two longs)
     private static final StreamCodec<ByteBuf, UUID> UUID_CODEC = new StreamCodec<>() {
         @Override
-        public UUID decode(ByteBuf buf) {
+        public @Nonnull UUID decode(@Nonnull ByteBuf buf) {
             try {
                 long mostSig = buf.readLong();
                 long leastSig = buf.readLong();
@@ -51,7 +52,7 @@ public record SyncModelVariantPacket(UUID playerId, net.minecraft.resources.Reso
         }
 
         @Override
-        public void encode(ByteBuf buf, UUID uuid) {
+        public void encode(@Nonnull ByteBuf buf, @Nonnull UUID uuid) {
             buf.writeLong(uuid.getMostSignificantBits());
             buf.writeLong(uuid.getLeastSignificantBits());
         }
@@ -115,13 +116,15 @@ public record SyncModelVariantPacket(UUID playerId, net.minecraft.resources.Reso
                         entity = minecraft.level.getPlayerByUUID(msg.playerId());
                     }
                     if (entity == null) {
-                        LOGGER.debug("This will be fine! Player {} not found in level (cached anyway)", msg.playerId());
+                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", msg.playerId());
                         return;
                     }
 
                     IModelVariant modelVariant = DataUtils.getModelVariantData(entity);
-                    if (modelVariant == null)
+                    if (modelVariant == null) {
+                        LOGGER.error("How did I?! Uuuughh! Failed to get model variant data for player {}", msg.playerId());
                         return;
+                    }
 
                     if (!msg.hasCustomVariant()) {
                         modelVariant.clearCustomVariant();
@@ -130,7 +133,7 @@ public record SyncModelVariantPacket(UUID playerId, net.minecraft.resources.Reso
                                 .setVariant(mc.sayda.twilight_lib.api.model_variant.IModelVariantRegistry.getInstance()
                                         .get(validatedVariant));
                     }
-                    LOGGER.debug("Time to change! Synced model variant {} for {}", validatedVariant,
+                    LOGGER.debug("Want to see something neat? Synced model variant {} for {}", validatedVariant,
                             entity.getName().getString());
                 } catch (Exception e) {
                     LOGGER.error("How did I?! Uuuughh! Failed to sync model variant for player {}", msg.playerId(), e);

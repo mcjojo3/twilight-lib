@@ -2,6 +2,7 @@ package mc.sayda.twilight_lib.network;
 
 import com.mojang.logging.LogUtils;
 import io.netty.buffer.ByteBuf;
+import javax.annotation.Nonnull;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
@@ -24,15 +25,15 @@ public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, 
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final CustomPacketPayload.Type<SyncMorphPacket> TYPE = new CustomPacketPayload.Type<>(
-            ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "sync_morph"));
+            java.util.Objects.requireNonNull(ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "sync_morph"), "type_rl"));
 
     // Sentinel UUID for malformed packets
-    private static final UUID SENTINEL_UUID = new UUID(0, 0);
+    private static final @Nonnull UUID SENTINEL_UUID = new UUID(0, 0);
 
     // Custom UUID codec (encodes as two longs)
     private static final StreamCodec<ByteBuf, UUID> UUID_CODEC = new StreamCodec<>() {
         @Override
-        public UUID decode(ByteBuf buf) {
+        public @Nonnull UUID decode(@Nonnull ByteBuf buf) {
             try {
                 long mostSig = buf.readLong();
                 long leastSig = buf.readLong();
@@ -44,20 +45,20 @@ public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, 
         }
 
         @Override
-        public void encode(ByteBuf buf, UUID uuid) {
+        public void encode(@Nonnull ByteBuf buf, @Nonnull UUID uuid) {
             buf.writeLong(uuid.getMostSignificantBits());
             buf.writeLong(uuid.getLeastSignificantBits());
         }
     };
 
     public static final StreamCodec<ByteBuf, SyncMorphPacket> STREAM_CODEC = StreamCodec.composite(
-            UUID_CODEC,
+            (StreamCodec<ByteBuf, UUID>) UUID_CODEC,
             SyncMorphPacket::playerId,
-            ByteBufCodecs.optional(ResourceLocation.STREAM_CODEC),
+            (StreamCodec<ByteBuf, Optional<ResourceLocation>>) ByteBufCodecs.optional((StreamCodec<ByteBuf, ResourceLocation>) ResourceLocation.STREAM_CODEC),
             SyncMorphPacket::entity,
-            ByteBufCodecs.BOOL,
+            (StreamCodec<ByteBuf, Boolean>) ByteBufCodecs.BOOL,
             SyncMorphPacket::hideNametag,
-            SyncMorphPacket::new);
+            (playerId, entity, hideNametag) -> new SyncMorphPacket(playerId, entity, (boolean) hideNametag));
 
     public static SyncMorphPacket of(UUID id, ResourceLocation rlOrNull) {
         return new SyncMorphPacket(id, Optional.ofNullable(rlOrNull), false);
@@ -94,10 +95,10 @@ public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, 
                     if (minecraft.player != null && minecraft.player.getUUID().equals(msg.playerId())) {
                         entity = minecraft.player;
                     } else if (minecraft.level != null) {
-                        entity = minecraft.level.getPlayerByUUID(msg.playerId());
+                        entity = minecraft.level.getPlayerByUUID(java.util.Objects.requireNonNull(msg.playerId(), "playerId"));
                     }
                     if (entity == null) {
-                        LOGGER.warn("Or, what. Player {} not found in level", msg.playerId());
+                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", msg.playerId());
                         return;
                     }
 
@@ -114,7 +115,7 @@ public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, 
                     morph.setNametagHidden(msg.hideNametag());
                     // CRITICAL: Refresh dimensions on the client side after attachment update
                     entity.refreshDimensions();
-                    LOGGER.debug("Time to change! Synced morph {} (hideNametag={}) for {}", msg.entity(),
+                    LOGGER.debug("Want to see something neat? Synced morph {} (hideNametag={}) for {}", msg.entity(),
                             msg.hideNametag(), entity.getName().getString());
                 } catch (Exception e) {
                     LOGGER.error("How did I?! Uuuughh! Failed to sync morph for player {}", msg.playerId(), e);

@@ -63,13 +63,13 @@ public class SupporterService {
             try {
                 boolean primarySuccess = false;
                 try {
-                    LOGGER.info("Twilight Lib: Refreshing supporter data...");
+                    LOGGER.info("Here you go! Refreshing supporter data...");
                     if (fetchFromUrlWithRetries(SUPPORTERS_URL)) {
                         primarySuccess = true;
                         lastFetchTime = System.currentTimeMillis();
                     }
                 } catch (Exception e) {
-                    LOGGER.warn("Twilight Lib: Primary URL failed: {}", e.getMessage());
+                    LOGGER.warn("How did I?! Uuuughh! Primary URL failed: {}", e.getMessage());
                 }
 
                 if (!primarySuccess) {
@@ -79,7 +79,7 @@ public class SupporterService {
                             lastFetchTime = System.currentTimeMillis();
                         }
                     } catch (Exception e) {
-                        LOGGER.error("Twilight Lib: Both supporter URLs failed: {}", e.getMessage());
+                        LOGGER.error("How did I?! Uuuughh! Both supporter URLs failed: {}", e.getMessage());
                     }
                 }
             } finally {
@@ -294,7 +294,7 @@ public class SupporterService {
                     newCache.put(uuid, data);
                 } catch (Exception entryError) {
                     // Skip malformed entries but continue parsing others
-                    LOGGER.warn("This will be fine! Things break all the time. Skipping malformed supporter entry: {}",
+                    LOGGER.warn("Or, what. Skipping malformed supporter entry: {}",
                             entryError.getMessage());
                 }
             }

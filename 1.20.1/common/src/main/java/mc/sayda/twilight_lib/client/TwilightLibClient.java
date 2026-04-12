@@ -22,8 +22,7 @@ import mc.sayda.twilight_lib.particle.WolfPrintParticle;
 public class TwilightLibClient {
 
     public static void init() {
-        mc.sayda.twilight_lib.TwilightLib.LOGGER.info("This is the precipice of a new reality! Client Initializing...");
-        mc.sayda.twilight_lib.network.NetworkHandler.registerS2C();
+        mc.sayda.twilight_lib.TwilightLib.LOGGER.info("Yes! This'll be fun! Right? Client Initializing...");
 
         boolean isNeoForge = dev.architectury.platform.Platform.isModLoaded("neoforge");
 

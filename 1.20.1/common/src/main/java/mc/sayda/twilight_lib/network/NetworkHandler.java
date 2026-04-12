@@ -13,34 +13,36 @@ import java.util.Optional;
 public class NetworkHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public static void registerS2C() {
-        // Register client-bound packets
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncMorphPacket.ID, (buf, context) -> {
-            var pkt = new SyncMorphPacket(buf);
-            pkt.handle(() -> context);
+    public static void register() {
+        dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> {
+            // Register client-bound packets
+            NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncMorphPacket.ID, (buf, context) -> {
+                var pkt = new SyncMorphPacket(buf);
+                pkt.handle(() -> context);
+            });
+
+            NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncAddonsPacket.ID, (buf, context) -> {
+                var pkt = new SyncAddonsPacket(buf);
+                pkt.handle(() -> context);
+            });
+
+            NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncTrailsPacket.ID, (buf, context) -> {
+                var pkt = new SyncTrailsPacket(buf);
+                pkt.handle(() -> context);
+            });
+
+            NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncEffectsPacket.ID, (buf, context) -> {
+                var pkt = new SyncEffectsPacket(buf);
+                pkt.handle(() -> context);
+            });
+
+            NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncModelVariantPacket.ID, (buf, context) -> {
+                var pkt = new SyncModelVariantPacket(buf);
+                pkt.handle(() -> context);
+            });
         });
 
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncAddonsPacket.ID, (buf, context) -> {
-            var pkt = new SyncAddonsPacket(buf);
-            pkt.handle(() -> context);
-        });
-
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncTrailsPacket.ID, (buf, context) -> {
-            var pkt = new SyncTrailsPacket(buf);
-            pkt.handle(() -> context);
-        });
-
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncEffectsPacket.ID, (buf, context) -> {
-            var pkt = new SyncEffectsPacket(buf);
-            pkt.handle(() -> context);
-        });
-
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncModelVariantPacket.ID, (buf, context) -> {
-            var pkt = new SyncModelVariantPacket(buf);
-            pkt.handle(() -> context);
-        });
-
-        LOGGER.info("Twilight Lib: Client network payloads registered.");
+        LOGGER.info("What's your name? Network payloads registered.");
     }
 
     public static void sendMorphToAll(SyncMorphPacket pkt) {

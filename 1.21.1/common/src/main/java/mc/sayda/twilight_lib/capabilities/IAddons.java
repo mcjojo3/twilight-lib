@@ -150,9 +150,9 @@ public interface IAddons extends ISerializableData {
     /**
      * Force-sync external grants from network packet.
      * 
-     * @param external Set of addon IDs granted externally
+     * @param externalGrants Set of addon IDs granted externally
      */
-    void syncExternalGrantsFromPacket(Set<String> external);
+    void syncExternalGrantsFromPacket(@Nonnull Set<String> externalGrants);
 
     /**
      * Force-sync tint colors from network packet.

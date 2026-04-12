@@ -74,10 +74,10 @@ public class ClientModelVariantCache {
     public static void setModelVariant(UUID playerUUID, net.minecraft.resources.ResourceLocation modelVariant) {
         if (modelVariant == null) {
             MODEL_VARIANTS.remove(playerUUID);
-            LOGGER.debug("Time to change! Cleared model variant for player {}", playerUUID);
+            LOGGER.debug("Want to see something neat? Cleared model variant for player {}", playerUUID);
         } else {
             MODEL_VARIANTS.put(playerUUID, modelVariant);
-            LOGGER.debug("Time to change! Cached model variant {} for player {}", modelVariant, playerUUID);
+            LOGGER.debug("Want to see something neat? Cached model variant {} for player {}", modelVariant, playerUUID);
         }
     }
 

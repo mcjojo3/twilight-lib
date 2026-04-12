@@ -14,33 +14,19 @@ public class NetworkHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static void register() {
-        // Register client-bound packets
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C,
-                SyncMorphPacket.TYPE,
-                SyncMorphPacket.STREAM_CODEC,
+        // Register client-bound payloads
+        NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncMorphPacket.TYPE, SyncMorphPacket.STREAM_CODEC,
                 SyncMorphPacket::handle);
-
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C,
-                SyncAddonsPacket.TYPE,
-                SyncAddonsPacket.STREAM_CODEC,
+        NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncAddonsPacket.TYPE, SyncAddonsPacket.STREAM_CODEC,
                 SyncAddonsPacket::handle);
-
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C,
-                SyncTrailsPacket.TYPE,
-                SyncTrailsPacket.STREAM_CODEC,
+        NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncTrailsPacket.TYPE, SyncTrailsPacket.STREAM_CODEC,
                 SyncTrailsPacket::handle);
-
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C,
-                SyncEffectsPacket.TYPE,
-                SyncEffectsPacket.STREAM_CODEC,
+        NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncEffectsPacket.TYPE, SyncEffectsPacket.STREAM_CODEC,
                 SyncEffectsPacket::handle);
+        NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncModelVariantPacket.TYPE,
+                SyncModelVariantPacket.STREAM_CODEC, SyncModelVariantPacket::handle);
 
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C,
-                SyncModelVariantPacket.TYPE,
-                SyncModelVariantPacket.STREAM_CODEC,
-                SyncModelVariantPacket::handle);
-
-        LOGGER.debug("Hi! My name is Zoe. Network payloads registered.");
+        LOGGER.info("What's your name? Network payloads registered.");
     }
 
     public static void sendMorphToAll(SyncMorphPacket pkt) {
@@ -55,8 +41,9 @@ public class NetworkHandler {
     }
 
     public static void sendToPlayer(Player player, SyncMorphPacket pkt) {
-        if (!(player instanceof ServerPlayer serverPlayer))
+        if (!(player instanceof ServerPlayer serverPlayer)) {
             return;
+        }
         try {
             NetworkManager.sendToPlayer(serverPlayer, pkt);
             LOGGER.debug("We are going to be best friends! Sending morph to {}", player.getGameProfile().getName());
@@ -66,23 +53,22 @@ public class NetworkHandler {
     }
 
     public static void sendAllMorphsToPlayer(Player recipient) {
-        if (recipient.level() == null)
+        if (recipient.level() == null) {
             return;
+        }
         LOGGER.debug("We are going to be best friends! Syncing all morphs to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
-            if (p.level() == null)
-                continue;
-            IMorph morph = DataUtils.getMorphData(p);
-            if (morph == null) {
-                // Warning logged only if significant
+            if (p.level() == null) {
                 continue;
             }
-            morph.getEntityType().ifPresent(rl -> sendToPlayer(recipient,
-                    SyncMorphPacket.of(p.getUUID(), Optional.of(rl), morph.isNametagHidden())));
+            IMorph morph = DataUtils.getMorphData(p);
+            if (morph != null) {
+                morph.getEntityType().ifPresent(rl -> sendToPlayer(recipient,
+                        SyncMorphPacket.of(p.getUUID(), Optional.of(rl), morph.isNametagHidden())));
+            }
         }
     }
 
-    // Addon packet methods
     public static void sendAddonsToAll(SyncAddonsPacket pkt) {
         try {
             var server = dev.architectury.utils.GameInstance.getServer();
@@ -94,22 +80,23 @@ public class NetworkHandler {
         }
     }
 
-    // Simplified for plan brevity - repeating pattern for all packet types
     public static void sendAddonsToPlayer(Player player, SyncAddonsPacket pkt) {
-        if (player instanceof ServerPlayer sp)
+        if (player instanceof ServerPlayer sp) {
             NetworkManager.sendToPlayer(sp, pkt);
+        }
     }
 
     public static void sendAllAddonsToPlayer(Player recipient) {
-        // Same logic as morphs
-        if (recipient.level() == null)
+        if (recipient.level() == null) {
             return;
+        }
         LOGGER.debug("We are going to be best friends! Syncing all addons to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             var addons = DataUtils.getAddonsData(p);
             if (addons != null && !addons.getActiveAddons().isEmpty()) {
                 sendAddonsToPlayer(recipient,
-                        new SyncAddonsPacket(p.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(), addons.getAllAddonTints()));
+                        new SyncAddonsPacket(p.getUUID(), addons.getActiveAddons(), addons.getExternalGrants(),
+                                addons.getAllAddonTints()));
             }
         }
     }
@@ -126,14 +113,15 @@ public class NetworkHandler {
     }
 
     public static void sendTrailsToPlayer(Player player, SyncTrailsPacket pkt) {
-        if (player instanceof ServerPlayer sp)
+        if (player instanceof ServerPlayer sp) {
             NetworkManager.sendToPlayer(sp, pkt);
+        }
     }
 
     public static void sendAllTrailsToPlayer(Player recipient) {
-        // Logic...
-        if (recipient.level() == null)
+        if (recipient.level() == null) {
             return;
+        }
         LOGGER.debug("We are going to be best friends! Syncing all trails to {}", recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             var trails = DataUtils.getTrailsData(p);
@@ -155,26 +143,21 @@ public class NetworkHandler {
     }
 
     public static void sendEffectsToPlayer(Player player, SyncEffectsPacket pkt) {
-        if (player instanceof ServerPlayer sp)
+        if (player instanceof ServerPlayer sp) {
             NetworkManager.sendToPlayer(sp, pkt);
+        }
     }
 
     public static void sendAllEffectsToPlayer(Player recipient) {
-        // Logic
-        if (recipient.level() == null)
+        if (recipient.level() == null) {
             return;
+        }
         LOGGER.debug("We are going to be best friends! Syncing all effects to {}",
                 recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {
             var effects = DataUtils.getEffectsData(p);
             if (effects != null && !effects.getActiveEffects().isEmpty()) {
-                sendEffectsToPlayer(recipient, new SyncEffectsPacket(p.getUUID(), effects.getActiveEffects(), false)); // false
-                                                                                                                       // =
-                                                                                                                       // no
-                                                                                                                       // spawn
-                                                                                                                       // effect
-                                                                                                                       // on
-                                                                                                                       // sync
+                sendEffectsToPlayer(recipient, new SyncEffectsPacket(p.getUUID(), effects.getActiveEffects(), false));
             }
         }
     }
@@ -191,14 +174,15 @@ public class NetworkHandler {
     }
 
     public static void sendModelVariantToPlayer(Player player, SyncModelVariantPacket pkt) {
-        if (player instanceof ServerPlayer sp)
+        if (player instanceof ServerPlayer sp) {
             NetworkManager.sendToPlayer(sp, pkt);
+        }
     }
 
     public static void sendAllModelVariantsToPlayer(Player recipient) {
-        // Logic
-        if (recipient.level() == null)
+        if (recipient.level() == null) {
             return;
+        }
         LOGGER.debug("We are going to be best friends! Syncing all model variants to {}",
                 recipient.getGameProfile().getName());
         for (Player p : recipient.level().players()) {

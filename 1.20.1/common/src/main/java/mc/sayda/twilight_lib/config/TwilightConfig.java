@@ -10,6 +10,7 @@ public class TwilightConfig {
         public static Supplier<Boolean> ENABLE_EFFECTS = () -> true;
         public static Supplier<Boolean> ENABLE_MORPHS = () -> true;
         public static Supplier<Boolean> HIDE_CHEST_IN_ARMOR = () -> false;
+        public static Supplier<Boolean> HIDE_CHEST_IN_CUSTOM_ARMOR = () -> true;
         public static Supplier<Boolean> FORCE_LOAD_ALL_ADDONS = () -> false;
 
         // Performance

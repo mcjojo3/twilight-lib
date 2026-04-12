@@ -13,6 +13,7 @@ public class TwilightLibConfigNeoForge {
     public static final ModConfigSpec.BooleanValue ENABLE_EFFECTS;
     public static final ModConfigSpec.BooleanValue ENABLE_MORPHS;
     public static final ModConfigSpec.BooleanValue HIDE_CHEST_IN_ARMOR;
+    public static final ModConfigSpec.BooleanValue HIDE_CHEST_IN_CUSTOM_ARMOR;
     public static final ModConfigSpec.BooleanValue FORCE_LOAD_ALL_ADDONS;
 
     // Performance
@@ -81,6 +82,8 @@ public class TwilightLibConfigNeoForge {
         ENABLE_MORPHS = builder.comment("Enable player morphing system").define("enable_morphs", true);
         HIDE_CHEST_IN_ARMOR = builder.comment("Hide chest addon when wearing chest armor").define("hide_chest_in_armor",
                 false);
+        HIDE_CHEST_IN_CUSTOM_ARMOR = builder.comment("Hide chest addon when wearing custom rendered chest armor").define("hide_chest_in_custom_armor",
+                true);
         FORCE_LOAD_ALL_ADDONS = builder.comment("Force load all addons").define("force_load_all_addons", false);
 
         builder.pop();
@@ -155,6 +158,7 @@ public class TwilightLibConfigNeoForge {
         TwilightConfig.ENABLE_EFFECTS = ENABLE_EFFECTS::get;
         TwilightConfig.ENABLE_MORPHS = ENABLE_MORPHS::get;
         TwilightConfig.HIDE_CHEST_IN_ARMOR = HIDE_CHEST_IN_ARMOR::get;
+        TwilightConfig.HIDE_CHEST_IN_CUSTOM_ARMOR = HIDE_CHEST_IN_CUSTOM_ARMOR::get;
         TwilightConfig.FORCE_LOAD_ALL_ADDONS = FORCE_LOAD_ALL_ADDONS::get;
 
         TwilightConfig.MAX_CACHED_ADDON_MODELS = MAX_CACHED_ADDON_MODELS::get;

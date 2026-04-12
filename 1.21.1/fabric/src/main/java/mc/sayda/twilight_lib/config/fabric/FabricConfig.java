@@ -57,6 +57,7 @@ public class FabricConfig {
         TwilightConfig.ENABLE_EFFECTS = () -> data.features.enable_effects;
         TwilightConfig.ENABLE_MORPHS = () -> data.features.enable_morphs;
         TwilightConfig.HIDE_CHEST_IN_ARMOR = () -> data.features.hide_chest_in_armor;
+        TwilightConfig.HIDE_CHEST_IN_CUSTOM_ARMOR = () -> data.features.hide_chest_in_custom_armor;
         TwilightConfig.FORCE_LOAD_ALL_ADDONS = () -> data.features.force_load_all_addons;
 
         // Performance
@@ -126,6 +127,7 @@ public class FabricConfig {
             public boolean enable_effects = true;
             public boolean enable_morphs = true;
             public boolean hide_chest_in_armor = false;
+            public boolean hide_chest_in_custom_armor = true;
             public boolean force_load_all_addons = false;
         }
 

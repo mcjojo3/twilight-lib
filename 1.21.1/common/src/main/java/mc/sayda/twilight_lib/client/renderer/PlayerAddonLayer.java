@@ -130,8 +130,41 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                 // Special handling for chest addons - optionally hide when wearing armor
                 if (addonModel instanceof ChestModel<?>) {
                     ItemStack chestArmor = player.getItemBySlot(EquipmentSlot.CHEST);
-                    if (!chestArmor.isEmpty() && TwilightConfig.HIDE_CHEST_IN_ARMOR.get()) {
-                        return; // Skip chest addon - config set to hide when wearing armor
+                    if (!chestArmor.isEmpty()) {
+                        boolean hideAddon = false;
+
+                        if (chestArmor.getItem() instanceof ArmorItem armorItem) {
+                            // Check for custom armor using NeoForge layers
+                            var layers = armorItem.getMaterial().value().layers();
+                            if (!layers.isEmpty()) {
+                                ResourceLocation armorTexture = layers.get(0).texture(false);
+                                if (Minecraft.getInstance().getResourceManager().getResource(armorTexture).isEmpty()) {
+                                    // It's custom armor (texture missing from standard location)
+                                    if (TwilightConfig.HIDE_CHEST_IN_CUSTOM_ARMOR.get()) {
+                                        hideAddon = true;
+                                    }
+                                } else {
+                                    // Standard vanilla armor
+                                    if (TwilightConfig.HIDE_CHEST_IN_ARMOR.get()) {
+                                        hideAddon = true;
+                                    }
+                                }
+                            } else {
+                                // No layers defined, assume custom armor
+                                if (TwilightConfig.HIDE_CHEST_IN_CUSTOM_ARMOR.get()) {
+                                    hideAddon = true;
+                                }
+                            }
+                        } else {
+                            // Not an ArmorItem at all (like Elytra)
+                            if (TwilightConfig.HIDE_CHEST_IN_CUSTOM_ARMOR.get()) {
+                                hideAddon = true;
+                            }
+                        }
+
+                        if (hideAddon) {
+                            return; // Skip rendering the chest addon
+                        }
                     }
                 }
 

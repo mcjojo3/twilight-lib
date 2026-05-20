@@ -2,6 +2,8 @@ package mc.sayda.twilight_lib.cosmetics;
 
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -33,6 +35,7 @@ import dev.architectury.event.events.client.ClientTickEvent;
  * - spawn_flame: Soul fire particles (blazing fire theme)
  * - spawn_nature: Spore blossom particles (natural floral theme)
  */
+@Environment(EnvType.CLIENT)
 public class SpawnEffectHandler {
 
     private static final Logger LOGGER = LogUtils.getLogger();

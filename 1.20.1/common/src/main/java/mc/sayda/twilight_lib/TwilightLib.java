@@ -148,7 +148,7 @@ public class TwilightLib {
     private static void onPlayerClone(ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean wasDeath) {
         CompoundTag oldData = DataUtils.getPersistentData(oldPlayer);
 
-        if (oldData.contains(TwilightConstants.NBT_MORPH, 10)) {
+        if (oldData.contains(TwilightConstants.NBT_MORPH, CompoundTag.TAG_COMPOUND)) {
             IMorph newMorph = DataUtils.getMorphData(newPlayer);
             if (newMorph != null) {
                 CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_MORPH);
@@ -157,7 +157,7 @@ public class TwilightLib {
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_ADDONS, 10)) {
+        if (oldData.contains(TwilightConstants.NBT_ADDONS, CompoundTag.TAG_COMPOUND)) {
             IAddons newAddons = DataUtils.getAddonsData(newPlayer);
             if (newAddons != null) {
                 CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_ADDONS);
@@ -166,7 +166,7 @@ public class TwilightLib {
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_TRAILS, 10)) {
+        if (oldData.contains(TwilightConstants.NBT_TRAILS, CompoundTag.TAG_COMPOUND)) {
             ITrails newTrails = DataUtils.getTrailsData(newPlayer);
             if (newTrails != null) {
                 CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_TRAILS);
@@ -175,7 +175,7 @@ public class TwilightLib {
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_EFFECTS, 10)) {
+        if (oldData.contains(TwilightConstants.NBT_EFFECTS, CompoundTag.TAG_COMPOUND)) {
             IEffects newEffects = DataUtils.getEffectsData(newPlayer);
             if (newEffects != null) {
                 CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_EFFECTS);
@@ -184,7 +184,7 @@ public class TwilightLib {
             }
         }
 
-        if (oldData.contains(TwilightConstants.NBT_MODEL_VARIANT, 10)) {
+        if (oldData.contains(TwilightConstants.NBT_MODEL_VARIANT, CompoundTag.TAG_COMPOUND)) {
             IModelVariant newModelVariant = DataUtils.getModelVariantData(newPlayer);
             if (newModelVariant != null) {
                 CompoundTag tag = oldData.getCompound(TwilightConstants.NBT_MODEL_VARIANT);
@@ -237,6 +237,9 @@ public class TwilightLib {
 
     private static void onServerTick(MinecraftServer server) {
         long currentTick = serverTicks.incrementAndGet();
+
+        if (pendingTasks.isEmpty())
+            return;
 
         Iterator<Map.Entry<UUID, DelayedSyncTask>> iterator = pendingTasks.entrySet().iterator();
         while (iterator.hasNext()) {

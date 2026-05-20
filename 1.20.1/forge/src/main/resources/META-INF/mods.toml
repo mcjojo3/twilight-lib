@@ -23,3 +23,10 @@ mandatory=true
 versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="architectury"
+mandatory=true
+versionRange="[9.2.14,)"
+ordering="NONE"
+side="BOTH"

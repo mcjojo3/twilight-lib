@@ -1,12 +1,12 @@
 {
     "required": true,
+    "minVersion": "0.8",
     "package": "mc.sayda.twilight_lib.mixin",
     "compatibilityLevel": "JAVA_21",
     "mixins": [
         "ArmorItemMixin",
         "ArmorSlotMixin",
         "LivingEntityAccessor",
-        "LivingEntityMixin",
         "LivingEntityMixin",
         "PlayerMixin",
         "PlayerMiningMixin",

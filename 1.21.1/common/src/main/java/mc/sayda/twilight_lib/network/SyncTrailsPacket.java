@@ -37,7 +37,7 @@ public record SyncTrailsPacket(UUID playerId, Set<String> trails) implements Cus
             UUID_CODEC,
             SyncTrailsPacket::playerId,
             ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8, 128)
-                    .map(java.util.function.Function.identity(), set -> (HashSet<String>) set),
+                    .map(java.util.function.Function.identity(), set -> new HashSet<>(set)),
             SyncTrailsPacket::trails,
             SyncTrailsPacket::new);
 

@@ -14,6 +14,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+// MC 1.21.1 introduced a dedicated ArmorSlot class, so we can target it directly.
+// In 1.20.1 armor slots were plain Slot instances identified by container index
+// (36-39), requiring AbstractContainerMenuMixin + SlotAccessor + InventoryMenuMixin
+// as a workaround. Those three classes are intentionally absent here.
 @Mixin(net.minecraft.world.inventory.ArmorSlot.class)
 public class ArmorSlotMixin {
 

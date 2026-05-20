@@ -1,16 +1,9 @@
 package mc.sayda.twilight_lib.neoforge;
 
 import mc.sayda.twilight_lib.TwilightLib;
-import mc.sayda.twilight_lib.ModAttributes;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.core.Holder;
-import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
-import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 @EventBusSubscriber(modid = TwilightLib.MODID, bus = EventBusSubscriber.Bus.GAME)
@@ -30,22 +23,4 @@ public class NeoForgeEventHandler {
         }
     }
 
-}
-
-@EventBusSubscriber(modid = TwilightLib.MODID, bus = EventBusSubscriber.Bus.MOD)
-class NeoForgeModEventHandler {
-    @SubscribeEvent
-    public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
-        event.add(EntityType.PLAYER, getHolder(ModAttributes.MINING_PENALTY.get()));
-        event.add(EntityType.PLAYER, getHolder(ModAttributes.FOV_MODIFIER.get()));
-        event.add(EntityType.PLAYER, getHolder(ModAttributes.ALLOW_HELMET.get()));
-        event.add(EntityType.PLAYER, getHolder(ModAttributes.ALLOW_CHESTPLATE.get()));
-        event.add(EntityType.PLAYER, getHolder(ModAttributes.ALLOW_LEGGINGS.get()));
-        event.add(EntityType.PLAYER, getHolder(ModAttributes.ALLOW_BOOTS.get()));
-        event.add(EntityType.PLAYER, getHolder(ModAttributes.ELYTRA_FLIGHT.get()));
-    }
-
-    private static Holder<Attribute> getHolder(Attribute attribute) {
-        return BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute);
-    }
 }

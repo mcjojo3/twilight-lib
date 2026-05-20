@@ -34,6 +34,14 @@ public class FabricConfig {
             save(data);
         }
 
+        // Clamp divisor fields to prevent division-by-zero (mirrors NeoForge min=1
+        // bounds)
+        data.performance.trail_update_frequency = Math.max(1, data.performance.trail_update_frequency);
+        data.network_and_caching.morph_cache_cleanup_interval_ticks = Math.max(1,
+                data.network_and_caching.morph_cache_cleanup_interval_ticks);
+        data.network_and_caching.login_sync_delay_ticks = Math.max(1,
+                data.network_and_caching.login_sync_delay_ticks);
+
         apply(data);
     }
 

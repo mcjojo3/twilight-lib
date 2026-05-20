@@ -12,7 +12,6 @@
         "SlotAccessor",
         "PlayerAttributesMixin",
         "PlayerMixin",
-        "PlayerMixin",
         "PlayerMorphSoundMixin"
     ],
     "client": [

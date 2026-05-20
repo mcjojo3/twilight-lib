@@ -18,7 +18,6 @@ import java.util.Set;
 public class AddonsData implements IAddons {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String NBT_ADDONS = "Addons";
-    private static final String NBT_EQUIPPED_ADDONS = "EquippedAddons";
     private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
     private static final String NBT_EXTERNAL_GRANTS = "ExternalGrants";
     private static final String NBT_ADDON_TINTS = "AddonTints";
@@ -210,7 +209,7 @@ public class AddonsData implements IAddons {
             if (AddonRegistry.exists(addonId)) {
                 this.externalGrants.add(addonId);
             } else {
-                LOGGER.warn("Wait... what. Filtered invalid external grant ID from sync packet: {}", addonId);
+                LOGGER.warn("This will be fine! Things break all the time. Filtered invalid external grant ID from sync packet: {}", addonId);
             }
         }
     }

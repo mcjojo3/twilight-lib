@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.capabilities;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 
 /**
  * Implementation of IModelVariant for storing player model variant.
@@ -32,7 +33,7 @@ public class ModelVariantData implements IModelVariant {
 
     @Override
     public synchronized void deserialize(CompoundTag tag) {
-        if (tag.contains("modelVariant")) {
+        if (tag.contains("modelVariant", Tag.TAG_STRING)) {
             try {
                 String val = tag.getString("modelVariant");
                 // Support both old "steve"/"alex" and new ResourceLocation format

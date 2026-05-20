@@ -82,6 +82,7 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
 
         // Get player's equipped addons
         var addons = mc.sayda.twilight_lib.capabilities.DataUtils.getAddonsData(player);
+        if (addons == null) return;
         PlayerModel<AbstractClientPlayer> playerModel = this.getParentModel();
 
         // Check if any addon forces all addons to be translucent

@@ -165,9 +165,7 @@ public class AddonInit {
                                 ChestModel.LAYER_LOCATION,
                                 ChestModel::createBodyLayer,
                                 ChestModel::new,
-                                new ResourceLocation(TwilightLib.MODID, "textures/addon/chest.png"), // Placeholder
-                                // texture (not
-                                // used)
+                                new ResourceLocation(TwilightLib.MODID, "textures/addon/stub.png"),
                                 true // Use player skin texture
                 );
 
@@ -305,9 +303,7 @@ public class AddonInit {
                                 ShortTorsoModel.LAYER_LOCATION,
                                 ShortTorsoModel::createBodyLayer,
                                 ShortTorsoModel::new,
-                                new ResourceLocation(TwilightLib.MODID,
-                                                "textures/addon/short_torso.png"), // Placeholder
-                                // (not used)
+                                new ResourceLocation(TwilightLib.MODID, "textures/addon/stub.png"),
                                 true, // usePlayerSkin
                                 false, // translucent
                                 false, // hidePlayerModel
@@ -322,9 +318,7 @@ public class AddonInit {
                                 OpaqueModel.LAYER_LOCATION,
                                 OpaqueModel::createBodyLayer,
                                 OpaqueModel::new,
-                                new ResourceLocation(TwilightLib.MODID, "textures/addon/opaque.png"), // Placeholder
-                                // texture (not
-                                // used)
+                                new ResourceLocation(TwilightLib.MODID, "textures/addon/stub.png"),
                                 true, // Use player skin texture
                                 true, // Translucent (50% transparency)
                                 true, // Hide player model
@@ -338,10 +332,8 @@ public class AddonInit {
                                 NymphModel::createBodyLayer,
                                 NymphModel::new,
                                 new ResourceLocation(TwilightLib.MODID,
-                                                "textures/addon/slime_body.png"), // Placeholder
-                                // texture
-                                // (not used)
-                                false, // Use player skin texture
+                                                "textures/addon/slime_body.png"),
+                                false, // usePlayerSkin - uses slime_body.png texture above
                                 true, // Translucent (50% transparency)
                                 false, // Hide player model
                                 false, // forceAllTranslucent

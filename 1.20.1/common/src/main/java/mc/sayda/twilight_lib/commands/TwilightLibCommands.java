@@ -977,6 +977,7 @@ public class TwilightLibCommands {
 
         // Sync morph (independent of supporter status - set by commands)
         IMorph morph = DataUtils.getMorphData(player);
+        if (morph == null) return;
         morph.getEntityType().ifPresent(rl -> {
             NetworkHandler
                     .sendMorphToAll(SyncMorphPacket.of(player.getUUID(), Optional.of(rl), morph.isNametagHidden()));
@@ -1073,6 +1074,7 @@ public class TwilightLibCommands {
 
         // Sync model variant (independent of supporter status - set by commands)
         IModelVariant modelVariant = DataUtils.getModelVariantData(player);
+        if (modelVariant == null) return;
         NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(player.getUUID(), modelVariant));
         LOGGER.debug("Time to change! Re-synced model variant for {}", player.getGameProfile().getName());
     }
@@ -1092,6 +1094,7 @@ public class TwilightLibCommands {
         }
 
         var addons = DataUtils.getAddonsData(target);
+        if (addons == null) return 0;
         // Optimization: Skip if addon is already active
         if (addons.isAddonActive(addonId)) {
             LOGGER.debug("Yeah? Well... {} already has addon '{}' active, skipping unnecessary update",
@@ -1126,6 +1129,7 @@ public class TwilightLibCommands {
 
     private static int executeUnequipAddon(CommandSourceStack source, ServerPlayer target, String addonId) {
         var addons = DataUtils.getAddonsData(target);
+        if (addons == null) return 0;
         // Admin command: Force unequip regardless of source (player selection or
         // external grant)
         ((AddonsData) addons).forceUnequipAddon(addonId);
@@ -1149,6 +1153,7 @@ public class TwilightLibCommands {
 
     private static int executeClearAddons(CommandSourceStack source, ServerPlayer target) {
         var addons = DataUtils.getAddonsData(target);
+        if (addons == null) return 0;
         // Admin command: Clear all active addons
         addons.clearActiveAddons();
         DataUtils.getPersistentData(target).put(TwilightConstants.NBT_ADDONS, addons.serialize());
@@ -1176,6 +1181,7 @@ public class TwilightLibCommands {
         }
 
         IModelVariant modelVariant = DataUtils.getModelVariantData(target);
+        if (modelVariant == null) return 0;
 
         // Optimization: Skip if already set to avoid unnecessary NBT writes and network
         // syncs
@@ -1214,6 +1220,7 @@ public class TwilightLibCommands {
 
     private static int executeClearModelVariant(CommandSourceStack source, ServerPlayer target) {
         IModelVariant modelVariant = DataUtils.getModelVariantData(target);
+        if (modelVariant == null) return 0;
         modelVariant.clearCustomVariant();
         DataUtils.getPersistentData(target).remove(TwilightConstants.NBT_MODEL_VARIANT);
         NetworkHandler.sendModelVariantToAll(SyncModelVariantPacket.of(target.getUUID(), modelVariant));

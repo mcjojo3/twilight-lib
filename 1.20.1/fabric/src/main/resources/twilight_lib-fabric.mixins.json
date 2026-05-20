@@ -8,10 +8,12 @@
         "FabricArmorBlockMixin",
         "FabricInventoryArmorMixin",
         "FabricLivingEntityMixin",
-        "FabricLocalPlayerMixin",
         "PlayerMiningMixin",
         "PlayerMixin",
         "ServerPlayerMixin"
+    ],
+    "client": [
+        "FabricLocalPlayerMixin"
     ],
     "injectors": {
         "defaultRequire": 1

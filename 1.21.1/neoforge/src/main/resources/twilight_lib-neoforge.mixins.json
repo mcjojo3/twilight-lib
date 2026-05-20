@@ -6,7 +6,9 @@
   "compatibilityLevel": "JAVA_21",
   "priority": 1000,
   "mixins": [
-    "NeoForgeLivingEntityMixin",
+    "NeoForgeLivingEntityMixin"
+  ],
+  "client": [
     "NeoForgeLocalPlayerMixin"
   ],
   "injectors": {

@@ -16,7 +16,6 @@ import java.util.Set;
 public class TrailsData implements ITrails {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String NBT_TRAILS = "Trails";
-    private static final String NBT_EQUIPPED_TRAILS = "EquippedTrails";
     private static final String NBT_PLAYER_SELECTIONS = "PlayerSelections";
     private static final String NBT_EXTERNAL_GRANTS = "ExternalGrants";
     // TwilightConfig.MAX_NBT_LIST_SIZE.get() moved to TwilightConfig // Same as

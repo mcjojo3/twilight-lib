@@ -1,6 +1,7 @@
 package mc.sayda.twilight_lib.capabilities;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 
 import javax.annotation.Nonnull;
 
@@ -35,7 +36,7 @@ public class ModelVariantData implements IModelVariant {
 
     @Override
     public synchronized void deserialize(@Nonnull CompoundTag tag) {
-        if (tag.contains("modelVariant")) {
+        if (tag.contains("modelVariant", Tag.TAG_STRING)) {
             try {
                 String val = tag.getString("modelVariant");
                 // Support both old "steve"/"alex" and new ResourceLocation format

@@ -64,7 +64,7 @@ public class ModAttributes {
                                                         1024.0)
                                                         .setSyncable(true));
 
-        public static net.minecraft.core.Holder<Attribute> getHolder(
+        public static @org.jetbrains.annotations.NotNull net.minecraft.core.Holder<Attribute> getHolder(
                         dev.architectury.registry.registries.RegistrySupplier<Attribute> supplier) {
                 return net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.wrapAsHolder(supplier.get());
         }

@@ -416,7 +416,21 @@ public class AddonRegistry implements IAddonRegistry {
 
     @Override
     public boolean contains(ResourceLocation id) {
-        return NEW_ADDONS.containsKey(id);
+        if (NEW_ADDONS.containsKey(id))
+            return true;
+        if (ADDONS.containsKey(id.toString()))
+            return true;
+        if (LOGICAL_ADDONS.containsKey(id.toString()))
+            return true;
+        if (id.getNamespace().equals("minecraft") || id.getNamespace().equals("twilight_lib")) {
+            String path = id.getPath();
+            if (ADDONS.containsKey(path) || LOGICAL_ADDONS.containsKey(path))
+                return true;
+            ResourceLocation twilightId = ResourceLocation.fromNamespaceAndPath("twilight_lib", path);
+            if (NEW_ADDONS.containsKey(twilightId))
+                return true;
+        }
+        return false;
     }
 
     /**

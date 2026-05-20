@@ -2,6 +2,14 @@ architectury {
     common(rootProject.property('1_21_1_enabled_platforms').split(","))
 }
 
+sourceSets {
+    main {
+        resources {
+            srcDir rootProject.file("common/src/main/resources")
+        }
+    }
+}
+
 loom {
     accessWidenerPath = file("src/main/resources/twilight_lib.accesswidener")
     mixin {

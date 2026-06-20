@@ -801,6 +801,16 @@ public class CosmeticsCommand {
                         return 0;
                 }
 
+                // Verify addon is available based on mod requirements
+                boolean isAvailable = AddonRegistry.getAddon(addonId)
+                                .map(info -> ModRequirement.shouldLoad(info.modTags()))
+                                .orElse(true);
+                if (!isAvailable) {
+                        player.sendSystemMessage(Component.literal("❌ That addon requires a mod that isn't loaded on this server!")
+                                        .withStyle(ChatFormatting.RED));
+                        return 0;
+                }
+
                 // Check if already active
                 if (addons.isAddonActive(addonId)) {
                         player.sendSystemMessage(Component.literal("⚠ Addon '" + addonId + "' is already equipped!")

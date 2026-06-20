@@ -3,6 +3,8 @@ package mc.sayda.twilight_lib.network;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.capabilities.IModelVariant;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 
@@ -32,7 +34,7 @@ public class SyncModelVariantPacket {
             id = SENTINEL_UUID;
         }
         this.playerId = id;
-        this.variant = buf.readUtf(java.util.Objects.requireNonNull(mc.sayda.twilight_lib.config.TwilightConfig.NETWORK_MAX_STRING_LENGTH.get(), "max_string_length"));
+        this.variant = buf.readUtf(mc.sayda.twilight_lib.config.TwilightConfig.NETWORK_MAX_STRING_LENGTH.get());
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -45,84 +47,78 @@ public class SyncModelVariantPacket {
     }
 
     public void handle(Supplier<dev.architectury.networking.NetworkManager.PacketContext> contextSupplier) {
-        var context = contextSupplier.get();
-        context.queue(() -> {
-            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> {
-                try {
-                    if (this.playerId.equals(SENTINEL_UUID)) {
-                        LOGGER.warn(
-                                "How did I?! Uuuughh! Received malformed sync_model_variant packet with invalid UUID");
-                        return;
-                    }
+        contextSupplier.get().queue(() ->
+            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> ClientHandler.apply(this)));
+    }
 
-                    ResourceLocation validatedVariant;
-                    if (this.variant.equalsIgnoreCase("steve") || this.variant.equalsIgnoreCase("alex")) {
-                        validatedVariant = new ResourceLocation("twilight_lib",
-                                this.variant.toLowerCase());
-                    } else if (this.variant.equalsIgnoreCase("none")) {
-                        validatedVariant = null;
-                    } else {
-                        try {
-                            validatedVariant = new ResourceLocation(
-                                    (String) java.util.Objects.requireNonNull(this.variant, "variant"));
-                        } catch (Exception e) {
-                            validatedVariant = null;
-                        }
-                    }
-
-                    if (validatedVariant != null
-                            && !mc.sayda.twilight_lib.api.model_variant.IModelVariantRegistry.getInstance()
-                                    .get(validatedVariant)
-                                    .isPresent()) {
-                        LOGGER.warn("Or, what. Rejected invalid model variant from network: '{}'", validatedVariant);
-                        validatedVariant = new net.minecraft.resources.ResourceLocation("twilight_lib", "steve");
-                    }
-
-                    // 1. Always update the client-side cache (essential for other players and self
-                    // fallback)
-                    if (this.variant.equalsIgnoreCase("none")) {
-                        mc.sayda.twilight_lib.client.ClientModelVariantCache.setModelVariant(this.playerId, null);
-                    } else {
-                        mc.sayda.twilight_lib.client.ClientModelVariantCache.setModelVariant(this.playerId,
-                                validatedVariant);
-                    }
-
-                    // 2. Try to update the capability on the player entity if it's currently loaded
-                    net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
-                    net.minecraft.world.entity.player.Player player = null;
-
-                    if (minecraft.player != null && minecraft.player.getUUID().equals(this.playerId)) {
-                        player = minecraft.player;
-                    } else if (minecraft.level != null) {
-                        player = minecraft.level
-                                .getPlayerByUUID(java.util.Objects.requireNonNull(this.playerId, "playerId"));
-                    }
-
-                    if (player == null) {
-                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", this.playerId);
-                        return;
-                    }
-
-                    var data = DataUtils.getModelVariantData(player);
-                    if (data == null) {
-                        LOGGER.error("How did I?! Uuuughh! Failed to get model variant data for player {}",
-                                this.playerId);
-                        return;
-                    }
-
-                    if (this.variant.equalsIgnoreCase("none")) {
-                        data.clearCustomVariant();
-                    } else {
-                        data.setModelVariant(this.variant);
-                    }
-
-                    LOGGER.debug("Want to see something neat? Synced model variant {} for {}", validatedVariant,
-                            player.getName().getString());
-                } catch (Exception e) {
-                    LOGGER.error("How did I?! Uuuughh! Failed to sync model variant for player {}", this.playerId, e);
+    @Environment(EnvType.CLIENT)
+    private static final class ClientHandler {
+        static void apply(SyncModelVariantPacket pkt) {
+            try {
+                if (pkt.playerId.equals(SENTINEL_UUID)) {
+                    LOGGER.warn("How did I?! Uuuughh! Received malformed sync_model_variant packet with invalid UUID");
+                    return;
                 }
-            });
-        });
+
+                ResourceLocation validatedVariant;
+                if (pkt.variant.equalsIgnoreCase("steve") || pkt.variant.equalsIgnoreCase("alex")) {
+                    validatedVariant = new ResourceLocation("twilight_lib", pkt.variant.toLowerCase());
+                } else if (pkt.variant.equalsIgnoreCase("none")) {
+                    validatedVariant = null;
+                } else {
+                    try {
+                        validatedVariant = new ResourceLocation(pkt.variant);
+                    } catch (Exception e) {
+                        validatedVariant = null;
+                    }
+                }
+
+                if (validatedVariant != null
+                        && !mc.sayda.twilight_lib.api.model_variant.IModelVariantRegistry.getInstance()
+                                .get(validatedVariant).isPresent()) {
+                    LOGGER.warn("Or, what. Rejected invalid model variant from network: '{}'", validatedVariant);
+                    validatedVariant = new ResourceLocation("twilight_lib", "steve");
+                }
+
+                if (pkt.variant.equalsIgnoreCase("none")) {
+                    mc.sayda.twilight_lib.client.ClientModelVariantCache.setModelVariant(pkt.playerId, null);
+                } else {
+                    mc.sayda.twilight_lib.client.ClientModelVariantCache.setModelVariant(pkt.playerId, validatedVariant);
+                }
+
+                net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+                net.minecraft.world.entity.player.Player player = null;
+
+                if (minecraft.player != null && minecraft.player.getUUID().equals(pkt.playerId)) {
+                    player = minecraft.player;
+                } else if (minecraft.level != null) {
+                    player = minecraft.level.getPlayerByUUID(pkt.playerId);
+                }
+
+                if (player == null) {
+                    LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", pkt.playerId);
+                    return;
+                }
+
+                var data = DataUtils.getModelVariantData(player);
+                if (data == null) {
+                    LOGGER.error("How did I?! Uuuughh! Failed to get model variant data for player {}", pkt.playerId);
+                    return;
+                }
+
+                if (pkt.variant.equalsIgnoreCase("none") || validatedVariant == null) {
+                    data.clearCustomVariant();
+                } else {
+                    data.setVariant(mc.sayda.twilight_lib.api.model_variant.IModelVariantRegistry
+                            .getInstance().get(validatedVariant));
+                }
+
+                LOGGER.debug("Want to see something neat? Synced model variant {} for {}", validatedVariant,
+                        player.getName().getString());
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to sync model variant for player {}", pkt.playerId, e);
+            }
+        }
     }
 
     public UUID getPlayerId() {

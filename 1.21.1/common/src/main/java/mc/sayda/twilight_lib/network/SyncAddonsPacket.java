@@ -5,6 +5,8 @@ import io.netty.buffer.ByteBuf;
 import javax.annotation.Nonnull;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -74,44 +76,51 @@ public record SyncAddonsPacket(UUID playerId, Set<String> addons, Set<String> ex
     }
 
     public static void handle(SyncAddonsPacket msg, dev.architectury.networking.NetworkManager.PacketContext context) {
-        context.queue(() -> {
-            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> {
-                try {
-                    if (msg.playerId().equals(SENTINEL_UUID)) {
-                        LOGGER.error("How did I?! Uuuughh! Received malformed SyncAddonsPacket with invalid UUID");
-                        return;
-                    }
+        context.queue(() ->
+            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> ClientHandler.apply(msg)));
+    }
 
-                    // Try the local player directly first (valid even before entity tracking on
-                    // join)
-                    net.minecraft.world.entity.player.Player entity = null;
-                    net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
-                    if (minecraft.player != null && minecraft.player.getUUID().equals(msg.playerId())) {
-                        entity = minecraft.player;
-                    } else if (minecraft.level != null) {
-                        entity = minecraft.level.getPlayerByUUID(msg.playerId());
-                    }
-                    if (entity == null) {
-                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", msg.playerId());
-                        return;
-                    }
+    @Environment(EnvType.CLIENT)
+    public static void clientApply(SyncAddonsPacket msg) {
+        ClientHandler.apply(msg);
+    }
 
-                    var addons = DataUtils.getAddonsData(entity);
-                    if (addons == null) {
-                        LOGGER.error("How did I?! Uuuughh! Failed to get addons data for player {}", msg.playerId());
-                        return;
-                    }
-
-                    addons.syncEquippedFromPacket(msg.addons());
-                    addons.syncExternalGrantsFromPacket(msg.externalGrants());
-                    addons.syncTintsFromPacket(msg.tints());
-
-                    LOGGER.debug("Want to see something neat? Synced {} active addons for {}", msg.addons().size(),
-                            entity.getName().getString());
-                } catch (Exception e) {
-                    LOGGER.error("How did I?! Uuuughh! Failed to sync addons for player {}", msg.playerId(), e);
+    @Environment(EnvType.CLIENT)
+    private static final class ClientHandler {
+        static void apply(SyncAddonsPacket msg) {
+            try {
+                if (msg.playerId().equals(SENTINEL_UUID)) {
+                    LOGGER.error("How did I?! Uuuughh! Received malformed SyncAddonsPacket with invalid UUID");
+                    return;
                 }
-            });
-        });
+
+                net.minecraft.world.entity.player.Player entity = null;
+                net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+                if (minecraft.player != null && minecraft.player.getUUID().equals(msg.playerId())) {
+                    entity = minecraft.player;
+                } else if (minecraft.level != null) {
+                    entity = minecraft.level.getPlayerByUUID(msg.playerId());
+                }
+                if (entity == null) {
+                    LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", msg.playerId());
+                    return;
+                }
+
+                var addons = DataUtils.getAddonsData(entity);
+                if (addons == null) {
+                    LOGGER.error("How did I?! Uuuughh! Failed to get addons data for player {}", msg.playerId());
+                    return;
+                }
+
+                addons.syncEquippedFromPacket(msg.addons());
+                addons.syncExternalGrantsFromPacket(msg.externalGrants());
+                addons.syncTintsFromPacket(msg.tints());
+
+                LOGGER.debug("Want to see something neat? Synced {} active addons for {}", msg.addons().size(),
+                        entity.getName().getString());
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to sync addons for player {}", msg.playerId(), e);
+            }
+        }
     }
 }

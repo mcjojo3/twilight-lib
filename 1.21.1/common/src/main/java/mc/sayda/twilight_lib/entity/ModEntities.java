@@ -35,7 +35,7 @@ public class ModEntities {
                                                 MobCategory.CREATURE)
                                                 .sized(0.6F, 0.7F)
                                                 .clientTrackingRange(8)
-                                                .build(name));
+                                                .build(""));
         }
 
         public static void register() {

@@ -14,6 +14,7 @@ public class TwilightConfig {
         public static Supplier<Boolean> FORCE_LOAD_ALL_ADDONS = () -> false;
 
         // Performance
+
         public static Supplier<Integer> MAX_CACHED_ADDON_MODELS = () -> 150;
         public static Supplier<Integer> TRAIL_UPDATE_FREQUENCY = () -> 3;
         public static Supplier<Integer> MAX_SUPPORTER_JSON_SIZE = () -> 10;

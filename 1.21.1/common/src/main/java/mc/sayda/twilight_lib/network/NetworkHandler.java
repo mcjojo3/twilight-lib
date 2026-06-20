@@ -4,17 +4,31 @@ import com.mojang.logging.LogUtils;
 import dev.architectury.networking.NetworkManager;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.slf4j.Logger;
 
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 public class NetworkHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
 
+    // Overridden by TwilightLibFabric to use native Fabric networking (Architectury 13.0.8 send path is broken on Fabric).
+    public static BiConsumer<ServerPlayer, CustomPacketPayload> PLATFORM_SEND_TO_PLAYER =
+            (player, pkt) -> NetworkManager.sendToPlayer(player, pkt);
+
     public static void register() {
-        // Register client-bound payloads
+        // On Fabric, native Fabric networking APIs handle registration (TwilightLibFabric/TwilightLibFabricClient).
+        // Architectury 13.0.8 has bugs in both registerReceiver and sendToPlayer on Fabric.
+        if (!dev.architectury.platform.Platform.isFabric()) {
+            registerReceivers();
+        }
+        LOGGER.info("What's your name? Network payloads registered.");
+    }
+
+    private static void registerReceivers() {
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncMorphPacket.TYPE, SyncMorphPacket.STREAM_CODEC,
                 SyncMorphPacket::handle);
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncAddonsPacket.TYPE, SyncAddonsPacket.STREAM_CODEC,
@@ -25,15 +39,15 @@ public class NetworkHandler {
                 SyncEffectsPacket::handle);
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncModelVariantPacket.TYPE,
                 SyncModelVariantPacket.STREAM_CODEC, SyncModelVariantPacket::handle);
-
-        LOGGER.info("What's your name? Network payloads registered.");
     }
 
     public static void sendMorphToAll(SyncMorphPacket pkt) {
         try {
             var server = dev.architectury.utils.GameInstance.getServer();
             if (server != null) {
-                NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), pkt);
+                for (var sp : server.getPlayerList().getPlayers()) {
+                    PLATFORM_SEND_TO_PLAYER.accept(sp, pkt);
+                }
             }
         } catch (Exception e) {
             LOGGER.error("How did I?! Uuuughh! Failed to send morph packet to all players", e);
@@ -45,7 +59,7 @@ public class NetworkHandler {
             return;
         }
         try {
-            NetworkManager.sendToPlayer(serverPlayer, pkt);
+            PLATFORM_SEND_TO_PLAYER.accept(serverPlayer, pkt);
             LOGGER.debug("We are going to be best friends! Sending morph to {}", player.getGameProfile().getName());
         } catch (Exception e) {
             LOGGER.warn("How did I?! Uuuughh! Failed to send morph to {}", player.getGameProfile().getName(), e);
@@ -73,7 +87,9 @@ public class NetworkHandler {
         try {
             var server = dev.architectury.utils.GameInstance.getServer();
             if (server != null) {
-                NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), pkt);
+                for (var sp : server.getPlayerList().getPlayers()) {
+                    PLATFORM_SEND_TO_PLAYER.accept(sp, pkt);
+                }
             }
         } catch (Exception e) {
             LOGGER.error("How did I?! Uuuughh! Failed to send addons packet", e);
@@ -82,7 +98,7 @@ public class NetworkHandler {
 
     public static void sendAddonsToPlayer(Player player, SyncAddonsPacket pkt) {
         if (player instanceof ServerPlayer sp) {
-            NetworkManager.sendToPlayer(sp, pkt);
+            PLATFORM_SEND_TO_PLAYER.accept(sp, pkt);
         }
     }
 
@@ -105,7 +121,9 @@ public class NetworkHandler {
         try {
             var server = dev.architectury.utils.GameInstance.getServer();
             if (server != null) {
-                NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), pkt);
+                for (var sp : server.getPlayerList().getPlayers()) {
+                    PLATFORM_SEND_TO_PLAYER.accept(sp, pkt);
+                }
             }
         } catch (Exception e) {
             LOGGER.error("How did I?! Uuuughh! Failed to send trails packet", e);
@@ -114,7 +132,7 @@ public class NetworkHandler {
 
     public static void sendTrailsToPlayer(Player player, SyncTrailsPacket pkt) {
         if (player instanceof ServerPlayer sp) {
-            NetworkManager.sendToPlayer(sp, pkt);
+            PLATFORM_SEND_TO_PLAYER.accept(sp, pkt);
         }
     }
 
@@ -135,7 +153,9 @@ public class NetworkHandler {
         try {
             var server = dev.architectury.utils.GameInstance.getServer();
             if (server != null) {
-                NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), pkt);
+                for (var sp : server.getPlayerList().getPlayers()) {
+                    PLATFORM_SEND_TO_PLAYER.accept(sp, pkt);
+                }
             }
         } catch (Exception e) {
             LOGGER.error("How did I?! Uuuughh! Failed to send effects packet", e);
@@ -144,7 +164,7 @@ public class NetworkHandler {
 
     public static void sendEffectsToPlayer(Player player, SyncEffectsPacket pkt) {
         if (player instanceof ServerPlayer sp) {
-            NetworkManager.sendToPlayer(sp, pkt);
+            PLATFORM_SEND_TO_PLAYER.accept(sp, pkt);
         }
     }
 
@@ -166,7 +186,9 @@ public class NetworkHandler {
         try {
             var server = dev.architectury.utils.GameInstance.getServer();
             if (server != null) {
-                NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), pkt);
+                for (var sp : server.getPlayerList().getPlayers()) {
+                    PLATFORM_SEND_TO_PLAYER.accept(sp, pkt);
+                }
             }
         } catch (Exception e) {
             LOGGER.error("How did I?! Uuuughh! Failed to send model variant packet", e);
@@ -175,7 +197,7 @@ public class NetworkHandler {
 
     public static void sendModelVariantToPlayer(Player player, SyncModelVariantPacket pkt) {
         if (player instanceof ServerPlayer sp) {
-            NetworkManager.sendToPlayer(sp, pkt);
+            PLATFORM_SEND_TO_PLAYER.accept(sp, pkt);
         }
     }
 

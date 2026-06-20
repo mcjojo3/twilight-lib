@@ -6,6 +6,8 @@ import javax.annotation.Nonnull;
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
 import mc.sayda.twilight_lib.cosmetics.SpawnEffectHandler;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -72,47 +74,54 @@ public record SyncEffectsPacket(UUID playerId, Set<String> effects, boolean trig
     }
 
     public static void handle(SyncEffectsPacket msg, dev.architectury.networking.NetworkManager.PacketContext context) {
-        context.queue(() -> {
-            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> {
-                try {
-                    if (msg.playerId().equals(SENTINEL_UUID)) {
-                        LOGGER.error("How did I?! Uuuughh! Received malformed SyncEffectsPacket with invalid UUID");
-                        return;
-                    }
+        context.queue(() ->
+            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> ClientHandler.apply(msg)));
+    }
 
-                    // Try the local player directly first (valid even before entity tracking on
-                    // join)
-                    net.minecraft.world.entity.player.Player entity = null;
-                    net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
-                    if (minecraft.player != null && minecraft.player.getUUID().equals(msg.playerId())) {
-                        entity = minecraft.player;
-                    } else if (minecraft.level != null) {
-                        entity = minecraft.level.getPlayerByUUID(msg.playerId());
-                    }
-                    if (entity == null) {
-                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", msg.playerId());
-                        return;
-                    }
+    @Environment(EnvType.CLIENT)
+    public static void clientApply(SyncEffectsPacket msg) {
+        ClientHandler.apply(msg);
+    }
 
-                    var effects = DataUtils.getEffectsData(entity);
-                    if (effects == null) {
-                        LOGGER.error("How did I?! Uuuughh! Failed to get effects data for player {}", msg.playerId());
-                        return;
-                    }
-
-                    effects.syncEquippedFromPacket(msg.effects());
-                    LOGGER.debug("Want to see something neat? Synced {} active effects for {}", msg.effects().size(),
-                            entity.getName().getString());
-
-                    if (msg.triggerSpawnEffect() && !msg.effects().isEmpty()) {
-                        LOGGER.debug("More sparkles, now! Scheduling spawn effect for player {}",
-                                entity.getName().getString());
-                        SpawnEffectHandler.scheduleSpawnEffect(msg.playerId());
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("How did I?! Uuuughh! Failed to sync effects for player {}", msg.playerId(), e);
+    @Environment(EnvType.CLIENT)
+    private static final class ClientHandler {
+        static void apply(SyncEffectsPacket msg) {
+            try {
+                if (msg.playerId().equals(SENTINEL_UUID)) {
+                    LOGGER.error("How did I?! Uuuughh! Received malformed SyncEffectsPacket with invalid UUID");
+                    return;
                 }
-            });
-        });
+
+                net.minecraft.world.entity.player.Player entity = null;
+                net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+                if (minecraft.player != null && minecraft.player.getUUID().equals(msg.playerId())) {
+                    entity = minecraft.player;
+                } else if (minecraft.level != null) {
+                    entity = minecraft.level.getPlayerByUUID(msg.playerId());
+                }
+                if (entity == null) {
+                    LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", msg.playerId());
+                    return;
+                }
+
+                var effects = DataUtils.getEffectsData(entity);
+                if (effects == null) {
+                    LOGGER.error("How did I?! Uuuughh! Failed to get effects data for player {}", msg.playerId());
+                    return;
+                }
+
+                effects.syncEquippedFromPacket(msg.effects());
+                LOGGER.debug("Want to see something neat? Synced {} active effects for {}", msg.effects().size(),
+                        entity.getName().getString());
+
+                if (msg.triggerSpawnEffect() && !msg.effects().isEmpty()) {
+                    LOGGER.debug("More sparkles, now! Scheduling spawn effect for player {}",
+                            entity.getName().getString());
+                    SpawnEffectHandler.scheduleSpawnEffect(msg.playerId());
+                }
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to sync effects for player {}", msg.playerId(), e);
+            }
+        }
     }
 }

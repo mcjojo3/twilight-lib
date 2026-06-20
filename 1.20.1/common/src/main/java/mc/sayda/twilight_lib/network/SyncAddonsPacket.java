@@ -2,6 +2,8 @@ package mc.sayda.twilight_lib.network;
 
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 
@@ -46,10 +48,15 @@ public class SyncAddonsPacket {
         this.externalGrants = buf.readCollection(s -> new java.util.HashSet<>(Math.min(s, maxColl)),
                 b -> b.readUtf(maxStr));
 
-        int tintSize = Math.min(buf.readVarInt(), maxColl);
+        int rawTintSize = buf.readVarInt();
+        int tintSize = Math.min(rawTintSize, maxColl);
         this.tints = new HashMap<>();
         for (int i = 0; i < tintSize; i++) {
             this.tints.put(buf.readUtf(maxStr), buf.readInt());
+        }
+        for (int i = tintSize; i < rawTintSize; i++) {
+            buf.readUtf(maxStr);
+            buf.readInt();
         }
     }
 
@@ -65,46 +72,49 @@ public class SyncAddonsPacket {
     }
 
     public void handle(Supplier<dev.architectury.networking.NetworkManager.PacketContext> contextSupplier) {
-        var context = contextSupplier.get();
-        context.queue(() -> {
-            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> {
-                try {
-                    if (this.playerId.equals(SENTINEL_UUID)) {
-                        LOGGER.warn("How did I?! Uuuughh! Received malformed SyncAddonsPacket with invalid UUID");
-                        return;
-                    }
+        contextSupplier.get().queue(() ->
+            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> ClientHandler.apply(this)));
+    }
 
-                    net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
-                    net.minecraft.world.entity.player.Player player = null;
-
-                    if (minecraft.player != null && minecraft.player.getUUID().equals(this.playerId)) {
-                        player = minecraft.player;
-                    } else if (minecraft.level != null) {
-                        player = minecraft.level.getPlayerByUUID(this.playerId);
-                    }
-
-                    if (player == null) {
-                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", this.playerId);
-                        return;
-                    }
-
-                    var data = DataUtils.getAddonsData(player);
-                    if (data == null) {
-                        LOGGER.error("How did I?! Uuuughh! Failed to get addons data for player {}", this.playerId);
-                        return;
-                    }
-
-                    data.syncEquippedFromPacket(this.addons);
-                    data.syncExternalGrantsFromPacket(this.externalGrants);
-                    data.syncTintsFromPacket(this.tints);
-
-                    LOGGER.debug("Want to see something neat? Synced {} active addons for {}", this.addons.size(),
-                            player.getName().getString());
-                } catch (Exception e) {
-                    LOGGER.error("How did I?! Uuuughh! Failed to sync addons for player {}", this.playerId, e);
+    @Environment(EnvType.CLIENT)
+    private static final class ClientHandler {
+        static void apply(SyncAddonsPacket pkt) {
+            try {
+                if (pkt.playerId.equals(SENTINEL_UUID)) {
+                    LOGGER.warn("How did I?! Uuuughh! Received malformed SyncAddonsPacket with invalid UUID");
+                    return;
                 }
-            });
-        });
+
+                net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+                net.minecraft.world.entity.player.Player player = null;
+
+                if (minecraft.player != null && minecraft.player.getUUID().equals(pkt.playerId)) {
+                    player = minecraft.player;
+                } else if (minecraft.level != null) {
+                    player = minecraft.level.getPlayerByUUID(pkt.playerId);
+                }
+
+                if (player == null) {
+                    LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", pkt.playerId);
+                    return;
+                }
+
+                var data = DataUtils.getAddonsData(player);
+                if (data == null) {
+                    LOGGER.error("How did I?! Uuuughh! Failed to get addons data for player {}", pkt.playerId);
+                    return;
+                }
+
+                data.syncEquippedFromPacket(pkt.addons);
+                data.syncExternalGrantsFromPacket(pkt.externalGrants);
+                data.syncTintsFromPacket(pkt.tints);
+
+                LOGGER.debug("Want to see something neat? Synced {} active addons for {}", pkt.addons.size(),
+                        player.getName().getString());
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to sync addons for player {}", pkt.playerId, e);
+            }
+        }
     }
 
     public UUID getPlayerId() {

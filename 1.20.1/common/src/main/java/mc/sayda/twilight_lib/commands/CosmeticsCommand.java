@@ -610,9 +610,9 @@ public class CosmeticsCommand {
                                 String tier = data.getTier();
                                 String tierDisplay = switch (tier.toLowerCase()) {
                                         case "stone" -> "🏅 Stone";
-                                        case "bronze" -> "🥁EBronze";
-                                        case "silver" -> "🥁ESilver";
-                                        case "gold" -> "🥁EGold";
+                                        case "bronze" -> "🥉 Bronze";
+                                        case "silver" -> "🥈 Silver";
+                                        case "gold" -> "🥇 Gold";
                                         case "platinum" -> "💎 Platinum";
                                         default -> tier;
                                 };
@@ -790,6 +790,16 @@ public class CosmeticsCommand {
                 // Check ownership - players can only interact with addons they own
                 if (!addons.hasAddon(addonId)) {
                         player.sendSystemMessage(Component.literal("❁EYou don't own '" + addonId + "'!")
+                                        .withStyle(ChatFormatting.RED));
+                        return 0;
+                }
+
+                // Verify addon is available based on mod requirements
+                boolean isAvailable = AddonRegistry.getAddon(addonId)
+                                .map(info -> ModRequirement.shouldLoad(info.modTags()))
+                                .orElse(true);
+                if (!isAvailable) {
+                        player.sendSystemMessage(Component.literal("❁EThat addon requires a mod that isn't loaded on this server!")
                                         .withStyle(ChatFormatting.RED));
                         return 0;
                 }

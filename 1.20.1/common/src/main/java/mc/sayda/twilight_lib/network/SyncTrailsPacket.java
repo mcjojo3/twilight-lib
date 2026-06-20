@@ -2,6 +2,8 @@ package mc.sayda.twilight_lib.network;
 
 import mc.sayda.twilight_lib.TwilightLib;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 
@@ -44,43 +46,46 @@ public class SyncTrailsPacket {
     }
 
     public void handle(Supplier<dev.architectury.networking.NetworkManager.PacketContext> contextSupplier) {
-        var context = contextSupplier.get();
-        context.queue(() -> {
-            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> {
-                try {
-                    if (this.playerId.equals(SENTINEL_UUID)) {
-                        LOGGER.warn("How did I?! Uuuughh! Received malformed sync_trails packet with invalid UUID");
-                        return;
-                    }
+        contextSupplier.get().queue(() ->
+            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> ClientHandler.apply(this)));
+    }
 
-                    net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
-                    net.minecraft.world.entity.player.Player player = null;
-
-                    if (minecraft.player != null && minecraft.player.getUUID().equals(this.playerId)) {
-                        player = minecraft.player;
-                    } else if (minecraft.level != null) {
-                        player = minecraft.level.getPlayerByUUID(this.playerId);
-                    }
-
-                    if (player == null) {
-                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", this.playerId);
-                        return;
-                    }
-
-                    var data = DataUtils.getTrailsData(player);
-                    if (data == null) {
-                        LOGGER.error("How did I?! Uuuughh! Failed to get trails data for player {}", this.playerId);
-                        return;
-                    }
-
-                    data.syncEquippedFromPacket(this.trails);
-                    LOGGER.debug("Want to see something neat? Synced {} active trails for {}", this.trails.size(),
-                            player.getName().getString());
-                } catch (Exception e) {
-                    LOGGER.error("How did I?! Uuuughh! Failed to sync trails for player {}", this.playerId, e);
+    @Environment(EnvType.CLIENT)
+    private static final class ClientHandler {
+        static void apply(SyncTrailsPacket pkt) {
+            try {
+                if (pkt.playerId.equals(SENTINEL_UUID)) {
+                    LOGGER.warn("How did I?! Uuuughh! Received malformed sync_trails packet with invalid UUID");
+                    return;
                 }
-            });
-        });
+
+                net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+                net.minecraft.world.entity.player.Player player = null;
+
+                if (minecraft.player != null && minecraft.player.getUUID().equals(pkt.playerId)) {
+                    player = minecraft.player;
+                } else if (minecraft.level != null) {
+                    player = minecraft.level.getPlayerByUUID(pkt.playerId);
+                }
+
+                if (player == null) {
+                    LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", pkt.playerId);
+                    return;
+                }
+
+                var data = DataUtils.getTrailsData(player);
+                if (data == null) {
+                    LOGGER.error("How did I?! Uuuughh! Failed to get trails data for player {}", pkt.playerId);
+                    return;
+                }
+
+                data.syncEquippedFromPacket(pkt.trails);
+                LOGGER.debug("Want to see something neat? Synced {} active trails for {}", pkt.trails.size(),
+                        player.getName().getString());
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to sync trails for player {}", pkt.playerId, e);
+            }
+        }
     }
 
     public UUID getPlayerId() {

@@ -3,6 +3,8 @@ package mc.sayda.twilight_lib.network;
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.capabilities.IMorph;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvType;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 
@@ -60,51 +62,54 @@ public class SyncMorphPacket {
     }
 
     public void handle(Supplier<dev.architectury.networking.NetworkManager.PacketContext> contextSupplier) {
-        var context = contextSupplier.get();
-        context.queue(() -> {
-            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> {
-                try {
-                    if (this.playerId.equals(SENTINEL_UUID)) {
-                        LOGGER.warn("How did I?! Uuuughh! Received malformed morph packet with invalid UUID");
-                        return;
-                    }
+        contextSupplier.get().queue(() ->
+            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () -> ClientHandler.apply(this)));
+    }
 
-                    net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
-                    net.minecraft.world.entity.player.Player player = null;
-                    
-                    if (minecraft.player != null && minecraft.player.getUUID().equals(this.playerId)) {
-                        player = minecraft.player;
-                    } else if (minecraft.level != null) {
-                        player = minecraft.level.getPlayerByUUID(this.playerId);
-                    }
-
-                    if (player == null) {
-                        LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", this.playerId);
-                        return;
-                    }
-
-                    IMorph morph = DataUtils.getMorphData(player);
-                    if (morph == null) {
-                        LOGGER.error("How did I?! Uuuughh! Failed to get morph data for player {}", this.playerId);
-                        return;
-                    }
-
-                    Optional<ResourceLocation> validatedEntity = this.entity;
-                    if (validatedEntity.isPresent() && !net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
-                            .containsKey(validatedEntity.get())) {
-                        LOGGER.warn("Or, what. Rejected invalid morph entity from network: '{}'", validatedEntity.get());
-                        validatedEntity = Optional.empty();
-                    }
-                    
-                    morph.setEntityType(validatedEntity);
-                    morph.setNametagHidden(this.hideNametag);
-                    player.refreshDimensions();
-                    LOGGER.debug("Want to see something neat? Synced morph {} (hideNametag={}) for {}", validatedEntity,
-                            this.hideNametag, player.getName().getString());
-                } catch (Exception e) {
-                    LOGGER.error("How did I?! Uuuughh! Failed to sync morph for player {}", this.playerId, e);
+    @Environment(EnvType.CLIENT)
+    private static final class ClientHandler {
+        static void apply(SyncMorphPacket pkt) {
+            try {
+                if (pkt.playerId.equals(SENTINEL_UUID)) {
+                    LOGGER.warn("How did I?! Uuuughh! Received malformed morph packet with invalid UUID");
+                    return;
                 }
-            });
-        });
+
+                net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+                net.minecraft.world.entity.player.Player player = null;
+
+                if (minecraft.player != null && minecraft.player.getUUID().equals(pkt.playerId)) {
+                    player = minecraft.player;
+                } else if (minecraft.level != null) {
+                    player = minecraft.level.getPlayerByUUID(pkt.playerId);
+                }
+
+                if (player == null) {
+                    LOGGER.warn("Or, what. Player {} not found in level (cached anyway)", pkt.playerId);
+                    return;
+                }
+
+                IMorph morph = DataUtils.getMorphData(player);
+                if (morph == null) {
+                    LOGGER.error("How did I?! Uuuughh! Failed to get morph data for player {}", pkt.playerId);
+                    return;
+                }
+
+                Optional<ResourceLocation> validatedEntity = pkt.entity;
+                if (validatedEntity.isPresent() && !net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
+                        .containsKey(validatedEntity.get())) {
+                    LOGGER.warn("Or, what. Rejected invalid morph entity from network: '{}'", validatedEntity.get());
+                    validatedEntity = Optional.empty();
+                }
+
+                morph.setEntityType(validatedEntity);
+                morph.setNametagHidden(pkt.hideNametag);
+                player.refreshDimensions();
+                LOGGER.debug("Want to see something neat? Synced morph {} (hideNametag={}) for {}", validatedEntity,
+                        pkt.hideNametag, player.getName().getString());
+            } catch (Exception e) {
+                LOGGER.error("How did I?! Uuuughh! Failed to sync morph for player {}", pkt.playerId, e);
+            }
+        }
     }
 }

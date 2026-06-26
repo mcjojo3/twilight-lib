@@ -217,7 +217,8 @@ public class AddonsData implements IAddons {
     // Tint color methods
     @Override
     public synchronized int getAddonTint(String addonId) {
-        return addonTints.getOrDefault(addonId, 0xFFFFFF); // Default to white (no tint)
+        int tint = addonTints.getOrDefault(addonId, 0xFFFFFF);
+        return tint == 0 ? 0xFFFFFF : tint; // 0 is invalid (stored default from old data), treat as white
     }
 
     @Override
@@ -241,7 +242,11 @@ public class AddonsData implements IAddons {
      */
     public synchronized void syncTintsFromPacket(java.util.Map<String, Integer> tints) {
         this.addonTints.clear();
-        this.addonTints.putAll(tints);
+        tints.forEach((k, v) -> {
+            if (k != null && v != null && v != 0) {
+                this.addonTints.put(k, v);
+            }
+        });
     }
 
     @Override
@@ -347,7 +352,11 @@ public class AddonsData implements IAddons {
                         + TwilightConfig.MAX_NBT_LIST_SIZE.get() + ")");
             }
             for (String key : keys) {
-                addonTints.put(key, tintsTag.getInt(key));
+                if (key == null) continue;
+                int tint = tintsTag.getInt(key);
+                if (tint != 0) {
+                    addonTints.put(key, tint);
+                }
             }
         }
 

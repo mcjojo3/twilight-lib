@@ -293,9 +293,8 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                                     RenderType armorRenderType = RenderType.entityCutoutNoCull(armorTexture);
                                     @SuppressWarnings("null")
                                     VertexConsumer armorVertexConsumer = buffer.getBuffer(armorRenderType);
-                                    // Use the same vanilla overlay for armor as the addon
                                     armorEntityModel.renderToBuffer(poseStack, armorVertexConsumer, packedLight,
-                                            overlay,
+                                            net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY,
                                             FastColor.ARGB32.colorFromFloat(1.0F, 1.0F, 1.0F, 1.0F));
                                 }
                             } catch (Exception e) {
@@ -443,7 +442,8 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
             implements VertexConsumer {
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
-            return delegate.addVertex(x, y, z);
+            delegate.addVertex(x, y, z);
+            return this;
         }
 
         @Override

@@ -24,6 +24,8 @@ public class ModEntities {
                         "purple_fox", CustomFoxEntity.FoxColor.PURPLE);
         public static final dev.architectury.registry.registries.RegistrySupplier<EntityType<CustomFoxEntity>> RED_FOX = registerFox(
                         "red_fox", CustomFoxEntity.FoxColor.RED);
+        public static final dev.architectury.registry.registries.RegistrySupplier<EntityType<CustomFoxEntity>> GRAY_FOX = registerFox(
+                        "gray_fox", CustomFoxEntity.FoxColor.GRAY);
 
         private static dev.architectury.registry.registries.RegistrySupplier<EntityType<CustomFoxEntity>> registerFox(
                         String name, CustomFoxEntity.FoxColor color) {

@@ -13,9 +13,13 @@ public class MorphData implements IMorph {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String NBT_ENTITY = "Entity";
     private static final String NBT_HIDE_NAMETAG = "HideNametag";
+    private static final String NBT_TINT = "Tint";
+    private static final int DEFAULT_TINT = 0xFFFFFF;
 
     private Optional<mc.sayda.twilight_lib.api.morph.IMorph> morph = Optional.empty();
     private boolean hideNametag = false; // Default: show nametag
+    private int tint = DEFAULT_TINT; // Default: no tint (white)
+    private boolean tintPersistent = true; // Whether the current tint survives serialize()
 
     @Override
     public synchronized Optional<mc.sayda.twilight_lib.api.morph.IMorph> getMorph() {
@@ -38,11 +42,35 @@ public class MorphData implements IMorph {
     }
 
     @Override
+    public synchronized int getTint() {
+        return tint;
+    }
+
+    @Override
+    public synchronized void setTint(int tint) {
+        this.tint = tint & 0x00FFFFFF;
+    }
+
+    @Override
+    public synchronized void setTint(int tint, boolean persistent) {
+        this.tint = tint & 0x00FFFFFF;
+        this.tintPersistent = persistent;
+    }
+
+    @Override
+    public synchronized boolean isTintPersistent() {
+        return tintPersistent;
+    }
+
+    @Override
     @Nonnull
     public synchronized CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
         getMorph().ifPresent(m -> tag.putString(NBT_ENTITY, m.getId().toString()));
         tag.putBoolean(NBT_HIDE_NAMETAG, hideNametag);
+        if (tint != DEFAULT_TINT && tintPersistent) {
+            tag.putInt(NBT_TINT, tint);
+        }
         return tag;
     }
 
@@ -67,5 +95,7 @@ public class MorphData implements IMorph {
         } else {
             this.hideNametag = false;
         }
+
+        this.tint = tag.contains(NBT_TINT, Tag.TAG_INT) ? tag.getInt(NBT_TINT) : DEFAULT_TINT;
     }
 }

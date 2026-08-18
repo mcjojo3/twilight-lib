@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import java.util.Optional;
 import java.util.UUID;
 
-public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, boolean hideNametag)
+public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, boolean hideNametag, int tint)
         implements CustomPacketPayload {
     public SyncMorphPacket {
         java.util.Objects.requireNonNull(playerId, "playerId");
@@ -60,18 +60,24 @@ public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, 
             SyncMorphPacket::entity,
             (StreamCodec<ByteBuf, Boolean>) ByteBufCodecs.BOOL,
             SyncMorphPacket::hideNametag,
-            (playerId, entity, hideNametag) -> new SyncMorphPacket(playerId, entity, (boolean) hideNametag));
+            (StreamCodec<ByteBuf, Integer>) ByteBufCodecs.VAR_INT,
+            SyncMorphPacket::tint,
+            (playerId, entity, hideNametag, tint) -> new SyncMorphPacket(playerId, entity, (boolean) hideNametag, (int) tint));
 
     public static SyncMorphPacket of(UUID id, ResourceLocation rlOrNull) {
-        return new SyncMorphPacket(id, Optional.ofNullable(rlOrNull), false);
+        return new SyncMorphPacket(id, Optional.ofNullable(rlOrNull), false, 0xFFFFFF);
     }
 
     public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity) {
-        return new SyncMorphPacket(id, entity, false);
+        return new SyncMorphPacket(id, entity, false, 0xFFFFFF);
     }
 
     public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity, boolean hideNametag) {
-        return new SyncMorphPacket(id, entity, hideNametag);
+        return new SyncMorphPacket(id, entity, hideNametag, 0xFFFFFF);
+    }
+
+    public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity, boolean hideNametag, int tint) {
+        return new SyncMorphPacket(id, entity, hideNametag, tint);
     }
 
     @Override
@@ -126,6 +132,7 @@ public record SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, 
                 }
                 morph.setEntityType(validatedEntity);
                 morph.setNametagHidden(msg.hideNametag());
+                morph.setTint(msg.tint());
                 entity.refreshDimensions();
                 LOGGER.debug("Want to see something neat? Synced morph {} (hideNametag={}) for {}", msg.entity(),
                         msg.hideNametag(), entity.getName().getString());

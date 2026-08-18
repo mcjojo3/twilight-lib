@@ -3,6 +3,7 @@ package mc.sayda.twilight_lib.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.LogUtils;
 import mc.sayda.twilight_lib.TwilightLib;
+import mc.sayda.twilight_lib.client.tint.TintTextureCompositor;
 import mc.sayda.twilight_lib.entity.CustomFoxEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -22,6 +23,10 @@ public class CustomFoxRenderer extends FoxRenderer {
     private static final ResourceLocation ORANGE_FOX_TEXTURE = ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/entity/fox/orange_fox.png");
     private static final ResourceLocation PURPLE_FOX_TEXTURE = ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/entity/fox/purple_fox.png");
     private static final ResourceLocation RED_FOX_TEXTURE = ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/entity/fox/red_fox.png");
+    private static final ResourceLocation GRAY_FOX_TEXTURE = ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/entity/fox/gray_fox.png");
+
+    // Shared across all 7 color variants - they share the same UV layout and dimensions.
+    private static final ResourceLocation FOX_TINT_MASK = ResourceLocation.fromNamespaceAndPath(TwilightLib.MODID, "textures/entity/fox/mask/fox.png");
 
     public CustomFoxRenderer(EntityRendererProvider.Context context) {
         super(context);
@@ -40,7 +45,7 @@ public class CustomFoxRenderer extends FoxRenderer {
             if (color == null) {
                 return super.getTextureLocation(fox);
             }
-            return switch (color) {
+            ResourceLocation base = switch (color) {
                 case WHITE -> WHITE_FOX_TEXTURE;
                 case BLACK -> BLACK_FOX_TEXTURE;
                 case BLUE -> BLUE_FOX_TEXTURE;
@@ -48,7 +53,13 @@ public class CustomFoxRenderer extends FoxRenderer {
                 case ORANGE -> ORANGE_FOX_TEXTURE;
                 case PURPLE -> PURPLE_FOX_TEXTURE;
                 case RED -> RED_FOX_TEXTURE;
+                case GRAY -> GRAY_FOX_TEXTURE;
             };
+            int tint = customFox.getTint();
+            if (tint != 0xFFFFFF) {
+                return TintTextureCompositor.getOrCreate(base, FOX_TINT_MASK, tint);
+            }
+            return base;
         }
         return super.getTextureLocation(fox);
     }

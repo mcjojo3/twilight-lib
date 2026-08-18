@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import org.slf4j.Logger;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
+import mc.sayda.twilight_lib.client.tint.TintTextureCompositor;
 import mc.sayda.twilight_lib.client.model.IAddonModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestArmorModel;
@@ -219,20 +220,34 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     boolean shouldBeTranslucent = addonInterface.isTranslucent()
                             || (forceAllTranslucent && !thisAddonForcesTranslucency);
 
+                    // Get tint color for this addon (stored as 0xRRGGBB)
+                    int tintColor = addons.getAddonTint(addonIdString);
+                    // Mask to ensure only RGB, no alpha or sign extension issues
+                    tintColor = tintColor & 0x00FFFFFF;
+
+                    // If this addon has a registered mask texture, bake a per-pixel tinted
+                    // texture and bind that instead of applying a flat color multiply. Texture
+                    // selection must happen before renderType/vertexConsumer are computed, since
+                    // the masked path binds a different texture than textureToUse.
+                    // Skip the mask lookup entirely on the common untinted path.
+                    java.util.Optional<ResourceLocation> maskTexture = tintColor != 0xFFFFFF
+                            ? addonInterface.getMaskTexture()
+                            : java.util.Optional.empty();
+                    ResourceLocation boundTexture = maskTexture.isPresent()
+                            ? TintTextureCompositor.getOrCreate(textureToUse, maskTexture.get(), tintColor)
+                            : textureToUse;
+                    boolean masked = boundTexture != textureToUse;
+
                     // Use translucent render type for transparent addons
                     @SuppressWarnings("null")
-                    RenderType renderType = shouldBeTranslucent ? RenderType.entityTranslucent(textureToUse)
-                            : RenderType.entityCutoutNoCull(textureToUse);
+                    RenderType renderType = shouldBeTranslucent ? RenderType.entityTranslucent(boundTexture)
+                            : RenderType.entityCutoutNoCull(boundTexture);
                     @SuppressWarnings("null")
                     VertexConsumer vertexConsumer = buffer.getBuffer(renderType);
 
                     // Use vanilla's official overlay calculation for damage effects
                     int overlay = LivingEntityRenderer.getOverlayCoords(player, 0.0F);
 
-                    // Get tint color for this addon (stored as 0xRRGGBB)
-                    int tintColor = addons.getAddonTint(addonIdString);
-                    // Mask to ensure only RGB, no alpha or sign extension issues
-                    tintColor = tintColor & 0x00FFFFFF;
                     final float tintRed = ((tintColor >> 16) & 0xFF) / 255.0F;
                     final float tintGreen = ((tintColor >> 8) & 0xFF) / 255.0F;
                     final float tintBlue = (tintColor & 0xFF) / 255.0F;
@@ -241,10 +256,12 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     final float targetAlpha = shouldBeTranslucent
                             ? Math.max(0.0F, Math.min(1.0F, TwilightConfig.TRANSLUCENT_ADDON_ALPHA.get().floatValue()))
                             : 1.0F;
-                    // Create a wrapped vertex consumer to handle tinting and alpha transparency
-                    VertexConsumer finalConsumer = new TintedVertexConsumer(vertexConsumer, tintRed, tintGreen,
-                            tintBlue,
-                            targetAlpha);
+                    // Masked addons already have the tint baked into boundTexture - only apply
+                    // alpha here. Non-masked addons keep the existing flat color multiply so
+                    // behavior is unchanged for every addon that has no mask registered.
+                    VertexConsumer finalConsumer = masked
+                            ? new TintedVertexConsumer(vertexConsumer, 1.0F, 1.0F, 1.0F, targetAlpha)
+                            : new TintedVertexConsumer(vertexConsumer, tintRed, tintGreen, tintBlue, targetAlpha);
 
                     // Render with wrapped vertex consumer (white color since tint is applied in
                     // wrapper)

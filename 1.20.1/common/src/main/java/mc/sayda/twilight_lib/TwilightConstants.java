@@ -295,7 +295,7 @@ public class TwilightConstants {
          * <b>Order matters</b>: This array defines the canonical registration order.
          */
         public static final String[] KITSUNE_COLORS = {
-                "white", "black", "blue", "yellow", "orange", "purple", "red"
+                "white", "black", "blue", "yellow", "orange", "purple", "red", "gray"
         };
     }
 }

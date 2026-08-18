@@ -74,17 +74,52 @@ public interface IMorph extends ISerializableData {
 
     /**
      * Check if the player's nametag should be hidden when morphed.
-     * 
+     *
      * @return true if nametag should be hidden, false if visible (default)
      */
     boolean isNametagHidden();
 
     /**
      * Set whether the player's nametag should be hidden when morphed.
-     * 
+     *
      * @param hidden true to hide nametag, false to show it
      */
     void setNametagHidden(boolean hidden);
+
+    /**
+     * Get the tint color applied to the morph, packed as 0xRRGGBB.
+     *
+     * @return the packed tint color, or 0xFFFFFF (white) if no tint is set
+     */
+    int getTint();
+
+    /**
+     * Set the tint color applied to the morph. Does not change whether the
+     * current tint is persistent - use this from network/render sync paths where
+     * persistence isn't a relevant concern.
+     *
+     * @param tint packed 0xRRGGBB color; 0xFFFFFF clears the tint
+     */
+    void setTint(int tint);
+
+    /**
+     * Set the tint color applied to the morph, with persistence control (mirrors
+     * {@link IAddons}'s equip-with-persistence pattern).
+     *
+     * @param tint       packed 0xRRGGBB color; 0xFFFFFF clears the tint
+     * @param persistent if true, the tint survives {@link #serialize()} (written
+     *                   to NBT, restored on next login); if false, it applies for
+     *                   the current session only and is dropped the next time
+     *                   this data is saved
+     */
+    void setTint(int tint, boolean persistent);
+
+    /**
+     * Whether the current tint (as last set via {@link #setTint(int, boolean)})
+     * is persistent. Used to decide whether a tint should be cleared when the
+     * player unmorphs, or carried forward to the next morph.
+     */
+    boolean isTintPersistent();
 
     /**
      * Serialize morph data to NBT for persistence.

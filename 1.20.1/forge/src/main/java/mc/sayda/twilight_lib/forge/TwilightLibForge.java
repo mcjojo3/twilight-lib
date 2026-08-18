@@ -21,6 +21,8 @@ public class TwilightLibForge {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         dev.architectury.platform.forge.EventBuses.registerModEventBus(TwilightLib.MODID, modBus);
+        mc.sayda.twilight_lib.forge.config.TwilightLibConfigForge.registerConfig();
+
         TwilightLib.init();
 
         // Client init must happen in the constructor (before EntityRenderersEvent

@@ -35,6 +35,7 @@ public class TwilightLibClient {
             EntityRendererRegistry.register(ModEntities.ORANGE_FOX, CustomFoxRenderer::new);
             EntityRendererRegistry.register(ModEntities.PURPLE_FOX, CustomFoxRenderer::new);
             EntityRendererRegistry.register(ModEntities.RED_FOX, CustomFoxRenderer::new);
+            EntityRendererRegistry.register(ModEntities.GRAY_FOX, CustomFoxRenderer::new);
 
             // Register Layer Definitions
             EntityModelLayerRegistry.register(PlayerRigModel.LAYER_LOCATION, PlayerRigModel::createBodyLayer);

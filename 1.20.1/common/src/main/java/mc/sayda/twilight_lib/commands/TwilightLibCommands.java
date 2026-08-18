@@ -230,19 +230,6 @@ public class TwilightLibCommands {
                                                 return executeMorph(ctx.getSource(), target,
                                                         ResourceLocationArgument.getId(ctx, "entity"), false);
                                             })
-                                            .then(Commands.argument("hidenametag", BoolArgumentType.bool())
-                                                    .executes(ctx -> {
-                                                        ServerPlayer target = CommandUtils
-                                                                .getTargetPlayer(ctx.getSource());
-                                                        if (target == null) {
-                                                            ctx.getSource().sendFailure(Component.literal(
-                                                                    "This command can only be used by players or must specify a target."));
-                                                            return 0;
-                                                        }
-                                                        return executeMorph(ctx.getSource(), target,
-                                                                ResourceLocationArgument.getId(ctx, "entity"),
-                                                                BoolArgumentType.getBool(ctx, "hidenametag"));
-                                                    }))
                                             .then(Commands.argument("target", EntityArgument.player())
                                                     .executes(ctx -> {
                                                         ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
@@ -276,6 +263,29 @@ public class TwilightLibCommands {
                                                 setMorph(ctx.getSource(), target, Optional.empty(), false);
                                                 return 1;
                                             })))
+
+                            // morphtint <color> [target]
+                            .then(Commands.literal("morphtint")
+                                    .then(Commands.argument("color", StringArgumentType.string())
+                                            .executes(ctx -> {
+                                                ServerPlayer target = CommandUtils.getTargetPlayer(ctx.getSource());
+                                                return executeSetMorphTint(ctx.getSource(), target,
+                                                        StringArgumentType.getString(ctx, "color"), false);
+                                            })
+                                            .then(Commands.argument("target", EntityArgument.player())
+                                                    .executes(ctx -> {
+                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                                        return executeSetMorphTint(ctx.getSource(), target,
+                                                                StringArgumentType.getString(ctx, "color"), false);
+                                                    })
+                                                    .then(Commands.argument("persistent", BoolArgumentType.bool())
+                                                            .executes(ctx -> {
+                                                                ServerPlayer target = EntityArgument.getPlayer(ctx,
+                                                                        "target");
+                                                                return executeSetMorphTint(ctx.getSource(), target,
+                                                                        StringArgumentType.getString(ctx, "color"),
+                                                                        BoolArgumentType.getBool(ctx, "persistent"));
+                                                            })))))
 
                             // trails ...
                             .then(Commands.literal("trails")
@@ -609,8 +619,10 @@ public class TwilightLibCommands {
             return;
         }
 
-        // Optimization: Skip if already morphed to this entity
-        if (morph.getEntityType().equals(morphType)) {
+        // Optimization: skip only if NEITHER the entity NOR the nametag visibility
+        // is actually changing - otherwise a same-entity call that just toggles
+        // hidenametag would silently no-op.
+        if (morph.getEntityType().equals(morphType) && morph.isNametagHidden() == hideNametag) {
             LOGGER.debug("Yeah? Well... {} is already morphed as {}, skipping unnecessary update",
                     target.getGameProfile().getName(), morphType.map(ResourceLocation::toString).orElse("none"));
             return;
@@ -619,16 +631,22 @@ public class TwilightLibCommands {
         morph.setEntityType(morphType);
         morph.setNametagHidden(hideNametag); // Set nametag visibility
 
-        // Save to persistent NBT for death persistence
-        if (morphType.isPresent()) {
-            DataUtils.getPersistentData(target).put(TwilightConstants.NBT_MORPH,
-                    (net.minecraft.nbt.Tag) morph.serialize());
-        } else {
-            DataUtils.getPersistentData(target).remove(TwilightConstants.NBT_MORPH);
+        // A non-persistent tint is a one-off for the current morph only - clear it
+        // when fully unmorphing so the next morph starts untinted. A persistent tint
+        // carries forward across unmorph (and survives serialize() below regardless).
+        if (morphType.isEmpty() && !morph.isTintPersistent()) {
+            morph.setTint(0xFFFFFF, true);
+        }
+
+        // Save to persistent NBT for death persistence. serialize() already omits the
+        // entity when unmorphed and omits the tint unless it's persistent, so this is
+        // safe to call unconditionally rather than removing the whole tag on unmorph.
+        DataUtils.getPersistentData(target).put(TwilightConstants.NBT_MORPH, (net.minecraft.nbt.Tag) morph.serialize());
+        if (morphType.isEmpty()) {
             LOGGER.debug("Time to change! {} has been unmorphed", target.getGameProfile().getName());
         }
 
-        NetworkHandler.sendMorphToAll(SyncMorphPacket.of(target.getUUID(), morphType, hideNametag));
+        NetworkHandler.sendMorphToAll(SyncMorphPacket.of(target.getUUID(), morphType, hideNametag, morph.getTint()));
         target.refreshDimensions();
 
         // Send feedback only to admin/console (not when player targets self)
@@ -644,6 +662,66 @@ public class TwilightLibCommands {
                                 .literal("Morph removed for " + target.getGameProfile().getName()),
                         true);
             }
+        }
+    }
+
+    private static int executeSetMorphTint(CommandSourceStack source, ServerPlayer target, String colorHex,
+            boolean persistent) {
+        if (target == null) {
+            source.sendFailure((net.minecraft.network.chat.Component) Component
+                    .literal("This command can only be used by players or must specify a target."));
+            return 0;
+        }
+
+        // Validate hex color length (DoS protection)
+        if (colorHex == null || colorHex.length() > TwilightConfig.MAX_HEX_COLOR_LENGTH.get()) {
+            source.sendFailure((net.minecraft.network.chat.Component) Component.literal("Or, what. Hex color string too long (max "
+                    + TwilightConfig.MAX_HEX_COLOR_LENGTH.get() + " characters)"));
+            LOGGER.warn("Or, what. Rejected oversized hex color string (length: {}, max: {})",
+                    colorHex == null ? 0 : colorHex.length(), TwilightConfig.MAX_HEX_COLOR_LENGTH.get());
+            return 0;
+        }
+
+        // Parse hex color (supports #RRGGBB or RRGGBB format)
+        String hexString = colorHex.startsWith("#") ? colorHex.substring(1) : colorHex;
+
+        // Validate hex format
+        if (!hexString.matches("[0-9A-Fa-f]{6}")) {
+            source.sendFailure((net.minecraft.network.chat.Component) Component
+                    .literal("Invalid color format. Use hex format: #RRGGBB or RRGGBB (e.g., #FF5733 or FF5733)"));
+            return 0;
+        }
+
+        try {
+            int color = Integer.parseInt(hexString, 16);
+
+            IMorph morph = DataUtils.getMorphData(target);
+            if (morph == null) {
+                source.sendFailure((net.minecraft.network.chat.Component) Component
+                        .literal("Or, what. Player " + target.getName().getString() + " has no morph data!"));
+                LOGGER.error("Or, what. Cannot set morph tint for {} - morph data not present",
+                        target.getName().getString());
+                return 0;
+            }
+
+            morph.setTint(color, persistent);
+            DataUtils.getPersistentData(target).put(TwilightConstants.NBT_MORPH,
+                    (net.minecraft.nbt.Tag) morph.serialize());
+            NetworkHandler.sendMorphToAll(
+                    SyncMorphPacket.of(target.getUUID(), morph.getEntityType(), morph.isNametagHidden(), color));
+            LOGGER.debug("Oooooh! Pretty! {} set morph tint to #{} (persistent: {})",
+                    target.getGameProfile().getName(), hexString.toUpperCase(), persistent);
+
+            if (CommandUtils.shouldSendFeedbackToSource(source, target)) {
+                String persistMode = persistent ? " (persistent)" : " (temporary)";
+                source.sendSuccess(() -> Component.literal("Morph tint color #" + hexString.toUpperCase()
+                        + " set for " + target.getGameProfile().getName() + persistMode), true);
+            }
+            return 1;
+        } catch (NumberFormatException e) {
+            source.sendFailure((net.minecraft.network.chat.Component) Component
+                    .literal("Invalid color format. Use hex format: #RRGGBB or RRGGBB (e.g., #FF5733 or FF5733)"));
+            return 0;
         }
     }
 

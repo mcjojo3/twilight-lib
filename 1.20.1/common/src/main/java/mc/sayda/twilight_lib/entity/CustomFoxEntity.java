@@ -7,6 +7,7 @@ import net.minecraft.world.level.Level;
 public class CustomFoxEntity extends Fox {
     private final FoxColor foxColor;
     private volatile boolean forceSleeping = false;
+    private volatile int tint = 0xFFFFFF;
 
     public CustomFoxEntity(EntityType<? extends Fox> type, Level level, FoxColor color) {
         super(type, level);
@@ -29,6 +30,19 @@ public class CustomFoxEntity extends Fox {
         this.forceSleeping = sleeping;
     }
 
+    public int getTint() {
+        return tint;
+    }
+
+    /**
+     * Push the player's morph tint onto this proxy each frame. Read by
+     * {@link mc.sayda.twilight_lib.client.renderer.CustomFoxRenderer} to bake a
+     * masked-tint texture instead of the plain color-variant texture.
+     */
+    public void setTint(int tint) {
+        this.tint = tint & 0x00FFFFFF;
+    }
+
     @Override
     public boolean isSleeping() {
         return forceSleeping || super.isSleeping();
@@ -41,6 +55,7 @@ public class CustomFoxEntity extends Fox {
         YELLOW,
         ORANGE,
         PURPLE,
-        RED
+        RED,
+        GRAY
     }
 }

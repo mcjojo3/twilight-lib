@@ -37,6 +37,7 @@ public class TwilightConfig {
         public static Supplier<Integer> SUPPORTER_FETCH_RETRY_DELAY_MS = () -> 2000;
         public static Supplier<Integer> MORPH_CACHE_CLEANUP_INTERVAL_TICKS = () -> 400; // Updated default
         public static Supplier<Integer> MAX_MORPH_PROXY_CACHE_SIZE = () -> 1000;
+        public static Supplier<Integer> MAX_TINT_TEXTURE_CACHE_SIZE = () -> 64;
         public static Supplier<Integer> MORPH_PROXY_TICK_THRESHOLD_TICKS = () -> 100;
         public static Supplier<Integer> LOGIN_SYNC_DELAY_TICKS = () -> 40;
         public static Supplier<Integer> NETWORK_MAX_COLLECTION_SIZE = () -> 128;

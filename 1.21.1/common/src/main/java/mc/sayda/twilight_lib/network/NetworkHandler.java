@@ -78,7 +78,7 @@ public class NetworkHandler {
             IMorph morph = DataUtils.getMorphData(p);
             if (morph != null) {
                 morph.getEntityType().ifPresent(rl -> sendToPlayer(recipient,
-                        SyncMorphPacket.of(p.getUUID(), Optional.of(rl), morph.isNametagHidden())));
+                        SyncMorphPacket.of(p.getUUID(), Optional.of(rl), morph.isNametagHidden(), morph.getTint())));
             }
         }
     }

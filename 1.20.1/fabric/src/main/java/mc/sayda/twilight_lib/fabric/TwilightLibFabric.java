@@ -9,6 +9,8 @@ import net.minecraft.server.level.ServerPlayer;
 public class TwilightLibFabric implements ModInitializer {
     @Override
     public void onInitialize() {
+        mc.sayda.twilight_lib.config.fabric.ConfigPlatformImpl.registerConfig();
+
         TwilightLib.init();
 
         // Event Listeners for cosmetic syncing

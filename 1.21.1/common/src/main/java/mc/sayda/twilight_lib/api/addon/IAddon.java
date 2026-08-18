@@ -43,6 +43,28 @@ public interface IAddon {
     ResourceLocation getTexture();
 
     /**
+     * Optional tint mask texture, same dimensions as {@link #getTexture()}.
+     * Pixel ALPHA controls how strongly a player-chosen tint color is
+     * multiplied into the base texture at that pixel (transparent = untouched,
+     * opaque = fully tinted) - draw white where tinting should apply, erase
+     * where it shouldn't. Empty means this addon has no per-pixel tinting - any
+     * tint set for it still applies as a flat, uniform multiply (see
+     * {@link mc.sayda.twilight_lib.capabilities.IAddons#getAddonTint}).
+     *
+     * <p>
+     * {@link mc.sayda.twilight_lib.addon.AddonModelInfo}'s implementation
+     * auto-discovers a mask by convention when none is explicitly registered:
+     * it looks for a same-named file under the texture's {@code mask/}
+     * subfolder, progressively stripping trailing {@code _variant} segments
+     * (e.g. {@code kitsune_ears_black.png} -> tries {@code mask/kitsune_ears_black.png},
+     * then {@code mask/kitsune_ears.png}). This default implementation does not
+     * perform that discovery.
+     */
+    default java.util.Optional<ResourceLocation> getMaskTexture() {
+        return java.util.Optional.empty();
+    }
+
+    /**
      * Whether this addon should use the player's skin texture instead of a custom
      * one.
      */

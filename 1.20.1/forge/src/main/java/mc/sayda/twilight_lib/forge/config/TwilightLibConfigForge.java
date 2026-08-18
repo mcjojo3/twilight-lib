@@ -1,116 +1,116 @@
-package mc.sayda.twilight_lib.neoforge.config;
+package mc.sayda.twilight_lib.forge.config;
 
 import mc.sayda.twilight_lib.config.TwilightConfig;
-import net.neoforged.fml.ModLoadingContext;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
 
-public class TwilightLibConfigNeoForge {
-    public static final ModConfigSpec COMMON_CONFIG;
+public class TwilightLibConfigForge {
+    public static final ForgeConfigSpec COMMON_CONFIG;
     // Features
-    public static final ModConfigSpec.BooleanValue ENABLE_TRAILS;
-    public static final ModConfigSpec.BooleanValue ENABLE_ADDONS;
-    public static final ModConfigSpec.BooleanValue ENABLE_EFFECTS;
-    public static final ModConfigSpec.BooleanValue ENABLE_MORPHS;
-    public static final ModConfigSpec.BooleanValue HIDE_CHEST_IN_ARMOR;
-    public static final ModConfigSpec.BooleanValue HIDE_CHEST_IN_CUSTOM_ARMOR;
-    public static final ModConfigSpec.BooleanValue FORCE_LOAD_ALL_ADDONS;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_TRAILS;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_ADDONS;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_EFFECTS;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_MORPHS;
+    public static final ForgeConfigSpec.BooleanValue HIDE_CHEST_IN_ARMOR;
+    public static final ForgeConfigSpec.BooleanValue HIDE_CHEST_IN_CUSTOM_ARMOR;
+    public static final ForgeConfigSpec.BooleanValue FORCE_LOAD_ALL_ADDONS;
 
     // Performance
-    public static final ModConfigSpec.IntValue MAX_CACHED_ADDON_MODELS;
-    public static final ModConfigSpec.IntValue TRAIL_UPDATE_FREQUENCY;
-    public static final ModConfigSpec.IntValue MAX_SUPPORTER_JSON_SIZE;
-    public static final ModConfigSpec.IntValue MAX_ENTITY_CACHE_SIZE;
-    public static final ModConfigSpec.IntValue MAX_SUPPORTERS;
-    public static final ModConfigSpec.IntValue MAX_NBT_LIST_SIZE;
-    public static final ModConfigSpec.IntValue MAX_TINT_TEXTURE_CACHE_SIZE;
-    public static final ModConfigSpec.IntValue TRAIL_CLEANUP_INTERVAL_TICKS;
-    public static final ModConfigSpec.IntValue MAX_ADDONS_IN_REGISTRY;
+    public static final ForgeConfigSpec.IntValue MAX_CACHED_ADDON_MODELS;
+    public static final ForgeConfigSpec.IntValue TRAIL_UPDATE_FREQUENCY;
+    public static final ForgeConfigSpec.IntValue MAX_SUPPORTER_JSON_SIZE;
+    public static final ForgeConfigSpec.IntValue MAX_ENTITY_CACHE_SIZE;
+    public static final ForgeConfigSpec.IntValue MAX_SUPPORTERS;
+    public static final ForgeConfigSpec.IntValue MAX_NBT_LIST_SIZE;
+    public static final ForgeConfigSpec.IntValue MAX_TINT_TEXTURE_CACHE_SIZE;
+    public static final ForgeConfigSpec.IntValue TRAIL_CLEANUP_INTERVAL_TICKS;
+    public static final ForgeConfigSpec.IntValue MAX_ADDONS_IN_REGISTRY;
 
     // Input Validation
-    public static final ModConfigSpec.IntValue MAX_HEX_COLOR_LENGTH;
-    public static final ModConfigSpec.IntValue MAX_COSMETIC_ID_LENGTH;
+    public static final ForgeConfigSpec.IntValue MAX_HEX_COLOR_LENGTH;
+    public static final ForgeConfigSpec.IntValue MAX_COSMETIC_ID_LENGTH;
 
     // Network & Caching
-    public static final ModConfigSpec.ConfigValue<String> SUPPORTER_BACKUP_URL;
-    public static final ModConfigSpec.IntValue SUPPORTER_CONNECT_TIMEOUT_MS;
-    public static final ModConfigSpec.IntValue SUPPORTER_READ_TIMEOUT_MS;
-    public static final ModConfigSpec.IntValue SUPPORTER_CACHE_DURATION_MINUTES;
-    public static final ModConfigSpec.IntValue SUPPORTER_FETCH_MAX_RETRIES;
-    public static final ModConfigSpec.IntValue SUPPORTER_FETCH_RETRY_DELAY_MS;
-    public static final ModConfigSpec.IntValue MORPH_CACHE_CLEANUP_INTERVAL_TICKS;
-    public static final ModConfigSpec.IntValue MAX_MORPH_PROXY_CACHE_SIZE;
-    public static final ModConfigSpec.IntValue MORPH_PROXY_TICK_THRESHOLD_TICKS;
-    public static final ModConfigSpec.IntValue LOGIN_SYNC_DELAY_TICKS;
-    public static final ModConfigSpec.IntValue NETWORK_MAX_COLLECTION_SIZE;
-    public static final ModConfigSpec.IntValue NETWORK_MAX_STRING_LENGTH;
-    public static final ModConfigSpec.IntValue MAX_JSON_FIELD_LENGTH;
-    public static final ModConfigSpec.IntValue MAX_COSMETIC_LIST_SIZE;
-    public static final ModConfigSpec.DoubleValue TRAIL_MOVEMENT_EPSILON;
+    public static final ForgeConfigSpec.ConfigValue<String> SUPPORTER_BACKUP_URL;
+    public static final ForgeConfigSpec.IntValue SUPPORTER_CONNECT_TIMEOUT_MS;
+    public static final ForgeConfigSpec.IntValue SUPPORTER_READ_TIMEOUT_MS;
+    public static final ForgeConfigSpec.IntValue SUPPORTER_CACHE_DURATION_MINUTES;
+    public static final ForgeConfigSpec.IntValue SUPPORTER_FETCH_MAX_RETRIES;
+    public static final ForgeConfigSpec.IntValue SUPPORTER_FETCH_RETRY_DELAY_MS;
+    public static final ForgeConfigSpec.IntValue MORPH_CACHE_CLEANUP_INTERVAL_TICKS;
+    public static final ForgeConfigSpec.IntValue MAX_MORPH_PROXY_CACHE_SIZE;
+    public static final ForgeConfigSpec.IntValue MORPH_PROXY_TICK_THRESHOLD_TICKS;
+    public static final ForgeConfigSpec.IntValue LOGIN_SYNC_DELAY_TICKS;
+    public static final ForgeConfigSpec.IntValue NETWORK_MAX_COLLECTION_SIZE;
+    public static final ForgeConfigSpec.IntValue NETWORK_MAX_STRING_LENGTH;
+    public static final ForgeConfigSpec.IntValue MAX_JSON_FIELD_LENGTH;
+    public static final ForgeConfigSpec.IntValue MAX_COSMETIC_LIST_SIZE;
+    public static final ForgeConfigSpec.DoubleValue TRAIL_MOVEMENT_EPSILON;
 
     // Client Performance
-    public static final ModConfigSpec.IntValue AMBIENT_PARTICLES_PER_TICK;
-    public static final ModConfigSpec.IntValue FOOTPRINT_UPDATE_FREQUENCY;
-    public static final ModConfigSpec.IntValue FOOTPRINT_LIFETIME_TICKS;
-    public static final ModConfigSpec.IntValue SPAWN_EFFECT_DELAY_TICKS;
-    public static final ModConfigSpec.DoubleValue TRANSLUCENT_ADDON_ALPHA;
-    public static final ModConfigSpec.IntValue TRAIL_RENDER_DISTANCE;
-    public static final ModConfigSpec.IntValue MAX_EFFECT_PARTICLES_PER_PLAYER;
-    public static final ModConfigSpec.BooleanValue ENABLE_FOOTPRINT_TRAILS;
-    public static final ModConfigSpec.BooleanValue ENABLE_PARTICLE_TRAILS;
-    public static final ModConfigSpec.DoubleValue CUSTOM_PARTICLE_SIZE;
-    public static final ModConfigSpec.IntValue CUSTOM_PARTICLE_LIFETIME;
-    public static final ModConfigSpec.DoubleValue CUSTOM_PARTICLE_GRAVITY;
+    public static final ForgeConfigSpec.IntValue AMBIENT_PARTICLES_PER_TICK;
+    public static final ForgeConfigSpec.IntValue FOOTPRINT_UPDATE_FREQUENCY;
+    public static final ForgeConfigSpec.IntValue FOOTPRINT_LIFETIME_TICKS;
+    public static final ForgeConfigSpec.IntValue SPAWN_EFFECT_DELAY_TICKS;
+    public static final ForgeConfigSpec.DoubleValue TRANSLUCENT_ADDON_ALPHA;
+    public static final ForgeConfigSpec.IntValue TRAIL_RENDER_DISTANCE;
+    public static final ForgeConfigSpec.IntValue MAX_EFFECT_PARTICLES_PER_PLAYER;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_FOOTPRINT_TRAILS;
+    public static final ForgeConfigSpec.BooleanValue ENABLE_PARTICLE_TRAILS;
+    public static final ForgeConfigSpec.DoubleValue CUSTOM_PARTICLE_SIZE;
+    public static final ForgeConfigSpec.IntValue CUSTOM_PARTICLE_LIFETIME;
+    public static final ForgeConfigSpec.DoubleValue CUSTOM_PARTICLE_GRAVITY;
 
     // Gameplay & Balance
-    public static final ModConfigSpec.DoubleValue MINING_WATER_SLOWDOWN_MULTIPLIER;
-    public static final ModConfigSpec.DoubleValue MINING_FLIGHT_SLOWDOWN_MULTIPLIER;
+    public static final ForgeConfigSpec.DoubleValue MINING_WATER_SLOWDOWN_MULTIPLIER;
+    public static final ForgeConfigSpec.DoubleValue MINING_FLIGHT_SLOWDOWN_MULTIPLIER;
 
     // Debug
-    public static final ModConfigSpec.BooleanValue VERBOSE_LOGGING;
-    public static final ModConfigSpec.BooleanValue LOG_COSMETIC_LOADS;
-    public static final ModConfigSpec.BooleanValue LOG_SUPPORTER_FETCHES;
+    public static final ForgeConfigSpec.BooleanValue VERBOSE_LOGGING;
+    public static final ForgeConfigSpec.BooleanValue LOG_COSMETIC_LOADS;
+    public static final ForgeConfigSpec.BooleanValue LOG_SUPPORTER_FETCHES;
 
     // Morph Physics
-    public static final ModConfigSpec.DoubleValue EYE_HEIGHT_MULTIPLIER;
-    public static final ModConfigSpec.DoubleValue MIN_MORPH_SCALE;
-    public static final ModConfigSpec.DoubleValue MAX_MORPH_SCALE;
-    public static final ModConfigSpec.DoubleValue PLAYER_DEFAULT_HEIGHT;
+    public static final ForgeConfigSpec.DoubleValue EYE_HEIGHT_MULTIPLIER;
+    public static final ForgeConfigSpec.DoubleValue MIN_MORPH_SCALE;
+    public static final ForgeConfigSpec.DoubleValue MAX_MORPH_SCALE;
+    public static final ForgeConfigSpec.DoubleValue PLAYER_DEFAULT_HEIGHT;
 
     // Animation
-    public static final ModConfigSpec.DoubleValue TAIL_SWING_BASE;
-    public static final ModConfigSpec.DoubleValue TAIL_SWING_AMPLITUDE;
-    public static final ModConfigSpec.DoubleValue TAIL_WAVE_MODIFIER;
+    public static final ForgeConfigSpec.DoubleValue TAIL_SWING_BASE;
+    public static final ForgeConfigSpec.DoubleValue TAIL_SWING_AMPLITUDE;
+    public static final ForgeConfigSpec.DoubleValue TAIL_WAVE_MODIFIER;
 
     // Spawn Effects
-    public static final ModConfigSpec.IntValue SPAWN_PARTICLE_COUNT;
-    public static final ModConfigSpec.IntValue SPAWN_SOUL_PARTICLE_COUNT;
-    public static final ModConfigSpec.DoubleValue SPAWN_MAX_RADIUS;
-    public static final ModConfigSpec.DoubleValue SPAWN_MAX_HEIGHT;
-    public static final ModConfigSpec.DoubleValue SPAWN_VELOCITY_HORIZONTAL;
-    public static final ModConfigSpec.DoubleValue SPAWN_VELOCITY_VERTICAL;
-    public static final ModConfigSpec.DoubleValue SPAWN_CENTER_RADIUS;
+    public static final ForgeConfigSpec.IntValue SPAWN_PARTICLE_COUNT;
+    public static final ForgeConfigSpec.IntValue SPAWN_SOUL_PARTICLE_COUNT;
+    public static final ForgeConfigSpec.DoubleValue SPAWN_MAX_RADIUS;
+    public static final ForgeConfigSpec.DoubleValue SPAWN_MAX_HEIGHT;
+    public static final ForgeConfigSpec.DoubleValue SPAWN_VELOCITY_HORIZONTAL;
+    public static final ForgeConfigSpec.DoubleValue SPAWN_VELOCITY_VERTICAL;
+    public static final ForgeConfigSpec.DoubleValue SPAWN_CENTER_RADIUS;
 
     // Trails
-    public static final ModConfigSpec.DoubleValue TRAIL_MIN_SPEED;
-    public static final ModConfigSpec.DoubleValue TRAIL_FEET_OFFSET_Y;
-    public static final ModConfigSpec.DoubleValue TRAIL_SPREAD_HORIZONTAL;
-    public static final ModConfigSpec.DoubleValue TRAIL_SPREAD_VERTICAL;
-    public static final ModConfigSpec.DoubleValue TRAIL_FOOTPRINT_OFFSET_LATERAL;
-    public static final ModConfigSpec.DoubleValue TRAIL_FOOTPRINT_OFFSET_Y;
+    public static final ForgeConfigSpec.DoubleValue TRAIL_MIN_SPEED;
+    public static final ForgeConfigSpec.DoubleValue TRAIL_FEET_OFFSET_Y;
+    public static final ForgeConfigSpec.DoubleValue TRAIL_SPREAD_HORIZONTAL;
+    public static final ForgeConfigSpec.DoubleValue TRAIL_SPREAD_VERTICAL;
+    public static final ForgeConfigSpec.DoubleValue TRAIL_FOOTPRINT_OFFSET_LATERAL;
+    public static final ForgeConfigSpec.DoubleValue TRAIL_FOOTPRINT_OFFSET_Y;
 
     // Ambient Effects
-    public static final ModConfigSpec.DoubleValue AMBIENT_CIRCLE_RADIUS;
-    public static final ModConfigSpec.DoubleValue AMBIENT_HEIGHT_OFFSET;
-    public static final ModConfigSpec.DoubleValue AMBIENT_FLAME_VELOCITY;
-    public static final ModConfigSpec.DoubleValue AMBIENT_SMALL_FLAME_VELOCITY;
-    public static final ModConfigSpec.DoubleValue AMBIENT_SMALL_FLAME_CHANCE;
-    public static final ModConfigSpec.DoubleValue AMBIENT_SNOW_VELOCITY;
-    public static final ModConfigSpec.DoubleValue AMBIENT_ASH_VELOCITY;
-    public static final ModConfigSpec.DoubleValue AMBIENT_ASH_CHANCE;
+    public static final ForgeConfigSpec.DoubleValue AMBIENT_CIRCLE_RADIUS;
+    public static final ForgeConfigSpec.DoubleValue AMBIENT_HEIGHT_OFFSET;
+    public static final ForgeConfigSpec.DoubleValue AMBIENT_FLAME_VELOCITY;
+    public static final ForgeConfigSpec.DoubleValue AMBIENT_SMALL_FLAME_VELOCITY;
+    public static final ForgeConfigSpec.DoubleValue AMBIENT_SMALL_FLAME_CHANCE;
+    public static final ForgeConfigSpec.DoubleValue AMBIENT_SNOW_VELOCITY;
+    public static final ForgeConfigSpec.DoubleValue AMBIENT_ASH_VELOCITY;
+    public static final ForgeConfigSpec.DoubleValue AMBIENT_ASH_CHANCE;
 
     static {
-        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 
         builder.comment("Twilight Lib Configuration")
                 .comment("Changes require server restart")
@@ -240,9 +240,11 @@ public class TwilightLibConfigNeoForge {
     }
 
     public static void registerConfig() {
-        ModLoadingContext.get().getActiveContainer().registerConfig(ModConfig.Type.COMMON, COMMON_CONFIG);
+        // Unlike NeoForge (ModContainer.registerConfig via getActiveContainer()),
+        // Forge 1.20.1 exposes registerConfig directly on ModLoadingContext.
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_CONFIG);
 
-        // Link Common TwilightConfig suppliers to NeoForge Config
+        // Link Common TwilightConfig suppliers to Forge Config
         TwilightConfig.ENABLE_TRAILS = ENABLE_TRAILS::get;
         TwilightConfig.ENABLE_ADDONS = ENABLE_ADDONS::get;
         TwilightConfig.ENABLE_EFFECTS = ENABLE_EFFECTS::get;

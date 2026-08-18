@@ -18,6 +18,7 @@ public class TwilightLibFabric implements ModInitializer {
         @Override
         public void onInitialize() {
                 mc.sayda.twilight_lib.capabilities.FabricModAttachments.init();
+                mc.sayda.twilight_lib.config.fabric.ConfigPlatformImpl.registerConfig();
 
                 TwilightLib.init();
 

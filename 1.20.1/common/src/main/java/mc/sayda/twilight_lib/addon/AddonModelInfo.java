@@ -34,7 +34,8 @@ public record AddonModelInfo(
         boolean hidePlayerModel,
         boolean forceAllTranslucent,
         Set<String> modTags,
-        Set<BodyPart> hiddenBodyParts) implements IAddon {
+        Set<BodyPart> hiddenBodyParts,
+        Optional<ResourceLocation> maskTexture) implements IAddon {
 
     @Override
     public ResourceLocation getId() {
@@ -61,6 +62,21 @@ public record AddonModelInfo(
     @Override
     public ResourceLocation getTexture() {
         return texture;
+    }
+
+    @Override
+    public Optional<ResourceLocation> getMaskTexture() {
+        if (maskTexture.isPresent()) {
+            return maskTexture;
+        }
+        if (usePlayerSkin) {
+            // texture is just the shared stub placeholder here, not a real
+            // per-addon texture to derive a mask from - auto-discovery would
+            // wrongly apply whatever mask/stub.png happens to be present (if
+            // any) to every player-skin addon at once.
+            return Optional.empty();
+        }
+        return mc.sayda.twilight_lib.client.tint.TintTextureCompositor.resolveMask(texture);
     }
 
     @Override

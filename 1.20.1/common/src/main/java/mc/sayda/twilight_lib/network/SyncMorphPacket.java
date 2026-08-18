@@ -22,11 +22,13 @@ public class SyncMorphPacket {
     private final UUID playerId;
     private final Optional<ResourceLocation> entity;
     private final boolean hideNametag;
+    private final int tint;
 
-    public SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, boolean hideNametag) {
+    public SyncMorphPacket(UUID playerId, Optional<ResourceLocation> entity, boolean hideNametag, int tint) {
         this.playerId = java.util.Objects.requireNonNull(playerId, "playerId");
         this.entity = entity != null ? entity : Optional.empty();
         this.hideNametag = hideNametag;
+        this.tint = tint;
     }
 
     public SyncMorphPacket(net.minecraft.network.FriendlyByteBuf buf) {
@@ -40,6 +42,7 @@ public class SyncMorphPacket {
         this.playerId = id;
         this.entity = buf.readBoolean() ? Optional.ofNullable(buf.readResourceLocation()) : Optional.empty();
         this.hideNametag = buf.readBoolean();
+        this.tint = buf.readInt();
     }
 
     public void encode(net.minecraft.network.FriendlyByteBuf buf) {
@@ -47,18 +50,23 @@ public class SyncMorphPacket {
         buf.writeBoolean(this.entity.isPresent());
         this.entity.ifPresent(buf::writeResourceLocation);
         buf.writeBoolean(this.hideNametag);
+        buf.writeInt(this.tint);
     }
 
     public static SyncMorphPacket of(UUID id, ResourceLocation rlOrNull) {
-        return new SyncMorphPacket(id, Optional.ofNullable(rlOrNull), false);
+        return new SyncMorphPacket(id, Optional.ofNullable(rlOrNull), false, 0xFFFFFF);
     }
 
     public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity) {
-        return new SyncMorphPacket(id, entity, false);
+        return new SyncMorphPacket(id, entity, false, 0xFFFFFF);
     }
 
     public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity, boolean hideNametag) {
-        return new SyncMorphPacket(id, entity, hideNametag);
+        return new SyncMorphPacket(id, entity, hideNametag, 0xFFFFFF);
+    }
+
+    public static SyncMorphPacket of(UUID id, Optional<ResourceLocation> entity, boolean hideNametag, int tint) {
+        return new SyncMorphPacket(id, entity, hideNametag, tint);
     }
 
     public void handle(Supplier<dev.architectury.networking.NetworkManager.PacketContext> contextSupplier) {
@@ -104,6 +112,7 @@ public class SyncMorphPacket {
 
                 morph.setEntityType(validatedEntity);
                 morph.setNametagHidden(pkt.hideNametag);
+                morph.setTint(pkt.tint);
                 player.refreshDimensions();
                 LOGGER.debug("Want to see something neat? Synced morph {} (hideNametag={}) for {}", validatedEntity,
                         pkt.hideNametag, player.getName().getString());

@@ -35,6 +35,7 @@ public class NeoForgeClientEvents {
         event.registerEntityRenderer(ModEntities.ORANGE_FOX.get(), CustomFoxRenderer::new);
         event.registerEntityRenderer(ModEntities.PURPLE_FOX.get(), CustomFoxRenderer::new);
         event.registerEntityRenderer(ModEntities.RED_FOX.get(), CustomFoxRenderer::new);
+        event.registerEntityRenderer(ModEntities.GRAY_FOX.get(), CustomFoxRenderer::new);
     }
 
     @SubscribeEvent

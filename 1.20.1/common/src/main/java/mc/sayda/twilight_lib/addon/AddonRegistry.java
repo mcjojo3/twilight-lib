@@ -283,6 +283,33 @@ public class AddonRegistry implements IAddonRegistry {
             boolean forceAllTranslucent,
             Set<String> modTags,
             Set<BodyPart> hiddenBodyParts) {
+        registerAddon(id, layerLocation, layerDefinitionSupplier, modelFactory, texture, usePlayerSkin, translucent,
+                hidePlayerModel, forceAllTranslucent, modTags, hiddenBodyParts, null);
+    }
+
+    /**
+     * Register a new addon model with all options including mod tags, hidden
+     * body parts, and an optional tint mask texture (TRUE MAIN METHOD)
+     *
+     * @param maskTexture Optional tint mask texture, same dimensions as
+     *                    {@code texture}. Pixel ALPHA controls how strongly a
+     *                    player-chosen tint multiplies into the base texture at
+     *                    that pixel (opaque = tinted, transparent = untouched).
+     *                    Pass {@code null} for addons that don't support
+     *                    per-pixel tinting (they still get the existing
+     *                    flat/uniform tint behavior).
+     */
+    public static void registerAddon(String id, ModelLayerLocation layerLocation,
+            Supplier<LayerDefinition> layerDefinitionSupplier,
+            Function<ModelPart, ?> modelFactory,
+            ResourceLocation texture,
+            boolean usePlayerSkin,
+            boolean translucent,
+            boolean hidePlayerModel,
+            boolean forceAllTranslucent,
+            Set<String> modTags,
+            Set<BodyPart> hiddenBodyParts,
+            ResourceLocation maskTexture) {
 
         // Validate addon ID parameter (Issue #29: prevent null/empty/oversized IDs)
         if (id == null || id.trim().isEmpty()) {
@@ -328,7 +355,7 @@ public class AddonRegistry implements IAddonRegistry {
 
         ADDONS.put(id, new AddonModelInfo(id, layerLocation, layerDefinitionSupplier, modelFactory, texture,
                 usePlayerSkin, translucent, hidePlayerModel, forceAllTranslucent, effectiveModTags,
-                effectiveHiddenParts));
+                effectiveHiddenParts, Optional.ofNullable(maskTexture)));
 
         String modInfo = effectiveModTags.isEmpty() ? "all mods" : String.join(", ", effectiveModTags);
         String partsInfo = effectiveHiddenParts.isEmpty() ? "none"

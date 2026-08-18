@@ -57,7 +57,8 @@ public class ForgeClientEvents {
                 ModEntities.YELLOW_FOX,
                 ModEntities.ORANGE_FOX,
                 ModEntities.PURPLE_FOX,
-                ModEntities.RED_FOX).forEach(fox -> event.registerEntityRenderer(fox.get(), CustomFoxRenderer::new));
+                ModEntities.RED_FOX,
+                ModEntities.GRAY_FOX).forEach(fox -> event.registerEntityRenderer(fox.get(), CustomFoxRenderer::new));
     }
 
     private static void addLayerToSkin(EntityRenderersEvent.AddLayers event, String skinName) {

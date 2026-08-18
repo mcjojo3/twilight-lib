@@ -1,10 +1,12 @@
 package mc.sayda.twilight_lib.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.logging.LogUtils;
 import com.mojang.math.Axis;
 import mc.sayda.twilight_lib.capabilities.DataUtils;
 import mc.sayda.twilight_lib.capabilities.IMorph;
+import mc.sayda.twilight_lib.client.tint.TintTextureCompositor;
 import mc.sayda.twilight_lib.config.TwilightConfig;
 import mc.sayda.twilight_lib.entity.CustomFoxEntity;
 import net.minecraft.client.Minecraft;
@@ -48,6 +50,7 @@ public class MorphRenderHandler {
         CACHE.clear();
         LAST_RENDERED.clear();
         tickCounter = 0;
+        TintTextureCompositor.clearAll();
     }
 
     public static void onLevelUnload() {
@@ -55,6 +58,7 @@ public class MorphRenderHandler {
         CACHE.clear();
         LAST_RENDERED.clear();
         tickCounter = 0;
+        TintTextureCompositor.clearAll();
     }
 
     public static void onClientTick(Minecraft client) {
@@ -122,7 +126,7 @@ public class MorphRenderHandler {
         syncProxyState(player, proxy, morph, m);
         LAST_RENDERED.put(player.getUUID(), player.level().getGameTime());
 
-        renderProxy(player, proxy, partialTicks, poseStack, buffer);
+        renderProxy(player, proxy, partialTicks, poseStack, buffer, morph.getTint());
         return true;
     }
 
@@ -191,14 +195,21 @@ public class MorphRenderHandler {
 
             if (fox instanceof CustomFoxEntity customFox) {
                 customFox.setForceSleeping(player.getPose() == Pose.SLEEPING);
+                customFox.setTint(morphCap.getTint());
             }
         }
     }
 
     private static void renderProxy(Player player, LivingEntity proxy, float pt, PoseStack poseStack,
-            MultiBufferSource buffer) {
+            MultiBufferSource buffer, int tint) {
         EntityRenderDispatcher disp = Minecraft.getInstance().getEntityRenderDispatcher();
         int packedLight = disp.getPackedLightCoords(proxy, pt);
+
+        // CustomFoxEntity proxies get a full per-pixel masked tint via
+        // CustomFoxRenderer.getTextureLocation instead - skip the flat multiply here
+        // to avoid double-applying the tint.
+        MultiBufferSource effectiveBuffer = (tint == 0xFFFFFF || proxy instanceof CustomFoxEntity) ? buffer
+                : wrapTinted(buffer, tint);
 
         double yOffset = 0.0;
         if (proxy instanceof Fox) {
@@ -222,10 +233,56 @@ public class MorphRenderHandler {
                 poseStack.mulPose(Axis.ZP.rotationDegrees(270.0f));
                 poseStack.translate(0.0, -0.3, 0.0);
             }
-            disp.render(proxy, 0.0, 0.0, 0.0, player.getYRot(), pt, poseStack, buffer, packedLight);
+            disp.render(proxy, 0.0, 0.0, 0.0, player.getYRot(), pt, poseStack, effectiveBuffer, packedLight);
             poseStack.popPose();
         } else {
-            disp.render(proxy, 0.0, 0.0, 0.0, player.getYRot(), pt, poseStack, buffer, packedLight);
+            disp.render(proxy, 0.0, 0.0, 0.0, player.getYRot(), pt, poseStack, effectiveBuffer, packedLight);
+        }
+    }
+
+    private static MultiBufferSource wrapTinted(MultiBufferSource delegate, int tint) {
+        float r = ((tint >> 16) & 0xFF) / 255.0F;
+        float g = ((tint >> 8) & 0xFF) / 255.0F;
+        float b = (tint & 0xFF) / 255.0F;
+        return renderType -> new TintedVertexConsumer(delegate.getBuffer(renderType), r, g, b, 1.0F);
+    }
+
+    /** Multiplies vertex color by a flat tint. Uniform, non-masked - used for morph targets Twilight Lib doesn't own a renderer for. */
+    private static record TintedVertexConsumer(VertexConsumer delegate, float r, float g, float b, float a)
+            implements VertexConsumer {
+        @Override
+        public VertexConsumer addVertex(float x, float y, float z) {
+            delegate.addVertex(x, y, z);
+            return this;
+        }
+
+        @Override
+        public VertexConsumer setColor(int red, int green, int blue, int alpha) {
+            return delegate.setColor(
+                    (int) (red * r),
+                    (int) (green * g),
+                    (int) (blue * b),
+                    (int) (alpha * a));
+        }
+
+        @Override
+        public VertexConsumer setUv(float u, float v) {
+            return delegate.setUv(u, v);
+        }
+
+        @Override
+        public VertexConsumer setUv1(int u, int v) {
+            return delegate.setUv1(u, v);
+        }
+
+        @Override
+        public VertexConsumer setUv2(int u, int v) {
+            return delegate.setUv2(u, v);
+        }
+
+        @Override
+        public VertexConsumer setNormal(float x, float y, float z) {
+            return delegate.setNormal(x, y, z);
         }
     }
 

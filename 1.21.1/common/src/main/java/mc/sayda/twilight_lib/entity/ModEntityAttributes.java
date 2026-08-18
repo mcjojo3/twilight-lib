@@ -24,9 +24,11 @@ public class ModEntityAttributes {
                 ModEntities.YELLOW_FOX,
                 ModEntities.ORANGE_FOX,
                 ModEntities.PURPLE_FOX,
-                ModEntities.RED_FOX)
+                ModEntities.RED_FOX,
+                ModEntities.GRAY_FOX
+                )
                 .forEach(fox -> EntityAttributeRegistry.register(fox, Fox::createAttributes));
 
-        LOGGER.info("I like all these things around me! Registered attributes for 7 custom fox entities.");
+        LOGGER.info("I like all these things around me! Registered attributes for the custom fox entities.");
     }
 }

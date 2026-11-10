@@ -17,6 +17,7 @@
         "LocalPlayerMixin",
         "PlayerModelVariantMixin",
         "client.AbstractClientPlayerMixin",
+        "client.HumanoidArmorLayerMixin",
         "client.PlayerRendererMixin"
     ],
     "injectors": {

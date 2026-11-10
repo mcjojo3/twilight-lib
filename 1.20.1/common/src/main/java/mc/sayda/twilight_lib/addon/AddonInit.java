@@ -16,6 +16,7 @@ import mc.sayda.twilight_lib.client.model.addon.HatModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneEarsModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneSnoutModel;
 import mc.sayda.twilight_lib.client.model.addon.KitsuneTailsVariantModel;
+import mc.sayda.twilight_lib.client.model.addon.MermaidTailModel;
 import mc.sayda.twilight_lib.client.model.addon.ShortTorsoModel;
 import mc.sayda.twilight_lib.client.model.addon.SuccubusWingsModel;
 import mc.sayda.twilight_lib.client.model.addon.TeemoHatModel;
@@ -295,6 +296,26 @@ public class AddonInit {
                                 false, // forceAllTranslucent
                                 Set.of("creraces"), // modTags
                                 Set.of() // No body parts hidden
+                );
+
+                // Register mermaid tail addon - replaces both legs with a tail and fin. Also hides
+                // the vanilla leggings/boots overlays; PlayerAddonLayer draws them on the tail
+                // (leggings) and fin (boots) instead
+                AddonRegistry.registerAddon(
+                                "mermaid_tail",
+                                MermaidTailModel.LAYER_LOCATION,
+                                MermaidTailModel::createBodyLayer,
+                                MermaidTailModel::new,
+                                new ResourceLocation(TwilightLib.MODID,
+                                                "textures/addon/mermaid_tail.png"),
+                                false, // usePlayerSkin
+                                false, // translucent
+                                false, // hidePlayerModel
+                                false, // forceAllTranslucent
+                                Set.of("creraces"), // modTags
+                                Set.of(BodyPart.RIGHT_LEG, BodyPart.LEFT_LEG, BodyPart.LEFT_PANTS,
+                                                BodyPart.RIGHT_PANTS, BodyPart.LEGGINGS_ARMOR,
+                                                BodyPart.BOOTS_ARMOR) // Hide legs and leg armor
                 );
 
                 // Register short torso addon - 10 pixel tall body using player skin

@@ -9,6 +9,7 @@ import mc.sayda.twilight_lib.client.tint.TintTextureCompositor;
 import mc.sayda.twilight_lib.client.model.IAddonModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestArmorModel;
+import mc.sayda.twilight_lib.client.model.addon.MermaidTailModel;
 import mc.sayda.twilight_lib.config.TwilightConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
@@ -20,11 +21,13 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.DyeableLeatherItem;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Collections;
@@ -325,6 +328,13 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                             }
                         }
                     }
+
+                    // Mermaid tail: draw leggings on the tail and boots on the fin. The vanilla
+                    // overlays for those slots are hidden by its LEGGINGS_ARMOR/BOOTS_ARMOR parts.
+                    if (addonModel instanceof MermaidTailModel<?>) {
+                        renderMermaidTailArmor(poseStack, buffer, packedLight, player, playerModel, limbSwing,
+                                limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+                    }
                 } finally {
                     // Restore visibility
                     visibilityState.forEach((part, visible) -> part.visible = visible);
@@ -350,6 +360,112 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
             var modelPart = context.bakeLayer(ChestArmorModel.LAYER_LOCATION);
             return new ChestArmorModel<>(modelPart);
         });
+    }
+
+    @SuppressWarnings("unchecked")
+    private MermaidTailModel<Entity> getOrBakeMermaidTailArmorModel() {
+        return (MermaidTailModel<Entity>) bakedModels.computeIfAbsent("__mermaid_tail_armor_internal__", id -> {
+            var context = Minecraft.getInstance().getEntityModels();
+            var modelPart = context.bakeLayer(MermaidTailModel.ARMOR_LAYER_LOCATION);
+            return new MermaidTailModel<Entity>(modelPart);
+        });
+    }
+
+    /**
+     * Draws the player's leggings on the mermaid tail and boots on its fin using
+     * the vanilla armor textures. Ignores the addon tint, like the chest armor
+     * overlay. Custom armor without a standard texture is skipped.
+     */
+    private void renderMermaidTailArmor(PoseStack poseStack, MultiBufferSource buffer, int packedLight,
+            AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> playerModel, float limbSwing,
+            float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+        ItemStack leggings = player.getItemBySlot(EquipmentSlot.LEGS);
+        ItemStack boots = player.getItemBySlot(EquipmentSlot.FEET);
+        boolean hasLeggings = isArmorFor(leggings, EquipmentSlot.LEGS);
+        boolean hasBoots = isArmorFor(boots, EquipmentSlot.FEET);
+        if (!hasLeggings && !hasBoots) {
+            return;
+        }
+
+        MermaidTailModel<Entity> armorModel = getOrBakeMermaidTailArmorModel();
+        armorModel.getBody().ifPresent(part -> copyModelPart(playerModel.body, part));
+        armorModel.getRightLeg().ifPresent(part -> copyModelPart(playerModel.rightLeg, part));
+        armorModel.getLeftLeg().ifPresent(part -> copyModelPart(playerModel.leftLeg, part));
+        armorModel.setupAnim(player, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+
+        try {
+            if (hasLeggings) {
+                armorModel.setArmorPieceVisibility(true, false);
+                renderTailArmorPiece(poseStack, buffer, packedLight, armorModel, leggings, true);
+            }
+            if (hasBoots) {
+                armorModel.setArmorPieceVisibility(false, true);
+                renderTailArmorPiece(poseStack, buffer, packedLight, armorModel, boots, false);
+            }
+        } catch (Exception e) {
+            LOGGER.warn("How did I?! Uuuughh! Failed to render mermaid tail armor, skipping", e);
+        } finally {
+            armorModel.setArmorPieceVisibility(true, true);
+        }
+    }
+
+    private static boolean isArmorFor(ItemStack stack, EquipmentSlot slot) {
+        return stack.getItem() instanceof ArmorItem armorItem && armorItem.getEquipmentSlot() == slot;
+    }
+
+    /**
+     * Renders one armor item on the mermaid tail armor model the way vanilla's
+     * HumanoidArmorLayer does: the base texture (dyed for leather) plus the leather
+     * overlay, then the enchantment glint. No damage overlay, so it doesn't flash
+     * red.
+     *
+     * @param innerLayer true for the leggings texture (layer_2), false for layer_1
+     */
+    private void renderTailArmorPiece(PoseStack poseStack, MultiBufferSource buffer, int packedLight,
+            MermaidTailModel<Entity> model, ItemStack stack, boolean innerLayer) {
+        ArmorItem armorItem = (ArmorItem) stack.getItem();
+        boolean drewBase;
+        if (armorItem instanceof DyeableLeatherItem dyeable) {
+            int color = dyeable.getColor(stack);
+            drewBase = renderTailArmorTexture(poseStack, buffer, packedLight, model,
+                    armorTexture(armorItem, innerLayer, null),
+                    ((color >> 16) & 0xFF) / 255.0F, ((color >> 8) & 0xFF) / 255.0F, (color & 0xFF) / 255.0F);
+            renderTailArmorTexture(poseStack, buffer, packedLight, model,
+                    armorTexture(armorItem, innerLayer, "overlay"), 1.0F, 1.0F, 1.0F);
+        } else {
+            drewBase = renderTailArmorTexture(poseStack, buffer, packedLight, model,
+                    armorTexture(armorItem, innerLayer, null), 1.0F, 1.0F, 1.0F);
+        }
+
+        if (drewBase && stack.hasFoil()) {
+            model.renderToBuffer(poseStack, buffer.getBuffer(RenderType.armorEntityGlint()), packedLight,
+                    OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+        }
+    }
+
+    /**
+     * @return false if the texture doesn't exist (custom armor) and nothing was drawn
+     */
+    @SuppressWarnings("null")
+    private boolean renderTailArmorTexture(PoseStack poseStack, MultiBufferSource buffer, int packedLight,
+            MermaidTailModel<Entity> model, ResourceLocation texture, float red, float green, float blue) {
+        if (Minecraft.getInstance().getResourceManager().getResource(texture).isEmpty()) {
+            return false;
+        }
+        model.renderToBuffer(poseStack, buffer.getBuffer(RenderType.armorCutoutNoCull(texture)), packedLight,
+                OverlayTexture.NO_OVERLAY, red, green, blue, 1.0F);
+        return true;
+    }
+
+    /**
+     * Vanilla armor texture location, e.g. minecraft:textures/models/armor/iron_layer_2.png.
+     *
+     * @param suffix optional suffix like "overlay", or null
+     */
+    private static ResourceLocation armorTexture(ArmorItem armorItem, boolean innerLayer, String suffix) {
+        ResourceLocation material = new ResourceLocation(armorItem.getMaterial().getName());
+        return new ResourceLocation(material.getNamespace(), "textures/models/armor/" + material.getPath()
+                + "_layer_" + (innerLayer ? 2 : 1) + (suffix == null ? "" : "_" + suffix) + ".png");
     }
 
     private void copyModelPart(ModelPart from, ModelPart to) {
@@ -451,6 +567,9 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
             case RIGHT_SLEEVE -> {
                 state.put(model.rightSleeve, model.rightSleeve.visible);
                 model.rightSleeve.visible = false;
+            }
+            case HELMET_ARMOR, CHESTPLATE_ARMOR, LEGGINGS_ARMOR, BOOTS_ARMOR -> {
+                // Armor overlays are skipped by HumanoidArmorLayerMixin, not here
             }
         }
     }

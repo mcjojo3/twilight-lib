@@ -17,6 +17,7 @@
     "client": [
         "client.AbstractClientPlayerMixin",
         "client.AddonRenderMixin",
+        "client.HumanoidArmorLayerMixin",
         "client.PlayerRendererMixin",
         "PlayerModelVariantMixin"
     ],

@@ -53,6 +53,10 @@ public class AddonLogicalInit {
         register("harpy_legs_alt", Set.of("creraces"), harpyLegsHidden);
         register("harpy_thighs_alt", Set.of("creraces"));
 
+        // Mermaid tail replaces the legs and draws leggings/boots itself
+        register("mermaid_tail", Set.of("creraces"), Set.of(BodyPart.RIGHT_LEG, BodyPart.LEFT_LEG,
+                BodyPart.LEFT_PANTS, BodyPart.RIGHT_PANTS, BodyPart.LEGGINGS_ARMOR, BodyPart.BOOTS_ARMOR));
+
         register("short_torso", Set.of(), Set.of(BodyPart.BODY, BodyPart.JACKET));
         register("opaque_body", Set.of());
         register("slime_body", Set.of("creraces"));

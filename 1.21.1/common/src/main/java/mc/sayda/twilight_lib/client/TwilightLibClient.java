@@ -5,6 +5,7 @@ import dev.architectury.registry.client.level.entity.EntityRendererRegistry;
 import dev.architectury.registry.client.particle.ParticleProviderRegistry;
 import mc.sayda.twilight_lib.client.model.PlayerRigModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestArmorModel;
+import mc.sayda.twilight_lib.client.model.addon.MermaidTailModel;
 import mc.sayda.twilight_lib.client.renderer.CustomFoxRenderer;
 import mc.sayda.twilight_lib.cosmetics.AmbientEffectHandler;
 import mc.sayda.twilight_lib.cosmetics.SpawnEffectHandler;
@@ -40,6 +41,7 @@ public class TwilightLibClient {
             // Register Layer Definitions
             EntityModelLayerRegistry.register(PlayerRigModel.LAYER_LOCATION, PlayerRigModel::createBodyLayer);
             EntityModelLayerRegistry.register(ChestArmorModel.LAYER_LOCATION, ChestArmorModel::createBodyLayer);
+            EntityModelLayerRegistry.register(MermaidTailModel.ARMOR_LAYER_LOCATION, MermaidTailModel::createArmorLayer);
         }
 
         // Addons

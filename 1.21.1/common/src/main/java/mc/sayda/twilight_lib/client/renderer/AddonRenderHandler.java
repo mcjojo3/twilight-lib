@@ -2,9 +2,11 @@ package mc.sayda.twilight_lib.client.renderer;
 
 import mc.sayda.twilight_lib.addon.AddonRegistry;
 import mc.sayda.twilight_lib.addon.BodyPart;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,11 +28,34 @@ import java.util.Set;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 
 public class AddonRenderHandler {
+    /**
+     * Armor slots whose vanilla overlay is hidden for the player currently being
+     * rendered (from {@code *_ARMOR} hidden body parts). Tied to the player model
+     * instance so armor layers of other entities never match it. Read by
+     * HumanoidArmorLayerMixin.
+     */
+    private static final ThreadLocal<HiddenArmor> HIDDEN_ARMOR = new ThreadLocal<>();
+
+    private record HiddenArmor(Object parentModel, Set<EquipmentSlot> slots) {
+    }
+
     public static void init() {
         // Registered via AddonRenderMixin in common
     }
 
+    /**
+     * Whether the vanilla armor overlay for {@code slot} should be skipped for the
+     * armor layer whose parent model is {@code parentModel}.
+     */
+    public static boolean isArmorSlotHidden(Object parentModel, EquipmentSlot slot) {
+        HiddenArmor hidden = HIDDEN_ARMOR.get();
+        return hidden != null && hidden.parentModel() == parentModel && hidden.slots().contains(slot);
+    }
+
     public static void onRenderPlayerPre(Player player, PlayerRenderer renderer) {
+        // Clear any state left over from a previous render that didn't reach Post
+        HIDDEN_ARMOR.remove();
+
         // Don't modify rendering for invisible players
         if (player.isInvisible()) {
             return;
@@ -66,6 +91,17 @@ public class AddonRenderHandler {
 
             // Check if hideEntireModel was requested (sentinel value present)
             hideEntireModel = allHiddenParts.remove(null); // Remove and return true if present
+        }
+
+        // Armor overlays to skip (applies whether or not the whole model is hidden)
+        Set<EquipmentSlot> hiddenArmorSlots = EnumSet.noneOf(EquipmentSlot.class);
+        for (BodyPart part : allHiddenParts) {
+            if (part.getArmorSlot() != null) {
+                hiddenArmorSlots.add(part.getArmorSlot());
+            }
+        }
+        if (!hiddenArmorSlots.isEmpty()) {
+            HIDDEN_ARMOR.set(new HiddenArmor(playerModel, hiddenArmorSlots));
         }
 
         // Hide the entire model if requested (legacy system)
@@ -116,12 +152,17 @@ public class AddonRenderHandler {
                         playerModel.rightPants.visible = false;
                     }
                     case RIGHT_PANTS -> playerModel.rightPants.visible = false;
+                    case HELMET_ARMOR, CHESTPLATE_ARMOR, LEGGINGS_ARMOR, BOOTS_ARMOR -> {
+                        // Armor overlays are skipped by HumanoidArmorLayerMixin, not here
+                    }
                 }
             }
         }
     }
 
     public static void onRenderPlayerPost(PlayerRenderer renderer) {
+        HIDDEN_ARMOR.remove();
+
         // Always restore visibility after rendering (in case it was modified)
         var playerModel = renderer.getModel();
         playerModel.head.visible = true;

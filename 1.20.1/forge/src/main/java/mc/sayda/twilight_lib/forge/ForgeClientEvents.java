@@ -5,6 +5,7 @@ import mc.sayda.twilight_lib.addon.AddonInit;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
 import mc.sayda.twilight_lib.client.model.PlayerRigModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestArmorModel;
+import mc.sayda.twilight_lib.client.model.addon.MermaidTailModel;
 import mc.sayda.twilight_lib.client.renderer.CustomFoxRenderer;
 import mc.sayda.twilight_lib.client.renderer.PlayerAddonLayer;
 import mc.sayda.twilight_lib.entity.ModEntities;
@@ -35,6 +36,7 @@ public class ForgeClientEvents {
 
         event.registerLayerDefinition(PlayerRigModel.LAYER_LOCATION, PlayerRigModel::createBodyLayer);
         event.registerLayerDefinition(ChestArmorModel.LAYER_LOCATION, ChestArmorModel::createBodyLayer);
+        event.registerLayerDefinition(MermaidTailModel.ARMOR_LAYER_LOCATION, MermaidTailModel::createArmorLayer);
 
         // Register all addon layer definitions
         AddonRegistry.getAllRegisteredAddons().forEach(addon -> {

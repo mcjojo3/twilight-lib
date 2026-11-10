@@ -10,6 +10,7 @@ import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import mc.sayda.twilight_lib.client.renderer.CustomFoxRenderer;
 import mc.sayda.twilight_lib.client.model.PlayerRigModel;
 import mc.sayda.twilight_lib.client.model.addon.ChestArmorModel;
+import mc.sayda.twilight_lib.client.model.addon.MermaidTailModel;
 import mc.sayda.twilight_lib.addon.AddonRegistry;
 import mc.sayda.twilight_lib.entity.ModEntities;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
@@ -43,6 +44,7 @@ public class NeoForgeClientEvents {
         TwilightLib.LOGGER.info("Twilight Lib NeoForge: Registering model layer definitions natively...");
         event.registerLayerDefinition(PlayerRigModel.LAYER_LOCATION, PlayerRigModel::createBodyLayer);
         event.registerLayerDefinition(ChestArmorModel.LAYER_LOCATION, ChestArmorModel::createBodyLayer);
+        event.registerLayerDefinition(MermaidTailModel.ARMOR_LAYER_LOCATION, MermaidTailModel::createArmorLayer);
 
         Set<net.minecraft.client.model.geom.ModelLayerLocation> registeredLayers = new HashSet<>();
         AddonRegistry.getAllRegisteredAddons().forEach(addon -> {

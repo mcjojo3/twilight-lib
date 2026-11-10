@@ -20,21 +20,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import dev.architectury.event.events.client.ClientTickEvent;
 
-/**
- * Client-side spawn effects for players with spawn effects active
- * Creates beautiful particle bursts when spawning (login, respawn, dimension
- * change, etc)
- *
- * Supported effects:
- * - spawn_ethereal: Soul + portal + enchanting particles (purple/blue ethereal
- * theme)
- * - spawn_rainbow: Rainbow cycling particles (vibrant multi-color)
- * - spawn_portal: End portal particles with reverse gravity (mysterious void
- * theme)
- * - spawn_frost: Snowflake particles (icy winter theme)
- * - spawn_flame: Soul fire particles (blazing fire theme)
- * - spawn_nature: Spore blossom particles (natural floral theme)
- */
+/** Client-side particle bursts for spawn effects (login, respawn, dimension change). */
 @Environment(EnvType.CLIENT)
 public class SpawnEffectHandler {
 
@@ -70,12 +56,7 @@ public class SpawnEffectHandler {
         clear();
     }
 
-    /**
-     * Get the effective particle count, clamped by config limit (if set).
-     * 
-     * @param baseCount The default particle count from TwilightConstants
-     * @return The clamped particle count (0 = unlimited uses base count)
-     */
+    /** Particle count, capped by the config limit if one is set. */
     private static int getClampedParticleCount(int baseCount) {
         int maxParticles = mc.sayda.twilight_lib.config.TwilightConfig.MAX_EFFECT_PARTICLES_PER_PLAYER.get();
         if (maxParticles <= 0) {

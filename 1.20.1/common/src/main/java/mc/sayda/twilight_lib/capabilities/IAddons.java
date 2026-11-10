@@ -4,25 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 
 import java.util.Set;
 
-/**
- * Capability interface for player cosmetic addons (visual attachments).
- * Addons are 3D model attachments that render on top of the player (e.g.,
- * tails, wings).
- *
- * <p>
- * Addons have two states:
- * <ul>
- * <li><b>Owned</b>: Addons the player has unlocked (via supporter tier or admin
- * grant)</li>
- * <li><b>Active</b>: Addons currently equipped and visible (multiple can be
- * active simultaneously)</li>
- * </ul>
- *
- * <p>
- * Players manage addons via /cosmetics addons commands.
- * Supporter tiers grant addons additively (never removed on login).
- * Admin grants via /twilightlib persist independently of supporter status.
- */
+/** Player addons: the ones they own and the ones they have equipped. */
 public interface IAddons {
     // Owned addons (what the player has access to)
     /**
@@ -39,20 +21,10 @@ public interface IAddons {
      */
     void addAddon(String addonId);
 
-    /**
-     * Remove an owned addon from the player.
-     * Also deactivates the addon if currently active.
-     * 
-     * @param addonId The addon ID to remove
-     */
+    /** Removes an owned addon and unequips it. */
     void removeAddon(String addonId);
 
-    /**
-     * Check if the player owns an addon.
-     * 
-     * @param addonId The addon ID to check
-     * @return true if the player owns this addon
-     */
+    /** Whether the player owns this addon. */
     boolean hasAddon(String addonId);
 
     /**
@@ -70,21 +42,10 @@ public interface IAddons {
      */
     Set<String> getActiveAddons();
 
-    /**
-     * Set whether an addon is active (equipped).
-     * Player must own the addon to activate it.
-     * 
-     * @param addonId The addon ID to activate/deactivate
-     * @param active  true to activate, false to deactivate
-     */
+    /** Equips or unequips an addon. The player must own it. */
     void setActiveAddon(String addonId, boolean active);
 
-    /**
-     * Check if an addon is currently active.
-     * 
-     * @param addonId The addon ID to check
-     * @return true if the addon is both owned and active
-     */
+    /** Whether the addon is owned and equipped. */
     boolean isAddonActive(String addonId);
 
     /**
@@ -92,31 +53,14 @@ public interface IAddons {
      */
     void clearActiveAddons();
 
-    /**
-     * Get all external grants (addons activated by mod/race logic, not by the
-     * player).
-     * These are the addons set via setActiveAddon(id, true, true).
-     *
-     * @return Set of addon IDs that are externally granted (race cosmetics etc.)
-     */
+    /** Addons equipped by mod or race logic rather than the player, via setActiveAddon(id, true, true). */
     Set<String> getExternalGrants();
 
     // Tint color methods
-    /**
-     * Get the RGB tint color for an addon.
-     * 
-     * @param addonId The addon ID
-     * @return RGB color as packed int (0xRRGGBB), default 0xFFFFFF (white/no tint)
-     */
+    /** Tint color as 0xRRGGBB, 0xFFFFFF (no tint) by default. */
     int getAddonTint(String addonId);
 
-    /**
-     * Set the RGB tint color for an addon.
-     * Color is stored per-player and persists across sessions.
-     * 
-     * @param addonId The addon ID
-     * @param color   RGB color as packed int (0xRRGGBB), 0xFFFFFF = white (no tint)
-     */
+    /** Sets the tint color (0xRRGGBB, 0xFFFFFF = no tint). Saved per player. */
     void setAddonTint(String addonId, int color);
 
     /**

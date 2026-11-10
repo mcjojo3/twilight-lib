@@ -21,16 +21,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Bakes a base texture and a "mask" texture into a single tinted texture:
- * mask pixel ALPHA controls how strongly the chosen tint color multiplies
- * into the base pixel at that spot (transparent = untouched, opaque = fully
- * tinted). Alpha rather than brightness/RGB is used deliberately - many image
- * editors leave undefined/black RGB behind on erased (fully transparent)
- * pixels, which would otherwise silently read as "don't tint" regardless of
- * what the artist intended. Painting a mask is then just: draw white where
- * tinting should apply, erase (transparent) where it shouldn't. Results are
- * cached and registered as dynamic textures so normal rendering code can
- * bind them like any other {@link ResourceLocation}.
+ * Bakes a texture and its tint mask into one tinted texture. Mask alpha sets how
+ * strongly the tint applies. Results are cached as dynamic textures.
  */
 public final class TintTextureCompositor {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -68,14 +60,8 @@ public final class TintTextureCompositor {
     }
 
     /**
-     * Auto-discovers a mask for {@code texture} by progressively stripping
-     * trailing "_token" segments from its filename and checking whether a
-     * same-named file exists under that texture's "mask/" subfolder, e.g.
-     * {@code textures/addon/kitsune_ears_black.png} tries, in order:
-     * {@code textures/addon/mask/kitsune_ears_black.png}, then
-     * {@code textures/addon/mask/kitsune_ears.png}, then
-     * {@code textures/addon/mask/kitsune.png} - using whichever exists first.
-     * Returns empty if none exist. Results are cached per texture.
+     * Finds a texture's mask in its mask/ folder, dropping trailing _parts from the
+     * name until one exists (kitsune_ears_black, kitsune_ears, kitsune).
      */
     public static Optional<ResourceLocation> resolveMask(ResourceLocation texture) {
         if (texture == null) {
@@ -218,12 +204,7 @@ public final class TintTextureCompositor {
         }
     }
 
-    /**
-     * Releases every cached composite. Currently called on disconnect and level
-     * unload (see {@code MorphRenderHandler}). Not wired to resource-pack reload -
-     * a mask/texture swapped via {@code /reload} won't be picked up until the
-     * next disconnect/level unload; call this manually if that's ever needed.
-     */
+    /** Frees every cached texture. Called on disconnect and level unload. */
     public static synchronized void clearAll() {
         var textureManager = Minecraft.getInstance().getTextureManager();
         for (ResourceLocation rl : CACHE.values()) {

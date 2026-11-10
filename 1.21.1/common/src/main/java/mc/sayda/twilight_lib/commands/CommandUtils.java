@@ -10,20 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
  */
 public class CommandUtils {
 
-    /**
-     * Check if feedback should be sent to the command source.
-     * Used to prevent duplicate messages when a player targets themselves.
-     *
-     * <p>Returns true if:
-     * <ul>
-     *   <li>Source is not a player (console, command block, etc.)</li>
-     *   <li>Source player is different from target player</li>
-     * </ul>
-     *
-     * @param source The command source executing the command
-     * @param target The target player being affected by the command
-     * @return true if feedback should be sent to the source
-     */
+    /** False when a player targets themselves, so they don't get the same message twice. */
     public static boolean shouldSendFeedbackToSource(CommandSourceStack source, ServerPlayer target) {
         try {
             ServerPlayer sourcePlayer = source.getPlayerOrException();
@@ -34,12 +21,7 @@ public class CommandUtils {
         }
     }
 
-    /**
-     * Get the player executing the command, or null if not a player.
-     *
-     * @param source The command source
-     * @return The ServerPlayer executing the command, or null if source is console/command block
-     */
+    /** The player running the command, or null for console and command blocks. */
     public static ServerPlayer getTargetPlayer(CommandSourceStack source) {
         try {
             return source.getPlayerOrException();

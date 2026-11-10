@@ -69,18 +69,7 @@ public class AmbientEffectHandler {
         }
     }
 
-    /**
-     * Renders a continuous particle circle around the player's feet
-     * 
-     * @param player               The player to render around
-     * @param level                The level to spawn particles in
-     * @param mainParticle         The primary particle type
-     * @param mainVelocity         The upward velocity for primary particles
-     * @param secondaryParticle    Optional secondary particle type (can be null)
-     * @param secondaryVelocity    The upward velocity for secondary particles
-     * @param secondaryProbability The spawn probability for secondary particles
-     *                             (0.0-1.0)
-     */
+    /** Spawns a ring of particles around the player's feet, plus an optional random second particle. */
     private static void renderParticleCircle(AbstractClientPlayer player, Level level,
             ParticleOptions mainParticle, double mainVelocity,
             ParticleOptions secondaryParticle, double secondaryVelocity,

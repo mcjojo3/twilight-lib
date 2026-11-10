@@ -138,14 +138,8 @@ public class EffectsData implements IEffects {
     }
 
     /**
-     * Force-set effect state with persistence control (admin/mod command only).
-     * Enforces one-per-category rule: activating an effect will deactivate other
-     * effects in the same category.
-     * 
-     * @param effectId   The effect ID to activate/deactivate
-     * @param active     true to activate, false to deactivate
-     * @param persistent If true, persists through logout/death (external grant); if
-     *                   false, temporary preview
+     * Admin equip. Persistent survives logout and death, otherwise it's a temporary
+     * preview. Equipping turns off other effects in the same category.
      */
     public synchronized void setActiveEffect(String effectId, boolean active, boolean persistent) {
         if (active) {
@@ -184,13 +178,7 @@ public class EffectsData implements IEffects {
         }
     }
 
-    /**
-     * Force unequip effect regardless of source (admin command only).
-     * Removes effect from equipped state and clears all tracking (player selections
-     * and external grants).
-     * 
-     * @param effectId The effect ID to unequip
-     */
+    /** Admin unequip that also clears the player's own selection and any external grant. */
     public synchronized void forceUnequipEffect(String effectId) {
         equippedEffects.remove(effectId);
         playerSelections.remove(effectId);

@@ -18,13 +18,7 @@ import java.util.Set;
  */
 public class CosmeticManager {
 
-    /**
-     * Re-syncs all cosmetics for a player.
-     *
-     * @param player              The player to sync
-     * @param triggerSpawnEffects Whether to trigger spawn effects
-     *                            (particles/sounds)
-     */
+    /** Re-syncs all of a player's cosmetics, optionally playing spawn effects. */
     public static void resyncAll(ServerPlayer player, boolean triggerSpawnEffects) {
         if (player == null || player.isRemoved())
             return;

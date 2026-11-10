@@ -13,23 +13,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * TODO: Improve Fabric-side armor slot write protection for 1.20.1.
- * 
- * WHY THIS EXISTS AND DIFFERS FROM OTHER VERSIONS/PLATFORMS:
- * - In 1.21.1, we safely replace the slots entirely using NeoForge/Fabric API
- * events.
- * - In 1.20.1 Forge, we have `IForgeItem.canEquip()` to cleanly block
- * placement.
- * - In 1.20.1 Fabric, neither exist. Replacing `InventoryMenu` slots via Mixin
- * can likely break mods,
- * and Fabric lacks a `canEquip` hook. Furthermore, `AbstractContainerMenuMixin`
- * `Slot.set` redirects
- * don't catch drag-and-drop on Fabric due to how `InventoryMenu$1` overrides
- * it.
- * 
- * Therefore, we intercept the absolute lowest level: `Inventory.setItem` at
- * slots 36–39.
- * This guarantees we catch drag-and-drop, hotbar swaps, and shift-clicks.
+ * Blocks restricted armor at Inventory.setItem (slots 36-39). 1.20.1 Fabric has no
+ * canEquip hook, and slot redirects miss drag-and-drop.
+ *
+ * TODO: find a cleaner hook.
  */
 @Mixin(Inventory.class)
 public class FabricInventoryArmorMixin {

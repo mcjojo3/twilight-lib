@@ -5,12 +5,7 @@ import net.minecraft.nbt.Tag;
 
 import javax.annotation.Nonnull;
 
-/**
- * Implementation of IModelVariant for storing player model variant.
- *
- * <p>
- * Thread-safe implementation using synchronized methods.
- */
+/** Stores the player's model variant. Methods are synchronized. */
 public class ModelVariantData implements IModelVariant {
     private java.util.Optional<mc.sayda.twilight_lib.api.model_variant.IModelVariant> variant = java.util.Optional
             .empty();

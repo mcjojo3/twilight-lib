@@ -22,32 +22,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Central registry for all player addon models - 3D attachments rendered on
- * players.
+ * Registry of player addon models (tails, wings, ears and so on).
  *
- * <p>
- * <b>What are addons?</b> Addons are cosmetic 3D models attached to players:
- * <ul>
- * <li>Tails that sway with player movement</li>
- * <li>Wings that animate during flight</li>
- * <li>Horns, ears, and other decorative attachments</li>
- * </ul>
- *
- * <p>
- * <b>Thread Safety</b>: Uses {@link java.util.concurrent.ConcurrentHashMap} for
- * safe concurrent
- * registration during mod loading. Multiple mods can register addons
- * simultaneously.
- *
- * <p>
- * <b>Performance</b>: Registry is built once during startup. Lookups during
- * rendering are O(1) via hash map.
- *
- * @see AddonModelInfo for detailed addon configuration options
- * @see mc.sayda.twilight_lib.client.model.IAddonModel for addon model interface
- *      requirements
  * @author SaydaGames (mc_jojo3)
- * @version 2.0
  */
 public class AddonRegistry implements IAddonRegistry {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -74,21 +51,7 @@ public class AddonRegistry implements IAddonRegistry {
 
     private final Map<ResourceLocation, IAddon> NEW_ADDONS = new ConcurrentHashMap<>();
 
-    /**
-     * Register a new addon model
-     * 
-     * @param id                      Unique identifier for the addon (e.g.,
-     *                                "horns", "wings")
-     * @param layerLocation           Model layer location
-     * @param layerDefinitionSupplier Supplier for the layer definition
-     * @param modelFactory            Function to create model instance from
-     *                                ModelPart (should return EntityModel &
-     *                                IAddonModel)
-     * @param texture                 Texture location for the addon (ignored if
-     *                                usePlayerSkin is true)
-     * @param usePlayerSkin           If true, the addon will use the player's skin
-     *                                texture instead of the provided texture
-     */
+    /** Registers an addon, optionally textured with the player's skin. */
     public static void registerAddon(String id, ModelLayerLocation layerLocation,
             Supplier<LayerDefinition> layerDefinitionSupplier,
             Function<ModelPart, ?> modelFactory,
@@ -98,18 +61,7 @@ public class AddonRegistry implements IAddonRegistry {
                 false, Set.of());
     }
 
-    /**
-     * Register a new addon model with a custom texture (backwards compatible)
-     * 
-     * @param id                      Unique identifier for the addon (e.g.,
-     *                                "horns", "wings")
-     * @param layerLocation           Model layer location
-     * @param layerDefinitionSupplier Supplier for the layer definition
-     * @param modelFactory            Function to create model instance from
-     *                                ModelPart (should return EntityModel &
-     *                                IAddonModel)
-     * @param texture                 Texture location for the addon
-     */
+    /** Registers an addon with its own texture. */
     public static void registerAddon(String id, ModelLayerLocation layerLocation,
             Supplier<LayerDefinition> layerDefinitionSupplier,
             Function<ModelPart, ?> modelFactory,
@@ -118,23 +70,7 @@ public class AddonRegistry implements IAddonRegistry {
                 Set.of());
     }
 
-    /**
-     * Register a new addon model with translucency
-     * 
-     * @param id                      Unique identifier for the addon (e.g.,
-     *                                "horns", "wings")
-     * @param layerLocation           Model layer location
-     * @param layerDefinitionSupplier Supplier for the layer definition
-     * @param modelFactory            Function to create model instance from
-     *                                ModelPart (should return EntityModel &
-     *                                IAddonModel)
-     * @param texture                 Texture location for the addon (ignored if
-     *                                usePlayerSkin is true)
-     * @param usePlayerSkin           If true, the addon will use the player's skin
-     *                                texture instead of the provided texture
-     * @param translucent             If true, the addon will render with 50%
-     *                                transparency
-     */
+    /** Registers an addon, optionally skin-textured and translucent. */
     public static void registerAddon(String id, ModelLayerLocation layerLocation,
             Supplier<LayerDefinition> layerDefinitionSupplier,
             Function<ModelPart, ?> modelFactory,
@@ -145,25 +81,7 @@ public class AddonRegistry implements IAddonRegistry {
                 false, false, Set.of());
     }
 
-    /**
-     * Register a new addon model with standard options
-     * 
-     * @param id                      Unique identifier for the addon (e.g.,
-     *                                "horns", "wings")
-     * @param layerLocation           Model layer location
-     * @param layerDefinitionSupplier Supplier for the layer definition
-     * @param modelFactory            Function to create model instance from
-     *                                ModelPart (should return EntityModel &
-     *                                IAddonModel)
-     * @param texture                 Texture location for the addon (ignored if
-     *                                usePlayerSkin is true)
-     * @param usePlayerSkin           If true, the addon will use the player's skin
-     *                                texture instead of the provided texture
-     * @param translucent             If true, the addon will render with 50%
-     *                                transparency
-     * @param hidePlayerModel         If true, the base player model will be hidden
-     *                                (nametag and shadow remain visible)
-     */
+    /** Registers an addon with the common render options. */
     public static void registerAddon(String id, ModelLayerLocation layerLocation,
             Supplier<LayerDefinition> layerDefinitionSupplier,
             Function<ModelPart, ?> modelFactory,
@@ -175,28 +93,7 @@ public class AddonRegistry implements IAddonRegistry {
                 hidePlayerModel, false, Set.of());
     }
 
-    /**
-     * Register a new addon model with all options (without mod tags - backwards
-     * compatible)
-     * 
-     * @param id                      Unique identifier for the addon (e.g.,
-     *                                "horns", "wings")
-     * @param layerLocation           Model layer location
-     * @param layerDefinitionSupplier Supplier for the layer definition
-     * @param modelFactory            Function to create model instance from
-     *                                ModelPart (should return EntityModel &
-     *                                IAddonModel)
-     * @param texture                 Texture location for the addon (ignored if
-     *                                usePlayerSkin is true)
-     * @param usePlayerSkin           If true, the addon will use the player's skin
-     *                                texture instead of the provided texture
-     * @param translucent             If true, THIS addon will render with 50%
-     *                                transparency
-     * @param hidePlayerModel         If true, the base player model will be hidden
-     *                                (nametag and shadow remain visible)
-     * @param forceAllTranslucent     If true, ALL active addons will render with
-     *                                50% transparency
-     */
+    /** Registers an addon with every render option but no required mods. */
     public static void registerAddon(String id, ModelLayerLocation layerLocation,
             Supplier<LayerDefinition> layerDefinitionSupplier,
             Function<ModelPart, ?> modelFactory,
@@ -209,30 +106,7 @@ public class AddonRegistry implements IAddonRegistry {
                 hidePlayerModel, forceAllTranslucent, Set.of());
     }
 
-    /**
-     * Register a new addon model with all options including mod tags (with mod
-     * tags, no hidden parts - backward compat)
-     * 
-     * @param id                      Unique identifier for the addon (e.g.,
-     *                                "horns", "wings")
-     * @param layerLocation           Model layer location
-     * @param layerDefinitionSupplier Supplier for the layer definition
-     * @param modelFactory            Function to create model instance from
-     *                                ModelPart (should return EntityModel &
-     *                                IAddonModel)
-     * @param texture                 Texture location for the addon (ignored if
-     *                                usePlayerSkin is true)
-     * @param usePlayerSkin           If true, the addon will use the player's skin
-     *                                texture instead of the provided texture
-     * @param translucent             If true, THIS addon will render with 50%
-     *                                transparency
-     * @param hidePlayerModel         If true, the base player model will be hidden
-     *                                (nametag and shadow remain visible)
-     * @param forceAllTranslucent     If true, ALL active addons will render with
-     *                                50% transparency
-     * @param modTags                 Set of mod IDs required for this addon (empty
-     *                                = always load, OR logic for multiple)
-     */
+    /** Registers an addon with render options and required mods. */
     public static void registerAddon(String id, ModelLayerLocation layerLocation,
             Supplier<LayerDefinition> layerDefinitionSupplier,
             Function<ModelPart, ?> modelFactory,
@@ -246,33 +120,7 @@ public class AddonRegistry implements IAddonRegistry {
                 hidePlayerModel, forceAllTranslucent, modTags, Set.of());
     }
 
-    /**
-     * Register a new addon model with all options including mod tags and hidden
-     * body parts (MAIN METHOD)
-     * 
-     * @param id                      Unique identifier for the addon (e.g.,
-     *                                "horns", "wings")
-     * @param layerLocation           Model layer location
-     * @param layerDefinitionSupplier Supplier for the layer definition
-     * @param modelFactory            Function to create model instance from
-     *                                ModelPart (should return EntityModel &
-     *                                IAddonModel)
-     * @param texture                 Texture location for the addon (ignored if
-     *                                usePlayerSkin is true)
-     * @param usePlayerSkin           If true, the addon will use the player's skin
-     *                                texture instead of the provided texture
-     * @param translucent             If true, THIS addon will render with 50%
-     *                                transparency
-     * @param hidePlayerModel         If true, the base player model will be hidden
-     *                                (nametag and shadow remain visible)
-     * @param forceAllTranslucent     If true, ALL active addons will render with
-     *                                50% transparency
-     * @param modTags                 Set of mod IDs required for this addon (empty
-     *                                = always load, OR logic for multiple)
-     * @param hiddenBodyParts         Set of specific body parts to hide when this
-     *                                addon is equipped (e.g.,
-     *                                Set.of(BodyPart.HEAD))
-     */
+    /** Registers an addon without a tint mask. */
     public static void registerAddon(String id, ModelLayerLocation layerLocation,
             Supplier<LayerDefinition> layerDefinitionSupplier,
             Function<ModelPart, ?> modelFactory,
@@ -288,16 +136,16 @@ public class AddonRegistry implements IAddonRegistry {
     }
 
     /**
-     * Register a new addon model with all options including mod tags, hidden
-     * body parts, and an optional tint mask texture (TRUE MAIN METHOD)
+     * Registers an addon with every option.
      *
-     * @param maskTexture Optional tint mask texture, same dimensions as
-     *                    {@code texture}. Pixel ALPHA controls how strongly a
-     *                    player-chosen tint multiplies into the base texture at
-     *                    that pixel (opaque = tinted, transparent = untouched).
-     *                    Pass {@code null} for addons that don't support
-     *                    per-pixel tinting (they still get the existing
-     *                    flat/uniform tint behavior).
+     * @param texture             addon texture, ignored when usePlayerSkin is set
+     * @param usePlayerSkin       draw it with the player's skin instead
+     * @param translucent         draw it at 50% opacity
+     * @param hidePlayerModel     hide the player model (name tag and shadow stay)
+     * @param forceAllTranslucent draw every other active addon at 50% opacity
+     * @param modTags             mods it needs, any one is enough (empty = always loads)
+     * @param hiddenBodyParts     player parts hidden while it's worn
+     * @param maskTexture         tint mask (alpha = tint strength), or null for a flat tint
      */
     public static void registerAddon(String id, ModelLayerLocation layerLocation,
             Supplier<LayerDefinition> layerDefinitionSupplier,
@@ -496,12 +344,7 @@ public class AddonRegistry implements IAddonRegistry {
         return Optional.empty();
     }
 
-    /**
-     * Get all registered addon IDs that satisfy mod requirements.
-     * Use this for autocomplete and player-facing lists.
-     * 
-     * @return List of available addon IDs
-     */
+    /** Addon ids whose required mods are loaded, for autocomplete and player-facing lists. */
     public static List<String> getAllAddonIds() {
         Set<String> ids = new HashSet<>();
 
@@ -535,13 +378,7 @@ public class AddonRegistry implements IAddonRegistry {
         return ids.stream().sorted().toList();
     }
 
-    /**
-     * Get ALL registered addon IDs regardless of mod requirements.
-     * Used for internal tracking or sync packets where an addon might exist on the
-     * server but not be "loadable" on the client.
-     * 
-     * @return Set of all registered addon IDs
-     */
+    /** Every registered addon id, even ones whose required mods aren't loaded. */
     public static Set<String> getAllAddonIdsUnfiltered() {
         Set<String> ids = new HashSet<>(ADDONS.keySet());
         ids.addAll(LOGICAL_ADDONS.keySet());

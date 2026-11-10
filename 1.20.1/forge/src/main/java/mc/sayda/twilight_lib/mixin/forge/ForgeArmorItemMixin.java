@@ -32,12 +32,7 @@ public class ForgeArmorItemMixin {
             }
         }
 
-        // Fallback to default Forge-added behavior if needed,
-        // but usually ArmorItem just returns Mob.getEquipmentSlotForItem(stack) ==
-        // armorType;
-        // However, we can't easily call super or the original logic if it's a default
-        // method on IForgeItem.
-        // Actually, for ArmorItem, Forge patches it to override canEquip.
+        // Same check vanilla ArmorItem uses
 
         return net.minecraft.world.entity.Mob.getEquipmentSlotForItem(stack) == armorType;
     }

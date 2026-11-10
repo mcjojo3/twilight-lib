@@ -94,12 +94,7 @@ public class MorphRenderHandler {
         }
     }
 
-    /**
-     * Called from PlayerRendererMixin before rendering the player.
-     * 
-     * @return true if a morph was rendered and original rendering should be
-     *         cancelled.
-     */
+    /** Called before the player renders. Returns true if a morph was drawn instead. */
     public static boolean onRenderPlayerPre(Player player, PlayerRenderer renderer, float partialTicks,
             PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         if (!TwilightConfig.ENABLE_MORPHS.get() || player.isInvisible()) {

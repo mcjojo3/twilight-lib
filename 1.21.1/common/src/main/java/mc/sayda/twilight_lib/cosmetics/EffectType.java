@@ -77,13 +77,7 @@ public enum EffectType {
         return ModRequirement.shouldLoad(modTags);
     }
 
-    /**
-     * Look up an effect type by its string ID using cached O(1) lookup.
-     * Only returns effects that are available based on loaded mods.
-     * 
-     * @param id The effect type ID
-     * @return The matching EffectType, or null if not found or not available
-     */
+    /** Finds an effect by id, or null if it doesn't exist or its mods aren't loaded. */
     @Nullable
     public static EffectType fromId(String id) {
         EffectType type = ID_CACHE.get(id);

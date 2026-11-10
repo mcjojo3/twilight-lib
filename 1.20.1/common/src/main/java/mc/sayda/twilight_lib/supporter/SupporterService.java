@@ -96,12 +96,7 @@ public class SupporterService {
         }
     }
 
-    /**
-     * Fetch supporters from a specific URL with retry logic
-     * 
-     * @param urlString The URL to fetch from
-     * @return true if successful, false otherwise
-     */
+    /** Fetches supporters from a URL, with retries. Returns true on success. */
     private static boolean fetchFromUrlWithRetries(String urlString) {
         int maxRetries = 3; // Default fallback
         int retryDelay = 2000; // Default fallback
@@ -136,12 +131,7 @@ public class SupporterService {
         return false;
     }
 
-    /**
-     * Fetch supporters from a specific URL
-     * 
-     * @param urlString The URL to fetch from
-     * @return true if successful, false otherwise
-     */
+    /** Fetches supporters from a URL. Returns true on success. */
     private static boolean fetchFromUrl(String urlString) {
         HttpURLConnection conn = null;
         try {
@@ -183,11 +173,8 @@ public class SupporterService {
     }
 
     /**
-     * Parse the supporters.json content
-     *
-     * Tier determines supporter status and auto-grants from SupporterRegistry.
-     * Cosmetics field contains manual overrides that persist even if tier
-     * changes/expires.
+     * Parses supporters.json. Tiers grant from SupporterRegistry, and the cosmetics
+     * field adds manual extras that outlive the tier.
      */
     private static void parseSupportersJsonFromReader(InputStreamReader reader) {
         Map<String, SupporterData> newCache = new ConcurrentHashMap<>();

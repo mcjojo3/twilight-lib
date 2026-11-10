@@ -26,20 +26,10 @@ public interface IEffects extends ISerializableData {
      */
     void addEffect(String effectId);
 
-    /**
-     * Remove an owned effect from the player.
-     * Also deactivates the effect if currently active.
-     * 
-     * @param effectId The effect ID to remove
-     */
+    /** Removes an owned effect and unequips it. */
     void removeEffect(String effectId);
 
-    /**
-     * Check if the player owns an effect.
-     * 
-     * @param effectId The effect ID to check
-     * @return true if the player owns this effect
-     */
+    /** Whether the player owns this effect. */
     boolean hasEffect(String effectId);
 
     /**
@@ -58,26 +48,12 @@ public interface IEffects extends ISerializableData {
     Set<String> getActiveEffects();
 
     /**
-     * Set whether an effect is active (equipped).
-     * Player must own the effect to activate it.
-     *
-     * <p>
-     * <b>Category Enforcement</b>: Activating an effect will automatically
-     * deactivate
-     * any other effects in the same category (e.g., only one spawn effect can be
-     * active at a time).
-     *
-     * @param effectId The effect ID to activate/deactivate
-     * @param active   true to activate, false to deactivate
+     * Equips or unequips an effect. The player must own it. Equipping turns off
+     * other effects in the same category.
      */
     void setActiveEffect(String effectId, boolean active);
 
-    /**
-     * Check if an effect is currently active.
-     * 
-     * @param effectId The effect ID to check
-     * @return true if the effect is both owned and active
-     */
+    /** Whether the effect is owned and equipped. */
     boolean isEffectActive(String effectId);
 
     /**

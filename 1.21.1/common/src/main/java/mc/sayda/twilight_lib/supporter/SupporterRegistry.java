@@ -4,14 +4,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Registry that defines which addons/trails/effects are supporter-exclusive.
- * Items listed here require supporter status to be granted via /cosmetics.
- * Admins can still grant these via /twilightlib regardless.
- *
- * Each tier defines only the NEW cosmetics introduced at that tier.
- * Higher tiers automatically inherit all cosmetics from lower tiers via the getter methods.
- *
- * NOTE: Morphs are NOT part of the supporter system and are admin-only via /twilightlib morph
+ * Supporter-only cosmetics per tier. Each tier lists only what it adds and higher
+ * tiers inherit the rest. Admins can still grant anything; morphs aren't part of this.
  */
 public class SupporterRegistry {
 

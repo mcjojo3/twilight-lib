@@ -4,10 +4,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Data class representing a supporter's cosmetic permissions
- *
- * Tier unlocks are automatic based on SupporterRegistry.
- * Manual cosmetics are overrides that persist even if tier expires.
+ * A supporter's cosmetics. Tier unlocks come from SupporterRegistry; manual
+ * cosmetics stay even if the tier expires.
  */
 public class SupporterData {
     private final String uuid;

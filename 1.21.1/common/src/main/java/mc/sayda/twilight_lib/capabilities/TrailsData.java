@@ -120,14 +120,7 @@ public class TrailsData implements ITrails {
         }
     }
 
-    /**
-     * Force-set trail state with persistence control (admin/mod command only).
-     * 
-     * @param trailId    The trail ID to activate/deactivate
-     * @param active     true to activate, false to deactivate
-     * @param persistent If true, persists through logout/death (external grant); if
-     *                   false, temporary preview
-     */
+    /** Admin equip. Persistent survives logout and death, otherwise it's a temporary preview. */
     public synchronized void setActiveTrail(String trailId, boolean active, boolean persistent) {
         if (active) {
             equippedTrails.add(trailId);
@@ -146,13 +139,7 @@ public class TrailsData implements ITrails {
         }
     }
 
-    /**
-     * Force unequip trail regardless of source (admin command only).
-     * Removes trail from equipped state and clears all tracking (player selections
-     * and external grants).
-     * 
-     * @param trailId The trail ID to unequip
-     */
+    /** Admin unequip that also clears the player's own selection and any external grant. */
     public synchronized void forceUnequipTrail(String trailId) {
         equippedTrails.remove(trailId);
         playerSelections.remove(trailId);

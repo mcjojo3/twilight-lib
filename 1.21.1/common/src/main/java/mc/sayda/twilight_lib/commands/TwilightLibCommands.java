@@ -124,13 +124,7 @@ public class TwilightLibCommands {
                 return false;
         }
 
-        /**
-         * Initialize cache of valid living entity types.
-         * Called once on first command suggestion to avoid creating test entities on
-         * every keystroke.
-         * Automatically invalidates and refreshes if registry size changes.
-         * Thread-safe with double-check locking pattern.
-         */
+        /** Caches the living entity types once, and again if the registry size changes. */
         private static synchronized void initializeEntityCache(net.minecraft.world.level.Level level) {
                 // Double-check pattern to avoid repeated initialization
                 if (cacheInitialized && cachedRegistrySize == BuiltInRegistries.ENTITY_TYPE.size()) {
@@ -1083,12 +1077,8 @@ public class TwilightLibCommands {
                                         .literal("This command can only be used by players or must specify a target."));
                         return 0;
                 }
-                // Use exists() instead of hasAddon() - server doesn't need to check mod
-                // requirements.
-                // The client decides whether to render based on its own mod availability.
-                // hasAddon() checks ModRequirement.shouldLoad() which fails on dedicated
-                // servers
-                // where client-side mods like CreRaces aren't installed.
+                // exists() rather than hasAddon(): the server may not have the addon's
+                // required mods (like CreRaces), the client decides whether to render it.
                 if (!AddonRegistry.exists(addonId)) {
                         source.sendFailure(Component.literal("Unknown addon: " + addonId));
                         LOGGER.warn("Or, what. Unknown addon requested: {}", addonId);

@@ -43,22 +43,8 @@ public interface IAddon {
     ResourceLocation getTexture();
 
     /**
-     * Optional tint mask texture, same dimensions as {@link #getTexture()}.
-     * Pixel ALPHA controls how strongly a player-chosen tint color is
-     * multiplied into the base texture at that pixel (transparent = untouched,
-     * opaque = fully tinted) - draw white where tinting should apply, erase
-     * where it shouldn't. Empty means this addon has no per-pixel tinting - any
-     * tint set for it still applies as a flat, uniform multiply (see
-     * {@link mc.sayda.twilight_lib.capabilities.IAddons#getAddonTint}).
-     *
-     * <p>
-     * {@link mc.sayda.twilight_lib.addon.AddonModelInfo}'s implementation
-     * auto-discovers a mask by convention when none is explicitly registered:
-     * it looks for a same-named file under the texture's {@code mask/}
-     * subfolder, progressively stripping trailing {@code _variant} segments
-     * (e.g. {@code kitsune_ears_black.png} -> tries {@code mask/kitsune_ears_black.png},
-     * then {@code mask/kitsune_ears.png}). This default implementation does not
-     * perform that discovery.
+     * Tint mask, same size as the texture. Pixel alpha sets how strongly the tint
+     * applies there; empty means the tint applies evenly.
      */
     default java.util.Optional<ResourceLocation> getMaskTexture() {
         return java.util.Optional.empty();
@@ -117,11 +103,6 @@ public interface IAddon {
         return true;
     }
 
-    /**
-     * Creates the model instance for this addon.
-     * The returned model must implement
-     * {@link mc.sayda.twilight_lib.client.model.IAddonModel}
-     * and extend {@link net.minecraft.client.model.EntityModel}.
-     */
+    /** Creates the model. It must extend EntityModel and implement IAddonModel. */
     mc.sayda.twilight_lib.client.model.IAddonModel createModel(net.minecraft.client.model.geom.ModelPart root);
 }

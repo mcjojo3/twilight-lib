@@ -10,21 +10,8 @@ import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**
- * Capability interface for player morphing functionality.
- * Allows players to transform into different LivingEntity types.
- *
- * <p>
- * Morphing changes:
- * <ul>
- * <li>Visual appearance (rendered as the morphed entity)</li>
- * <li>Hitbox size (matches the morphed entity's dimensions)</li>
- * <li>Eye height (configurable via TwilightConfig)</li>
- * <li>Step height (scaled based on entity size)</li>
- * </ul>
- *
- * <p>
- * Morphs are admin-only and granted via /twilightlib morph command.
- * Data persists through death and dimension changes via NBT serialization.
+ * Player morph into another living entity. Admin-only, and kept through death
+ * and dimension changes.
  */
 public interface IMorph extends ISerializableData {
     /**
@@ -41,32 +28,17 @@ public interface IMorph extends ISerializableData {
      */
     void setMorph(Optional<mc.sayda.twilight_lib.api.morph.IMorph> morph);
 
-    /**
-     * Get the currently morphed entity type.
-     * 
-     * @return Optional containing the entity type ResourceLocation, or empty if not
-     *         morphed
-     */
+    /** The morphed entity type, or empty if not morphed. */
     default Optional<ResourceLocation> getEntityType() {
         return getMorph().map(mc.sayda.twilight_lib.api.morph.IMorph::getId);
     }
 
-    /**
-     * Set the morphed entity type.
-     * 
-     * @param type Optional containing the entity type ResourceLocation, or empty to
-     *             clear morph
-     */
+    /** Sets the morphed entity type, or clears the morph with an empty Optional. */
     default void setEntityType(Optional<ResourceLocation> type) {
         setMorph(type.flatMap(rl -> mc.sayda.twilight_lib.api.morph.IMorphRegistry.getInstance().get(rl)));
     }
 
-    /**
-     * Get the cached EntityType instance for performance.
-     * Avoids repeated registry lookups during rendering.
-     * 
-     * @return The cached EntityType, or null if not morphed or not yet cached
-     */
+    /** Cached EntityType so rendering skips the registry lookup. Null if not morphed. */
     @Nullable
     default EntityType<?> getCachedEntityType() {
         return getMorph().map(mc.sayda.twilight_lib.api.morph.IMorph::getEntityType).orElse(null);
@@ -93,25 +65,10 @@ public interface IMorph extends ISerializableData {
      */
     int getTint();
 
-    /**
-     * Set the tint color applied to the morph. Does not change whether the
-     * current tint is persistent - use this from network/render sync paths where
-     * persistence isn't a relevant concern.
-     *
-     * @param tint packed 0xRRGGBB color; 0xFFFFFF clears the tint
-     */
+    /** Sets the morph tint (0xRRGGBB, 0xFFFFFF clears it) without changing whether it's saved. */
     void setTint(int tint);
 
-    /**
-     * Set the tint color applied to the morph, with persistence control (mirrors
-     * {@link IAddons}'s equip-with-persistence pattern).
-     *
-     * @param tint       packed 0xRRGGBB color; 0xFFFFFF clears the tint
-     * @param persistent if true, the tint survives {@link #serialize()} (written
-     *                   to NBT, restored on next login); if false, it applies for
-     *                   the current session only and is dropped the next time
-     *                   this data is saved
-     */
+    /** Sets the morph tint (0xRRGGBB, 0xFFFFFF clears it). Non-persistent tints aren't saved. */
     void setTint(int tint, boolean persistent);
 
     /**

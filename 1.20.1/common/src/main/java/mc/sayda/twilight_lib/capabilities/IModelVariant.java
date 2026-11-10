@@ -2,20 +2,7 @@ package mc.sayda.twilight_lib.capabilities;
 
 import net.minecraft.nbt.CompoundTag;
 
-/**
- * Capability interface for storing player model variant (Steve/Alex).
- *
- * <p>
- * Minecraft has two built-in player model types:
- * <ul>
- * <li><b>Steve (classic)</b>: 4px wide arms</li>
- * <li><b>Alex (slim)</b>: 3px wide arms</li>
- * </ul>
- *
- * <p>
- * By default, the model type is determined by the player's UUID/skin,
- * but this capability allows cosmetic overriding for supporters.
- */
+/** Player model variant override (classic or slim arms). */
 public interface IModelVariant extends ISerializableData {
     /**
      * Get the active model variant.
@@ -24,12 +11,7 @@ public interface IModelVariant extends ISerializableData {
      */
     java.util.Optional<mc.sayda.twilight_lib.api.model_variant.IModelVariant> getVariant();
 
-    /**
-     * Set the active model variant.
-     * 
-     * @param variant Optional containing the new variant, or empty to revert to
-     *                default
-     */
+    /** Sets the model variant, or clears it with an empty Optional. */
     void setVariant(java.util.Optional<mc.sayda.twilight_lib.api.model_variant.IModelVariant> variant);
 
     /**

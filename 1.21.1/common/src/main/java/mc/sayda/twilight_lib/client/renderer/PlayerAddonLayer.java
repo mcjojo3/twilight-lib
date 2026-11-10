@@ -39,30 +39,11 @@ import java.util.Map;
 public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /**
-     * LRU cache for baked addon models.
-     * Key: addon ID (e.g., "kitsune_ears_white")
-     * Value: Baked EntityModel & IAddonModel instance
-     * Access-ordered to evict least recently used models when capacity is exceeded.
-     * Max size is configurable via TwilightConfig.MAX_CACHED_ADDON_MODELS.
-     *
-     * <p>
-     * <b>Thread Safety</b>: Wrapped with Collections.synchronizedMap() to prevent
-     * ConcurrentModificationException when multiple players are rendered
-     * simultaneously
-     * on multi-threaded renderers. The removeEldestEntry check is synchronized
-     * internally.
-     */
+    /** LRU cache of baked addon models, sized by MAX_CACHED_ADDON_MODELS. */
     private final Map<String, Object> bakedModels = Collections
             .synchronizedMap(new LinkedHashMap<String, Object>(16, 0.75f, true) {
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<String, Object> eldest) {
-                    // No additional synchronization needed - Collections.synchronizedMap() handles
-                    // thread safety
-                    // Config access outside any manual synchronized blocks to prevent potential
-                    // deadlock
-                    // No explicit cleanup needed - models don't hold native GPU resources
-                    // Minecraft's resource management handles texture/geometry lifecycle
                     return size() > TwilightConfig.MAX_CACHED_ADDON_MODELS.get();
                 }
             });
@@ -217,12 +198,8 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                     // Check if THIS addon is the one forcing translucency
                     boolean thisAddonForcesTranslucency = addon.forceAllTranslucent();
 
-                    // Translucency rules (spotlight effect):
-                    // 1. If THIS addon is naturally translucent → make it translucent
-                    // 2. If THIS addon is forcing others translucent → keep THIS opaque (spotlight:
-                    // forces others but stays solid)
-                    // 3. If ANOTHER addon is forcing translucency → make THIS translucent (follow
-                    // the force)
+                    // Translucent if this addon is, or if another addon forces it.
+                    // The addon doing the forcing stays opaque.
                     boolean shouldBeTranslucent = addon.isTranslucent()
                             || (forceAllTranslucent && !thisAddonForcesTranslucency);
 
@@ -328,8 +305,7 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
                         }
                     }
 
-                    // Mermaid tail: draw leggings on the tail and boots on the fin. The vanilla
-                    // overlays for those slots are hidden by its LEGGINGS_ARMOR/BOOTS_ARMOR parts.
+                    // The mermaid tail draws its own leggings and boots
                     if (addonModel instanceof MermaidTailModel<?>) {
                         renderMermaidTailArmor(poseStack, buffer, packedLight, player, playerModel, limbSwing,
                                 limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
@@ -370,11 +346,7 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
         });
     }
 
-    /**
-     * Draws the player's leggings on the mermaid tail and boots on its fin using
-     * the vanilla armor textures. Ignores the addon tint, like the chest armor
-     * overlay. Custom armor without a standard texture is skipped.
-     */
+    /** Draws leggings on the mermaid tail and boots on its fin, without the addon tint. */
     private void renderMermaidTailArmor(PoseStack poseStack, MultiBufferSource buffer, int packedLight,
             AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> playerModel, float limbSwing,
             float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
@@ -412,13 +384,7 @@ public class PlayerAddonLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
         return stack.getItem() instanceof ArmorItem armorItem && armorItem.getEquipmentSlot() == slot;
     }
 
-    /**
-     * Renders one armor item on the mermaid tail armor model the way vanilla's
-     * HumanoidArmorLayer does: each material layer (dyed if dyeable), then the
-     * enchantment glint. No damage overlay, so it doesn't flash red.
-     *
-     * @param innerLayer true for the leggings texture (layer_2), false for layer_1
-     */
+    /** Draws one armor item on the tail: each material layer, dyed if dyeable, then the glint. */
     @SuppressWarnings("null")
     private void renderTailArmorPiece(PoseStack poseStack, MultiBufferSource buffer, int packedLight,
             MermaidTailModel<Entity> model, ItemStack stack, boolean innerLayer) {

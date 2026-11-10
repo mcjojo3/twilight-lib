@@ -10,30 +10,11 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Handles player model visibility for addons that want to hide the base player
- * model or specific body parts.
- *
- * <p>
- * <b>Hiding Strategy:</b>
- * <ul>
- * <li><b>hidePlayerModel</b>: Legacy system - hides ALL parts (backward
- * compatible)</li>
- * <li><b>hiddenBodyParts</b>: New system - hides specific parts (fine-grained
- * control)</li>
- * <li><b>Stacking</b>: Multiple addons can hide the same part - it's simply
- * hidden if ANY addon requests it</li>
- * </ul>
- */
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 
+/** Hides the player model parts and armor that active addons ask to hide. */
 public class AddonRenderHandler {
-    /**
-     * Armor slots whose vanilla overlay is hidden for the player currently being
-     * rendered (from {@code *_ARMOR} hidden body parts). Tied to the player model
-     * instance so armor layers of other entities never match it. Read by
-     * HumanoidArmorLayerMixin.
-     */
+    /** Armor slots hidden for the player being rendered, read by HumanoidArmorLayerMixin. */
     private static final ThreadLocal<HiddenArmor> HIDDEN_ARMOR = new ThreadLocal<>();
 
     private record HiddenArmor(Object parentModel, Set<EquipmentSlot> slots) {
@@ -43,17 +24,14 @@ public class AddonRenderHandler {
         // Registered via AddonRenderMixin in common
     }
 
-    /**
-     * Whether the vanilla armor overlay for {@code slot} should be skipped for the
-     * armor layer whose parent model is {@code parentModel}.
-     */
+    /** Whether the armor layer for parentModel should skip this slot. */
     public static boolean isArmorSlotHidden(Object parentModel, EquipmentSlot slot) {
         HiddenArmor hidden = HIDDEN_ARMOR.get();
         return hidden != null && hidden.parentModel() == parentModel && hidden.slots().contains(slot);
     }
 
     public static void onRenderPlayerPre(Player player, PlayerRenderer renderer) {
-        // Clear any state left over from a previous render that didn't reach Post
+        // Clear leftovers from a render that never reached Post
         HIDDEN_ARMOR.remove();
 
         // Don't modify rendering for invisible players
@@ -93,7 +71,7 @@ public class AddonRenderHandler {
             hideEntireModel = allHiddenParts.remove(null); // Remove and return true if present
         }
 
-        // Armor overlays to skip (applies whether or not the whole model is hidden)
+        // Armor to skip, even when the whole model is hidden
         Set<EquipmentSlot> hiddenArmorSlots = EnumSet.noneOf(EquipmentSlot.class);
         for (BodyPart part : allHiddenParts) {
             if (part.getArmorSlot() != null) {

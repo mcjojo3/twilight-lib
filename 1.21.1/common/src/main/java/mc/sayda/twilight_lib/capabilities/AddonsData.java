@@ -123,14 +123,7 @@ public class AddonsData implements IAddons {
         }
     }
 
-    /**
-     * Force-set addon state with persistence control (admin/mod command only).
-     * 
-     * @param addonId    The addon ID to activate/deactivate
-     * @param active     true to activate, false to deactivate
-     * @param persistent If true, persists through logout/death (external grant); if
-     *                   false, temporary preview
-     */
+    /** Admin equip. Persistent survives logout and death, otherwise it's a temporary preview. */
     public synchronized void setActiveAddon(String addonId, boolean active, boolean persistent) {
         if (active) {
             equippedAddons.add(addonId);
@@ -149,13 +142,7 @@ public class AddonsData implements IAddons {
         }
     }
 
-    /**
-     * Force unequip addon regardless of source (admin command only).
-     * Removes addon from equipped state and clears all tracking (player selections
-     * and external grants).
-     * 
-     * @param addonId The addon ID to unequip
-     */
+    /** Admin unequip that also clears the player's own selection and any external grant. */
     public synchronized void forceUnequipAddon(String addonId) {
         equippedAddons.remove(addonId);
         playerSelections.remove(addonId);

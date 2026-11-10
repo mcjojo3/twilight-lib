@@ -57,12 +57,7 @@ public enum TrailType {
         return id;
     }
 
-    /**
-     * Get the particle type for this trail. Can be null for tier-based trails
-     * (e.g., hearts).
-     * 
-     * @return The particle type, or null if tier-based
-     */
+    /** The particle type, or null for tier-based trails like hearts. */
     @Nullable
     public ParticleOptions getParticleType() {
         return particleType.get();
@@ -76,23 +71,15 @@ public enum TrailType {
         return particleType == null || particleType.get() == null;
     }
 
-    /**
-     * Get the spawn mode for this trail, which determines when and how particles
-     * spawn.
-     * 
-     * @return The spawn mode (MOVEMENT, FOOTPRINT, CONTINUOUS, or GROUNDED)
-     */
+    /** When and how particles spawn. */
     public TrailSpawnMode getSpawnMode() {
         return spawnMode;
     }
 
     /**
-     * Check if this trail is a footprint-style trail (alternating left/right
-     * placement).
-     * 
-     * @return true if spawn mode is FOOTPRINT
-     * @deprecated Use getSpawnMode() instead for more flexible spawn behavior
-     *             checking
+     * Whether this is a footprint trail.
+     *
+     * @deprecated use getSpawnMode()
      */
     @Deprecated
     public boolean isFootprint() {
@@ -117,13 +104,7 @@ public enum TrailType {
         return ModRequirement.shouldLoad(modTags);
     }
 
-    /**
-     * Look up a trail type by its string ID using cached O(1) lookup.
-     * Only returns trails that are available based on loaded mods.
-     * 
-     * @param id The trail type ID
-     * @return The matching TrailType, or null if not found or not available
-     */
+    /** Finds a trail by id, or null if it doesn't exist or its mods aren't loaded. */
     @Nullable
     public static TrailType fromId(String id) {
         // Alias for backwards compatibility

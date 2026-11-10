@@ -13,16 +13,7 @@ import mc.sayda.twilight_lib.api.addon.AddonType;
 import mc.sayda.twilight_lib.api.addon.IAddon;
 import java.util.Optional;
 
-/**
- * Stores information about a registered addon model
- * The modelFactory should create models that extend EntityModel and implement
- * IAddonModel
- *
- * @param modTags         Set of mod IDs required for this addon to load (empty
- *                        = always load)
- * @param hiddenBodyParts Set of body parts this addon should hide (e.g., HEAD,
- *                        BODY)
- */
+/** A registered addon model and its render options. */
 public record AddonModelInfo(
         String id,
         ModelLayerLocation layerLocation,

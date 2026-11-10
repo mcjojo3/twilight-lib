@@ -2,13 +2,7 @@ package mc.sayda.twilight_lib.addon;
 
 import java.util.Set;
 
-/**
- * Handles the registration of addon metadata (logical registration) that is
- * safe for both
- * client and server. This ensures that the server is aware of all valid addon
- * IDs
- * without requiring client-only model classes to be loaded.
- */
+/** Server-safe addon registration: ids, required mods and hidden parts. */
 public class AddonLogicalInit {
     private static boolean initialized = false;
 

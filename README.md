@@ -1,4 +1,4 @@
-# ✨ Twilight Lib
+# Twilight Lib
 
 [![CurseForge](https://img.shields.io/badge/CurseForge-Twilight_Lib-orange?style=for-the-badge&logo=curseforge)](https://legacy.curseforge.com/minecraft/mc-mods/twilight-lib)
 [![Modrinth](https://img.shields.io/badge/Modrinth-Twilight_Lib-green?style=for-the-badge&logo=modrinth)](https://modrinth.com/mod/twilight-lib)
@@ -8,30 +8,30 @@
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-### 🎭 Advanced Morph System
+### Morph System
 Transform into any supported Minecraft entity. The system automatically handles:
 - **Visual Transforms**: Accurate entity rendering.
 - **Custom Sounds**: When Morphed the player will mimic the current Morph's death and hit sounds.
 
-### 👒 Cosmetic Addon System
+### Cosmetic Addon System
 Attach custom 3D models directly to the player rig:
 - **Modular Addons**: Equipment like tails, ears, wings, and more.
 - **Tinting System**: Support for per-layer color overrides.
 - **Low Impact**: Optimized rendering to ensure zero FPS drops.
 
-### ✨ Ambient Cosmetics
+### Ambient Cosmetics
 - **Particle Trails**: Custom particle effects that follow movement.
 - **Visual Effects**: Special effects for spawning, death, and persistent idle states.
 
-### 🛡️ Supporter Integration
+### Supporter Integration
 - **Cross-Platform Sync**: Automatic unlocking of cosmetics based on supporter tiers.
 - **Persistent Storage**: All selections are saved to player NBT and synchronized across servers.
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 This repository follows a **multi-version ARCHITECTURY** pattern, allowing seamless development across multiple Minecraft versions and loaders:
 
@@ -44,7 +44,7 @@ Each version is further divided into:
 
 ---
 
-## 🛠️ Build Information
+## Build Information
 
 The project uses a centralized Gradle setup. You can build all platforms simultaneously from the root directory.
 
@@ -64,13 +64,13 @@ The project uses a centralized Gradle setup. You can build all platforms simulta
 
 ---
 
-## 🤝 Used By
+## Used By
 - [CreRaces](https://modrinth.com/mod/creraces-experimental)
 - [CreRaces Classic](https://modrinth.com/mod/creraces)
 
 ---
 
-## 📜 Credits
+## Credits
 - **Primary Developer**: [mc_jojo3](https://www.legacy.curseforge.com/members/mc_jojo3/)
 - **Icon Art**: Traced from original art by [Kezi](https://www.artstation.com/kezi)
 - **Support**: Join our [Patreon](https://www.patreon.com/creraces) to support development!
